@@ -1,0 +1,79 @@
+models:
+  # Free models from OpenRouter
+  - name: deepseek-r1
+    provider: openrouter
+    model: deepseek/deepseek-r1:free
+    type: reasoning
+    contextSize: 64000
+    maxOutputTokens: 8000
+    speed: slow
+    tags: [reasoning, code, math]
+    jsonResponse: true
+    available: true
+    
+  - name: llama-3.3-70b
+    provider: openrouter
+    model: meta-llama/llama-3.3-70b-instruct:free
+    type: fast
+    contextSize: 128000
+    maxOutputTokens: 4096
+    speed: fast
+    tags: [general, code]
+    jsonResponse: true
+    available: true
+
+  - name: llama-3.1-8b
+    provider: openrouter
+    model: meta-llama/llama-3.1-8b-instruct:free
+    type: fast
+    contextSize: 128000
+    maxOutputTokens: 2048
+    speed: fast
+    tags: [general, code, simple]
+    jsonResponse: true
+    available: true
+
+  - name: gemma-2-9b
+    provider: openrouter
+    model: google/gemma-2-9b-it:free
+    type: fast
+    contextSize: 8192
+    maxOutputTokens: 2048
+    speed: fast
+    tags: [general, simple]
+    jsonResponse: true
+    available: true
+
+  - name: qwen-2.5-7b
+    provider: openrouter
+    model: qwen/qwen-2.5-7b-instruct:free
+    type: fast
+    contextSize: 32000
+    maxOutputTokens: 2048
+    speed: fast
+    tags: [general, code, multilingual]
+    jsonResponse: true
+    available: true
+
+  - name: phi-3-mini
+    provider: openrouter
+    model: microsoft/phi-3-mini-128k-instruct:free
+    type: fast
+    contextSize: 128000
+    maxOutputTokens: 2048
+    speed: fast
+    tags: [general, code]
+    jsonResponse: true
+    available: true
+
+  # Fallback paid model (DeepSeek)
+  - name: deepseek-chat
+    provider: deepseek
+    model: deepseek-chat
+    type: fast
+    contextSize: 64000
+    maxOutputTokens: 8000
+    speed: fast
+    tags: [general, code, paid]
+    jsonResponse: true
+    available: true

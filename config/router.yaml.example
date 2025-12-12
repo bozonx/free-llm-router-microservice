@@ -1,0 +1,38 @@
+# Path to models file (optional, defaults to ./config/models.yaml)
+modelsFile: ./config/models.yaml
+
+# Provider settings
+providers:
+  openrouter:
+    enabled: true
+    apiKey: ${OPENROUTER_API_KEY}
+    baseUrl: https://openrouter.ai/api/v1
+    
+  deepseek:
+    enabled: true
+    apiKey: ${DEEPSEEK_API_KEY}
+    baseUrl: https://api.deepseek.com
+
+# Routing settings
+routing:
+  # Selection algorithm: round-robin (MVP)
+  algorithm: round-robin
+  
+  # Maximum retries on free models
+  maxRetries: 3
+  
+  # Maximum retries on 429 rate limit for one model
+  rateLimitRetries: 2
+  
+  # Delay between retries (ms)
+  retryDelay: 1000
+  # Note: Jitter ±20% is hardcoded in RETRY_JITTER_PERCENT constant
+  
+  # Provider request timeout (ms)
+  timeout: 30000
+  
+  # Fallback to paid model
+  fallback:
+    enabled: true
+    provider: deepseek        # or openrouter
+    model: deepseek-chat      # model for fallback
