@@ -3,6 +3,7 @@ import { jest } from '@jest/globals';
 import { SelectorService } from '../../../../src/modules/selector/selector.service.js';
 import { ModelsService } from '../../../../src/modules/models/models.service.js';
 import { SmartStrategy } from '../../../../src/modules/selector/strategies/smart.strategy.js';
+import { CircuitBreakerService } from '../../../../src/modules/state/circuit-breaker.service.js';
 import type { ModelDefinition } from '../../../../src/modules/models/interfaces/model.interface.js';
 
 describe('SelectorService', () => {
@@ -32,12 +33,17 @@ describe('SelectorService', () => {
     select: jest.fn(),
   };
 
+  const mockCircuitBreakerService = {
+    canRequest: jest.fn().mockReturnValue(true),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SelectorService,
         { provide: ModelsService, useValue: mockModelsService },
         { provide: SmartStrategy, useValue: mockStrategy },
+        { provide: CircuitBreakerService, useValue: mockCircuitBreakerService },
       ],
     }).compile();
 
