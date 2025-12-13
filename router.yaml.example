@@ -1,5 +1,5 @@
-# Path to models file (optional, defaults to ./config/models.yaml)
-modelsFile: ./config/models.yaml
+# Path to models file (optional, defaults to ./models.yaml)
+modelsFile: ./models.yaml
 
 # Provider settings
 providers:

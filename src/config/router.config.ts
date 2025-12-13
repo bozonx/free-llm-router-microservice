@@ -12,7 +12,7 @@ export const RETRY_JITTER_PERCENT = 20;
  * Load router configuration from YAML file
  */
 export function loadRouterConfig(): RouterConfig {
-  const configPath = process.env['ROUTER_CONFIG_PATH'] ?? './config/router.yaml';
+  const configPath = process.env['ROUTER_CONFIG_PATH'] ?? './router.yaml';
   const absolutePath = resolve(configPath);
 
   let fileContent: string;

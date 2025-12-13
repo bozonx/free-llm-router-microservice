@@ -160,14 +160,14 @@ API_BASE_PATH=api
 LOG_LEVEL=warn
 
 # Новые
-CONFIG_PATH=./config/router.yaml  # Путь к конфигу роутера
+CONFIG_PATH=./router.yaml  # Путь к конфигу роутера
 ```
 
 ### Конфиг роутера (`router.yaml`)
 
 ```yaml
 # Путь к файлу со списком моделей (опционально, по умолчанию берется из корня репозитория models_file.yaml)
-models_file: ./config/models.yaml
+models_file: ./models.yaml
 
 # Настройки провайдеров
 providers:

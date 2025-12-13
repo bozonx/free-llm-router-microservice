@@ -16,7 +16,7 @@ describe('RouterService', () => {
   let mockProvider: jest.Mocked<LlmProvider>;
 
   const mockConfig: RouterConfig = {
-    modelsFile: './config/models.yaml',
+    modelsFile: './models.yaml',
     providers: {
       openrouter: {
         enabled: true,

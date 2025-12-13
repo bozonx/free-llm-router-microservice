@@ -25,7 +25,7 @@
 pnpm install
 
 # 2) Настройка конфигурации
-cp config/router.yaml.example config/router.yaml
+cp router.yaml.example router.yaml
 cp env.production.example .env.production
 
 # 3) Настройте API ключи в .env.production
@@ -55,7 +55,7 @@ LOG_LEVEL=warn
 TZ=UTC
 
 # Путь к конфигу роутера
-ROUTER_CONFIG_PATH=./config/router.yaml
+ROUTER_CONFIG_PATH=./router.yaml
 
 # API ключи провайдеров
 OPENROUTER_API_KEY=your_openrouter_key
@@ -64,11 +64,11 @@ DEEPSEEK_API_KEY=your_deepseek_key
 
 ### Конфигурация роутера
 
-Основной конфиг (`config/router.yaml`):
+Основной конфиг (`router.yaml`):
 
 ```yaml
 # Путь к файлу со списком моделей
-modelsFile: ./config/models.yaml
+modelsFile: ./models.yaml
 
 # Настройки провайдеров
 providers:
@@ -99,7 +99,7 @@ routing:
 
 ### Список моделей
 
-Модели настраиваются в `config/models.yaml`. Пример:
+Модели настраиваются в `models.yaml`. Пример:
 
 ```yaml
 models:

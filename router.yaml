@@ -2,7 +2,7 @@
 # Do not use in production
 
 # Path to models file
-modelsFile: ./config/models.yaml
+modelsFile: ./models.yaml
 
 # Provider configurations
 providers:

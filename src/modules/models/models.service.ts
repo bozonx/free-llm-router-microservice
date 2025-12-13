@@ -48,7 +48,7 @@ export class ModelsService implements OnModuleInit {
    * Load models from YAML file on module initialization
    */
   public onModuleInit(): void {
-    const modelsFilePath = process.env['MODELS_FILE_PATH'] ?? './config/models.yaml';
+    const modelsFilePath = process.env['MODELS_FILE_PATH'] ?? './models.yaml';
     this.loadModelsFromFile(modelsFilePath);
     this.logger.log(`Loaded ${this.models.length} models from ${modelsFilePath}`);
   }
