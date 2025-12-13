@@ -19,6 +19,11 @@ export function loadRouterConfig(): RouterConfig {
   const substitutedContent = substituteEnvVariables(fileContent);
   const config = parseYamlConfig(substitutedContent, absolutePath);
 
+  // Set default models file if not specified
+  if (config && typeof config === 'object' && !('modelsFile' in config)) {
+    (config as Record<string, unknown>)['modelsFile'] = './models.yaml';
+  }
+
   validateRouterConfig(config);
 
   return config;

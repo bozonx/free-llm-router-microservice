@@ -246,7 +246,7 @@ models:
     maxConcurrent: 3
 ```
 
-**router.yaml** (переопределение приоритетов, опционально):
+**config.yaml** (переопределение приоритетов, опционально):
 
 ```yaml
 # Переопределение приоритетов моделей (опционально)
@@ -299,7 +299,7 @@ export class ChatCompletionRequestDto {
  * Умный алгоритм выбора модели.
  * Заменяет round-robin и учитывает:
  * - Circuit Breaker состояние
- * - Приоритеты (из models.yaml + переопределения из router.yaml)
+ * - Приоритеты (из models.yaml + переопределения из config.yaml)
  * - Веса моделей
  * - Статистику (latency, success rate)
  * - Фильтры из запроса (tags, type, min_context_size, prefer_fast, min_success_rate)
@@ -338,7 +338,7 @@ export class SmartStrategy implements SelectionStrategy {
       return this.selectFastest(candidates);
     }
     
-    // 7. Применить приоритеты (из models.yaml + переопределения router.yaml)
+    // 7. Применить приоритеты (из models.yaml + переопределения config.yaml)
     const withPriorities = this.applyPriorityOverrides(candidates);
     
     // 8. Сгруппировать по приоритету
@@ -450,7 +450,7 @@ export class SmartStrategy implements SelectionStrategy {
 
 ## 📦 Фаза 3: Rate Limiting
 
-### 3.1 Конфигурация в router.yaml
+### 3.1 Конфигурация в config.yaml
 
 ```yaml
 rateLimiting:
@@ -615,7 +615,7 @@ if (availableModels.length === 0) {
 
 ## 📦 Фаза 6: Конфигурация
 
-### 6.1 Полный router.yaml
+### 6.1 Полный config.yaml
 
 ```yaml
 modelsFile: ./models.yaml
@@ -696,7 +696,7 @@ rateLimiting:
 5. ✅ **SmartStrategy** — единый алгоритм выбора
 6. ⏸️ Удаление round-robin.strategy.ts — отложено (тесты используют)
 7. ✅ Обновление models.yaml (priority, weight, maxConcurrent)
-8. ✅ Поддержка modelOverrides в router.yaml
+8. ✅ Поддержка modelOverrides в config.yaml
 9. ✅ Новые фильтры в запросе (prefer_fast, min_success_rate)
 10. ✅ Unit тесты для SmartStrategy
 
