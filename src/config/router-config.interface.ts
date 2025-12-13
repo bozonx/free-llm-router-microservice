@@ -55,7 +55,7 @@ export interface RoutingConfig {
   rateLimitRetries: number;
 
   /**
-   * Retry delay in milliseconds
+   * Retry delay in milliseconds (only for rate limit retries on the same model)
    */
   retryDelay: number;
 
