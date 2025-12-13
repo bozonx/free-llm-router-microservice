@@ -6,6 +6,7 @@ import { ROUTER_CONFIG } from '../../config/router-config.provider.js';
 import type { RouterConfig } from '../../config/router-config.interface.js';
 import type { ModelDefinition, ModelsConfig } from './interfaces/model.interface.js';
 import { ModelValidator } from './validators/model-validator.js';
+import { MODELS_FETCH_TIMEOUT_MS } from '../../common/constants/app.constants.js';
 
 /**
  * Filter criteria for model selection
@@ -75,17 +76,43 @@ export class ModelsService implements OnModuleInit {
   }
 
   private async fetchModelsFile(url: string): Promise<Response> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), MODELS_FETCH_TIMEOUT_MS);
+
     try {
+      this.logger.debug(`Fetching models file from URL: ${url}`);
       // eslint-disable-next-line no-undef
-      const response = await fetch(url);
+      const response = await fetch(url, { signal: controller.signal });
+
       if (!response.ok) {
         throw new Error(`HTTP ${response.status} ${response.statusText}`);
       }
+
+      // Warn if Content-Type is unexpected
+      const contentType = response.headers.get('content-type');
+      if (
+        contentType &&
+        !contentType.includes('yaml') &&
+        !contentType.includes('text/plain') &&
+        !contentType.includes('application/octet-stream')
+      ) {
+        this.logger.warn(
+          `Unexpected Content-Type: ${contentType}, expecting YAML. Proceeding anyway.`,
+        );
+      }
+
       return response;
     } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error(
+          `Timeout fetching models file from ${url} (${MODELS_FETCH_TIMEOUT_MS}ms exceeded)`,
+        );
+      }
       throw new Error(
         `Failed to fetch models file from ${url}: ${error instanceof Error ? error.message : String(error)}`,
       );
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
 
@@ -244,10 +271,11 @@ export class ModelsService implements OnModuleInit {
   }
 
   /**
-   * Find model by name
+   * Find model by name (case-insensitive)
    */
   public findByName(name: string): ModelDefinition | undefined {
-    return this.models.find(model => model.name === name);
+    const lowerName = name.toLowerCase();
+    return this.models.find(model => model.name.toLowerCase() === lowerName);
   }
 
   /**
@@ -260,8 +288,12 @@ export class ModelsService implements OnModuleInit {
    * @returns Array of matching models (may be empty)
    */
   public findByNameAndProvider(name: string, provider?: string): ModelDefinition[] {
+    const lowerName = name.toLowerCase();
+    const lowerProvider = provider?.toLowerCase();
+
     return this.models.filter(model => {
-      if (model.name !== name) {
+      // Case-insensitive name comparison
+      if (model.name.toLowerCase() !== lowerName) {
         return false;
       }
 
@@ -269,7 +301,8 @@ export class ModelsService implements OnModuleInit {
         return false;
       }
 
-      if (provider && model.provider !== provider) {
+      // Case-insensitive provider comparison
+      if (lowerProvider && model.provider.toLowerCase() !== lowerProvider) {
         return false;
       }
 

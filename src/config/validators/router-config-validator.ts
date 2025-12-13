@@ -22,8 +22,40 @@ export class RouterConfigValidator extends BaseValidator<RouterConfig> {
     this.circuitBreakerValidator.validate(config.circuitBreaker, `${path}.circuitBreaker`);
     this.rateLimitingValidator.validate(config.rateLimiting, `${path}.rateLimiting`);
 
+    // Cross-validation: ensure fallback provider is configured and enabled
+    this.validateFallbackProvider(config, path);
+
     if (config.modelOverrides !== undefined) {
       this.validateModelOverrides(config.modelOverrides, `${path}.modelOverrides`);
+    }
+  }
+
+  /**
+   * Validate that fallback provider is properly configured
+   */
+  private validateFallbackProvider(config: Record<string, unknown>, path: string): void {
+    const routing = config.routing as Record<string, unknown>;
+    const fallback = routing?.fallback as Record<string, unknown>;
+    const providers = config.providers as Record<string, Record<string, unknown>>;
+
+    // Skip validation if fallback is disabled
+    if (!fallback?.enabled) {
+      return;
+    }
+
+    const providerName = fallback.provider as string;
+    const provider = providers?.[providerName];
+
+    if (!provider) {
+      throw new Error(
+        `${path}.routing.fallback.provider: Provider "${providerName}" is not configured in providers section`,
+      );
+    }
+
+    if (!provider.enabled) {
+      throw new Error(
+        `${path}.routing.fallback.provider: Provider "${providerName}" is disabled. Enable it or use a different fallback provider.`,
+      );
     }
   }
 

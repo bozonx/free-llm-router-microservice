@@ -2,8 +2,8 @@ import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals
 import { Test, type TestingModule } from '@nestjs/testing';
 import { StateService } from '../../../../src/modules/state/state.service.js';
 import { ModelsService } from '../../../../src/modules/models/models.service.js';
-import { ROUTER_CONFIG } from '../../../../src/config/router-config.provider.js';
-import type { RouterConfig } from '../../../../src/config/router-config.interface.js';
+import { CIRCUIT_BREAKER_CONFIG } from '../../../../src/modules/state/circuit-breaker-config.provider.js';
+import type { CircuitBreakerConfig } from '../../../../src/modules/state/interfaces/state.interface.js';
 import type { ModelDefinition } from '../../../../src/modules/models/interfaces/model.interface.js';
 
 describe('StateService', () => {
@@ -36,24 +36,11 @@ describe('StateService', () => {
     },
   ];
 
-  const mockRouterConfig: RouterConfig = {
-    modelsFile: './models.yaml',
-    providers: {
-      openrouter: { enabled: true, apiKey: 'test', baseUrl: 'https://test.com' },
-    },
-    routing: {
-      maxRetries: 3,
-      rateLimitRetries: 2,
-      retryDelay: 1000,
-      timeoutSecs: 30,
-      fallback: { enabled: true, provider: 'deepseek', model: 'deepseek-chat' },
-    },
-    circuitBreaker: {
-      failureThreshold: 3,
-      cooldownPeriodSecs: 60,
-      successThreshold: 2,
-      statsWindowSizeMins: 5,
-    },
+  const mockCircuitBreakerConfig: CircuitBreakerConfig = {
+    failureThreshold: 3,
+    cooldownPeriodSecs: 60,
+    successThreshold: 2,
+    statsWindowSizeMins: 5,
   };
 
   beforeEach(async () => {
@@ -65,7 +52,7 @@ describe('StateService', () => {
       providers: [
         StateService,
         { provide: ModelsService, useValue: mockModelsService },
-        { provide: ROUTER_CONFIG, useValue: mockRouterConfig },
+        { provide: CIRCUIT_BREAKER_CONFIG, useValue: mockCircuitBreakerConfig },
       ],
     }).compile();
 

@@ -4,12 +4,7 @@ import {
   OnApplicationShutdown,
   ServiceUnavailableException,
 } from '@nestjs/common';
-
-/**
- * Graceful shutdown timeout in milliseconds
- * Requests will be cancelled after this duration during shutdown
- */
-export const SHUTDOWN_TIMEOUT_MS = 10_000;
+import { SHUTDOWN_TIMEOUT_MS } from '../../common/constants/app.constants.js';
 
 /**
  * Service for managing graceful shutdown with request cancellation
@@ -50,11 +45,12 @@ export class ShutdownService implements OnApplicationShutdown {
   }
 
   /**
-   * Unregister a completed request
+   * Unregister a completed request.
+   * Uses Math.max to prevent negative counter from race conditions.
    */
   public unregisterRequest(): void {
-    this.activeRequests--;
-    if (this.activeRequests <= 0 && this.shutdownResolve) {
+    this.activeRequests = Math.max(0, this.activeRequests - 1);
+    if (this.activeRequests === 0 && this.shutdownResolve) {
       this.shutdownResolve();
     }
   }

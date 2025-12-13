@@ -8,11 +8,10 @@ import type {
   TokenBucket,
 } from './interfaces/rate-limiter.interface.js';
 import { DEFAULT_RATE_LIMITING_CONFIG } from './interfaces/rate-limiter.interface.js';
-
-/**
- * Stale bucket cleanup threshold (10 minutes)
- */
-const STALE_BUCKET_THRESHOLD_MS = 600_000;
+import {
+  STALE_BUCKET_THRESHOLD_MS,
+  RATE_LIMITER_CLEANUP_INTERVAL_MS,
+} from '../../common/constants/app.constants.js';
 
 /**
  * Rate Limiter Service implementing Token Bucket algorithm.
@@ -52,8 +51,12 @@ export class RateLimiterService implements OnModuleDestroy {
       }
     }
 
-    // Schedule cleanup of stale client/model buckets every 5 minutes
-    this.cleanupIntervalId = setInterval(() => this.cleanupStaleBuckets(), 300000);
+    // Schedule cleanup of stale client/model buckets (unref to not block exit)
+    this.cleanupIntervalId = setInterval(
+      () => this.cleanupStaleBuckets(),
+      RATE_LIMITER_CLEANUP_INTERVAL_MS,
+    );
+    this.cleanupIntervalId.unref();
   }
 
   /**

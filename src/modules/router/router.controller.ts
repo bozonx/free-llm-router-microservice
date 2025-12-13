@@ -46,10 +46,15 @@ export class RouterController {
     const abortController = new AbortController();
     const signal = abortController.signal;
 
+    // Safely abort on client disconnect with try-catch to handle edge cases
     const closeListener = () => {
-      if (!signal.aborted) {
-        this.logger.debug('Client disconnected, cancelling request');
-        abortController.abort();
+      try {
+        if (!signal.aborted) {
+          this.logger.debug('Client disconnected, cancelling request');
+          abortController.abort();
+        }
+      } catch {
+        // Ignore abort errors - request may have already completed
       }
     };
 

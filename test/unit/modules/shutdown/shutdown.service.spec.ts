@@ -1,9 +1,7 @@
 import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import { ServiceUnavailableException } from '@nestjs/common';
-import {
-  ShutdownService,
-  SHUTDOWN_TIMEOUT_MS,
-} from '../../../../src/modules/shutdown/shutdown.service.js';
+import { ShutdownService } from '../../../../src/modules/shutdown/shutdown.service.js';
+import { SHUTDOWN_TIMEOUT_MS } from '../../../../src/common/constants/app.constants.js';
 
 describe('ShutdownService', () => {
   let service: ShutdownService;

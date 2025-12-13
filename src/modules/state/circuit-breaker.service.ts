@@ -1,10 +1,8 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
 import { StateService } from './state.service.js';
-import { ROUTER_CONFIG } from '../../config/router-config.provider.js';
-import type { RouterConfig } from '../../config/router-config.interface.js';
 import type { ModelDefinition } from '../models/interfaces/model.interface.js';
 import type { CircuitBreakerConfig } from './interfaces/state.interface.js';
-import { DEFAULT_CIRCUIT_BREAKER_CONFIG } from './interfaces/state.interface.js';
+import { CIRCUIT_BREAKER_CONFIG } from './circuit-breaker-config.provider.js';
 
 /**
  * Circuit Breaker service implementing the Circuit Breaker pattern.
@@ -18,17 +16,11 @@ import { DEFAULT_CIRCUIT_BREAKER_CONFIG } from './interfaces/state.interface.js'
 @Injectable()
 export class CircuitBreakerService {
   private readonly logger = new Logger(CircuitBreakerService.name);
-  private readonly config: CircuitBreakerConfig;
 
   constructor(
     private readonly stateService: StateService,
-    @Inject(ROUTER_CONFIG) routerConfig: RouterConfig,
-  ) {
-    this.config = {
-      ...DEFAULT_CIRCUIT_BREAKER_CONFIG,
-      ...routerConfig.circuitBreaker,
-    };
-  }
+    @Inject(CIRCUIT_BREAKER_CONFIG) private readonly config: CircuitBreakerConfig,
+  ) {}
 
   /**
    * Handle successful response from a model.

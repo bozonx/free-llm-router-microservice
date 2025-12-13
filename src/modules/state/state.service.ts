@@ -1,9 +1,8 @@
 import { Injectable, OnModuleInit, OnModuleDestroy, Inject, Logger } from '@nestjs/common';
 import { ModelsService } from '../models/models.service.js';
-import { ROUTER_CONFIG } from '../../config/router-config.provider.js';
-import type { RouterConfig } from '../../config/router-config.interface.js';
 import type { ModelState, ModelStats, CircuitBreakerConfig } from './interfaces/state.interface.js';
-import { DEFAULT_CIRCUIT_BREAKER_CONFIG } from './interfaces/state.interface.js';
+import { STATE_CLEANUP_INTERVAL_MS } from '../../common/constants/app.constants.js';
+import { CIRCUIT_BREAKER_CONFIG } from './circuit-breaker-config.provider.js';
 
 /**
  * Service for managing in-memory state of all models.
@@ -13,19 +12,13 @@ import { DEFAULT_CIRCUIT_BREAKER_CONFIG } from './interfaces/state.interface.js'
 export class StateService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(StateService.name);
   private readonly states: Map<string, ModelState> = new Map();
-  private readonly config: CircuitBreakerConfig;
   private cleanupIntervalId?: ReturnType<typeof setInterval>;
   private _fallbacksUsed = 0;
 
   constructor(
     private readonly modelsService: ModelsService,
-    @Inject(ROUTER_CONFIG) routerConfig: RouterConfig,
-  ) {
-    this.config = {
-      ...DEFAULT_CIRCUIT_BREAKER_CONFIG,
-      ...routerConfig.circuitBreaker,
-    };
-  }
+    @Inject(CIRCUIT_BREAKER_CONFIG) private readonly config: CircuitBreakerConfig,
+  ) {}
 
   /**
    * Initialize states for all models on module start
@@ -39,8 +32,9 @@ export class StateService implements OnModuleInit, OnModuleDestroy {
 
     this.logger.log(`Initialized state for ${this.states.size} models`);
 
-    // Schedule periodic cleanup of stale data
-    this.cleanupIntervalId = setInterval(() => this.cleanupStaleData(), 60000);
+    // Schedule periodic cleanup of stale data (unref to not block exit)
+    this.cleanupIntervalId = setInterval(() => this.cleanupStaleData(), STATE_CLEANUP_INTERVAL_MS);
+    this.cleanupIntervalId.unref();
   }
 
   /**

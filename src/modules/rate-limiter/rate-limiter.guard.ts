@@ -63,6 +63,10 @@ export class RateLimiterGuard implements CanActivate {
       );
     }
 
+    this.logger.debug(
+      `Rate limit check passed (client: ${clientId ?? 'unknown'}, remaining: ${rateLimitInfo.remaining}/${rateLimitInfo.limit})`,
+    );
+
     return true;
   }
 

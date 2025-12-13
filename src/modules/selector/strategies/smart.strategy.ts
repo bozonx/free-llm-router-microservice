@@ -45,11 +45,21 @@ export class SmartStrategy implements SelectionStrategy {
       return null;
     }
 
+    this.logger.debug(
+      `SmartStrategy: ${candidates.length} candidates available: ${candidates.map(c => c.name).join(', ')}`,
+    );
+
+    let selected: ModelDefinition | null;
+
     if (criteria.preferFast) {
-      return this.selectFastest(candidates);
+      selected = this.selectFastest(candidates);
+      this.logger.debug(`Selected fastest model: ${selected?.name ?? 'none'}`);
+    } else {
+      selected = this.selectByPriorityAndWeight(candidates);
+      this.logger.debug(`Selected by priority/weight: ${selected?.name ?? 'none'}`);
     }
 
-    return this.selectByPriorityAndWeight(candidates);
+    return selected;
   }
 
   private applyFilters(models: ModelDefinition[], criteria: SelectionCriteria): ModelDefinition[] {

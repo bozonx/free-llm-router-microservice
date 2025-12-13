@@ -1,51 +1,140 @@
 /**
+ * Router metadata included in responses
+ */
+export interface RouterMetadata {
+  /**
+   * Provider that handled the request
+   */
+  provider: string;
+
+  /**
+   * Model name used
+   */
+  model_name: string;
+
+  /**
+   * Number of attempts made
+   */
+  attempts: number;
+
+  /**
+   * Whether fallback model was used
+   */
+  fallback_used: boolean;
+
+  /**
+   * Errors from previous attempts (if any)
+   */
+  errors?: RouterErrorInfo[];
+}
+
+/**
+ * Error information for failed attempts
+ */
+export interface RouterErrorInfo {
+  /**
+   * Provider that returned the error
+   */
+  provider: string;
+
+  /**
+   * Model that returned the error
+   */
+  model: string;
+
+  /**
+   * Error message
+   */
+  error: string;
+
+  /**
+   * HTTP status code (if available)
+   */
+  code?: number;
+}
+
+/**
+ * Chat completion choice
+ */
+export interface ChatCompletionChoice {
+  index: number;
+  message: ChatCompletionMessage;
+  finish_reason: 'stop' | 'length' | 'content_filter';
+}
+
+/**
+ * Chat completion message in response
+ */
+export interface ChatCompletionMessage {
+  role: 'assistant';
+  content: string;
+}
+
+/**
+ * Token usage statistics
+ */
+export interface ChatCompletionUsage {
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
+}
+
+/**
  * Chat completion response DTO
  */
 export interface ChatCompletionResponseDto {
   // Standard OpenAI fields
+  /**
+   * Unique completion ID
+   */
   id: string;
-  object: 'chat.completion';
-  created: number;
-  model: string;
-  choices: Array<{
-    index: number;
-    message: {
-      role: 'assistant';
-      content: string;
-    };
-    finish_reason: 'stop' | 'length' | 'content_filter';
-  }>;
-  usage: {
-    prompt_tokens: number;
-    completion_tokens: number;
-    total_tokens: number;
-  };
 
-  // Router-specific metadata
-  _router: {
-    provider: string;
-    model_name: string;
-    attempts: number;
-    fallback_used: boolean;
-    errors?: Array<{
-      provider: string;
-      model: string;
-      error: string;
-      code?: number;
-    }>;
-  };
+  /**
+   * Object type (always 'chat.completion')
+   */
+  object: 'chat.completion';
+
+  /**
+   * Unix timestamp of creation
+   */
+  created: number;
+
+  /**
+   * Model used for completion
+   */
+  model: string;
+
+  /**
+   * Completion choices
+   */
+  choices: ChatCompletionChoice[];
+
+  /**
+   * Token usage statistics
+   */
+  usage: ChatCompletionUsage;
+
+  /**
+   * Router-specific metadata
+   */
+  _router: RouterMetadata;
+}
+
+/**
+ * Model info in models list response
+ */
+export interface ModelInfo {
+  name: string;
+  provider: string;
+  type: 'fast' | 'reasoning';
+  contextSize: number;
+  tags: string[];
+  available: boolean;
 }
 
 /**
  * Models list response DTO
  */
 export interface ModelsResponseDto {
-  models: Array<{
-    name: string;
-    provider: string;
-    type: 'fast' | 'reasoning';
-    contextSize: number;
-    tags: string[];
-    available: boolean;
-  }>;
+  models: ModelInfo[];
 }

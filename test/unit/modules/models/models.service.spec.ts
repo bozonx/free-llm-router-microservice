@@ -213,7 +213,10 @@ models:
         status: 200,
         statusText: 'OK',
         text: () => Promise.resolve(testModelsYaml),
-      } as Response;
+        headers: {
+          get: () => 'text/yaml',
+        },
+      } as unknown as Response;
 
       global.fetch = jest.fn(() => Promise.resolve(mockResponse)) as typeof global.fetch;
 
@@ -233,7 +236,10 @@ models:
       const urlService = module.get<ModelsService>(ModelsService);
       await urlService.onModuleInit();
 
-      expect(global.fetch).toHaveBeenCalledWith('https://example.com/models.yaml');
+      expect(global.fetch).toHaveBeenCalledWith(
+        'https://example.com/models.yaml',
+        expect.objectContaining({ signal: expect.any(AbortSignal) }),
+      );
       expect(urlService.getAll()).toHaveLength(3);
     });
 

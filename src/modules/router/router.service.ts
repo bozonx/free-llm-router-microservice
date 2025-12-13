@@ -94,6 +94,10 @@ export class RouterService {
           abortSignal,
         });
 
+        this.logger.debug(
+          `Request successful: ${model.name} (${model.provider}) in ${attemptCount} attempt(s)`,
+        );
+
         return this.buildSuccessResponse({
           result,
           model,
@@ -166,6 +170,10 @@ export class RouterService {
     request: ChatCompletionRequestDto,
     abortSignal: AbortSignal,
   ): Promise<{ result: ChatCompletionResult; model: ModelDefinition }> {
+    this.logger.debug(
+      `Executing fallback: ${this.config.routing.fallback.provider}/${this.config.routing.fallback.model}`,
+    );
+
     const fallbackProvider = this.providersMap.get(this.config.routing.fallback.provider);
     if (!fallbackProvider) {
       throw new ProviderNotFoundError(this.config.routing.fallback.provider);
@@ -179,6 +187,8 @@ export class RouterService {
 
     const result = await fallbackProvider.chatCompletion(completionParams);
     this.stateService.recordFallbackUsage();
+
+    this.logger.debug('Fallback request successful');
 
     return {
       result,
