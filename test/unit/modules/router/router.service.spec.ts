@@ -5,6 +5,8 @@ import { SelectorService } from '../../../../src/modules/selector/selector.servi
 import { StateService } from '../../../../src/modules/state/state.service.js';
 import { CircuitBreakerService } from '../../../../src/modules/state/circuit-breaker.service.js';
 import { ShutdownService } from '../../../../src/modules/shutdown/shutdown.service.js';
+import { RetryHandlerService } from '../../../../src/modules/router/services/retry-handler.service.js';
+import { RequestBuilderService } from '../../../../src/modules/router/services/request-builder.service.js';
 import { PROVIDERS_MAP } from '../../../../src/modules/providers/providers.module.js';
 import { ROUTER_CONFIG } from '../../../../src/config/router-config.provider.js';
 import type { ChatCompletionRequestDto } from '../../../../src/modules/router/dto/chat-completion.request.dto.js';
@@ -139,6 +141,8 @@ describe('RouterService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         RouterService,
+        RetryHandlerService,
+        RequestBuilderService,
         {
           provide: SelectorService,
           useValue: selectorService,
