@@ -1,6 +1,7 @@
 import { Injectable, Logger, Inject } from '@nestjs/common';
 import { SelectorService } from '../selector/selector.service.js';
-import { loadRouterConfig, RETRY_JITTER_PERCENT } from '../../config/router.config.js';
+import { RETRY_JITTER_PERCENT } from '../../config/router.config.js';
+import { ROUTER_CONFIG } from '../../config/router-config.provider.js';
 import type { ProvidersMap } from '../providers/providers.module.js';
 import { PROVIDERS_MAP } from '../providers/providers.module.js';
 import type { ChatCompletionRequestDto } from './dto/chat-completion.request.dto.js';
@@ -28,14 +29,12 @@ interface ErrorInfo {
 @Injectable()
 export class RouterService {
   private readonly logger = new Logger(RouterService.name);
-  private readonly config: RouterConfig;
 
   constructor(
     private readonly selectorService: SelectorService,
     @Inject(PROVIDERS_MAP) private readonly providersMap: ProvidersMap,
-  ) {
-    this.config = loadRouterConfig();
-  }
+    @Inject(ROUTER_CONFIG) private readonly config: RouterConfig,
+  ) {}
 
   /**
    * Handle chat completion request with retry and fallback logic

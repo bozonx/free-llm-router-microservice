@@ -25,7 +25,7 @@ export class ProvidersModule {
   /**
    * Register providers dynamically based on configuration
    */
-  static forRoot(): DynamicModule {
+  public static forRoot(): DynamicModule {
     const routerConfig: RouterConfig = loadRouterConfig();
 
     const providers: Provider[] = [];

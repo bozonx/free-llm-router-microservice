@@ -70,6 +70,7 @@ export default [
                     argsIgnorePattern: '^_',
                     varsIgnorePattern: '^_',
                     caughtErrorsIgnorePattern: '^_',
+                    destructuredArrayIgnorePattern: '^_',
                 },
             ],
             '@typescript-eslint/prefer-nullish-coalescing': 'error',
@@ -114,6 +115,7 @@ export default [
             'jest/valid-describe-callback': 'error',
 
             // General rules
+            'no-unused-vars': 'off', // Disabled in favor of @typescript-eslint/no-unused-vars
             'no-console': 'warn',
             'no-debugger': 'error',
             'prefer-const': 'error',

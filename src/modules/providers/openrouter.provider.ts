@@ -54,14 +54,14 @@ export class OpenRouterProvider extends BaseProvider {
     super(httpService, config);
   }
 
-  get name(): string {
+  public get name(): string {
     return 'openrouter';
   }
 
   /**
    * Perform chat completion using OpenRouter API
    */
-  async chatCompletion(params: ChatCompletionParams): Promise<ChatCompletionResult> {
+  public async chatCompletion(params: ChatCompletionParams): Promise<ChatCompletionResult> {
     const request: OpenRouterRequest = {
       model: params.model,
       messages: params.messages,

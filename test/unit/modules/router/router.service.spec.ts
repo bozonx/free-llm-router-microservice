@@ -1,16 +1,21 @@
-/* global jest */
 import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { RouterService } from '../../../../src/modules/router/router.service.js';
 import { SelectorService } from '../../../../src/modules/selector/selector.service.js';
 import { PROVIDERS_MAP } from '../../../../src/modules/providers/providers.module.js';
+import { ROUTER_CONFIG } from '../../../../src/config/router-config.provider.js';
 import type { ChatCompletionRequestDto } from '../../../../src/modules/router/dto/chat-completion.request.dto.js';
 import type { LlmProvider } from '../../../../src/modules/providers/interfaces/provider.interface.js';
 import type { ModelDefinition } from '../../../../src/modules/models/interfaces/model.interface.js';
+import type { RouterConfig } from '../../../../src/config/router-config.interface.js';
 
-// Mock loadRouterConfig
-jest.mock('../../../../src/config/router.config.js', () => ({
-  loadRouterConfig: jest.fn(() => ({
+describe('RouterService', () => {
+  let service: RouterService;
+  let selectorService: jest.Mocked<SelectorService>;
+  let providersMap: Map<string, LlmProvider>;
+  let mockProvider: jest.Mocked<LlmProvider>;
+
+  const mockConfig: RouterConfig = {
     modelsFile: './config/models.yaml',
     providers: {
       openrouter: {
@@ -25,7 +30,7 @@ jest.mock('../../../../src/config/router.config.js', () => ({
       },
     },
     routing: {
-      algorithm: 'round-robin',
+      algorithm: 'round-robin' as const,
       maxRetries: 3,
       rateLimitRetries: 2,
       retryDelay: 100,
@@ -36,15 +41,7 @@ jest.mock('../../../../src/config/router.config.js', () => ({
         model: 'deepseek-chat',
       },
     },
-  })),
-  RETRY_JITTER_PERCENT: 20,
-}));
-
-describe('RouterService', () => {
-  let service: RouterService;
-  let selectorService: jest.Mocked<SelectorService>;
-  let providersMap: Map<string, LlmProvider>;
-  let mockProvider: jest.Mocked<LlmProvider>;
+  };
 
   const mockModel: ModelDefinition = {
     name: 'test-model',
@@ -102,6 +99,10 @@ describe('RouterService', () => {
         {
           provide: PROVIDERS_MAP,
           useValue: providersMap,
+        },
+        {
+          provide: ROUTER_CONFIG,
+          useValue: mockConfig,
         },
       ],
     }).compile();
@@ -213,7 +214,7 @@ describe('RouterService', () => {
       // Assert
       expect(result).toBeDefined();
       expect(result._router.fallback_used).toBe(true);
-      expect(result._router.attempts).toBe(3);
+      expect(result._router.attempts).toBe(4); // 3 retries + 1 fallback
       expect(result._router.errors).toHaveLength(2);
     });
 

@@ -54,14 +54,14 @@ export class DeepSeekProvider extends BaseProvider {
     super(httpService, config);
   }
 
-  get name(): string {
+  public get name(): string {
     return 'deepseek';
   }
 
   /**
    * Perform chat completion using DeepSeek API
    */
-  async chatCompletion(params: ChatCompletionParams): Promise<ChatCompletionResult> {
+  public async chatCompletion(params: ChatCompletionParams): Promise<ChatCompletionResult> {
     const request: DeepSeekRequest = {
       model: params.model,
       messages: params.messages,
