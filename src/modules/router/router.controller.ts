@@ -1,6 +1,16 @@
-import { Controller, Post, Get, Body, HttpCode, HttpStatus, Logger } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  HttpCode,
+  HttpStatus,
+  Logger,
+  UseGuards,
+} from '@nestjs/common';
 import { RouterService } from './router.service.js';
 import { ModelsService } from '../models/models.service.js';
+import { RateLimiterGuard } from '../rate-limiter/rate-limiter.guard.js';
 import { ChatCompletionRequestDto } from './dto/chat-completion.request.dto.js';
 import type {
   ChatCompletionResponseDto,
@@ -22,9 +32,11 @@ export class RouterController {
   /**
    * Chat completion endpoint (OpenAI compatible)
    * POST /api/v1/chat/completions
+   * Protected by rate limiter
    */
   @Post('chat/completions')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(RateLimiterGuard)
   public async chatCompletion(
     @Body() request: ChatCompletionRequestDto,
   ): Promise<ChatCompletionResponseDto> {

@@ -4,6 +4,7 @@ import { APP_FILTER } from '@nestjs/core';
 import { LoggerModule } from 'nestjs-pino';
 import { HealthModule } from './modules/health/health.module.js';
 import { RouterModule } from './modules/router/router.module.js';
+import { RateLimiterModule } from './modules/rate-limiter/rate-limiter.module.js';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter.js';
 import appConfig from './config/app.config.js';
 import type { AppConfig } from './config/app.config.js';
@@ -89,6 +90,7 @@ import pkg from '../package.json' with { type: 'json' };
         };
       },
     }),
+    RateLimiterModule,
     HealthModule,
     RouterModule,
   ],

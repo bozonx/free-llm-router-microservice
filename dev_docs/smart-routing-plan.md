@@ -700,18 +700,19 @@ rateLimiting:
 9. ✅ Новые фильтры в запросе (prefer_fast, min_success_rate)
 10. ✅ Unit тесты для SmartStrategy
 
-### Этап 3: Защита (Приоритет: Средний)
-10. **Rate Limiter Module** — Token Bucket
-11. **RateLimiterGuard** — интеграция с NestJS
-12. Заголовки X-RateLimit-* и Retry-After
+### Этап 3: Защита (Приоритет: Средний) ✅ ЗАВЕРШЕНО
+10. ✅ **Rate Limiter Module** — Token Bucket алгоритм
+11. ✅ **RateLimiterGuard** — интеграция с NestJS
+12. ✅ Заголовки X-RateLimit-* и Retry-After
+13. ✅ Unit тесты для RateLimiterService
 
 ### Этап 4: Наблюдаемость (Приоритет: Средний)
 13. **Admin Module** — контроллер и DTO
 14. Эндпоинты /admin/state, /admin/metrics, /admin/rate-limits
 
 ### Этап 5: Документация и тесты
-15. ✅ Обновление README.md (Circuit Breaker, Smart Strategy)
-16. ✅ Unit тесты для State Module и SmartStrategy
+15. ✅ Обновление README.md (Circuit Breaker, Smart Strategy, Rate Limiting)
+16. ✅ Unit тесты для State Module, SmartStrategy и RateLimiter
 17. E2E тесты для сценариев отказа
 
 ---

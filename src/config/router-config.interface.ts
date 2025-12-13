@@ -114,6 +114,12 @@ export interface ModelOverrideConfig {
 }
 
 /**
+ * Rate limiting configuration (imported from rate-limiter module)
+ */
+export type { RateLimitingConfig } from '../modules/rate-limiter/interfaces/rate-limiter.interface.js';
+import type { RateLimitingConfig } from '../modules/rate-limiter/interfaces/rate-limiter.interface.js';
+
+/**
  * Router configuration
  */
 export interface RouterConfig {
@@ -141,4 +147,9 @@ export interface RouterConfig {
    * Model priority/weight overrides (optional)
    */
   modelOverrides?: Record<string, ModelOverrideConfig>;
+
+  /**
+   * Rate limiting configuration (optional)
+   */
+  rateLimiting?: RateLimitingConfig;
 }

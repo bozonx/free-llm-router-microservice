@@ -53,3 +53,23 @@ routing:
 #   deepseek-r1:
 #     priority: 1             # Higher priority
 #     weight: 15              # Higher weight
+
+# Rate limiting settings (optional, disabled by default)
+# rateLimiting:
+#   enabled: false            # Enable rate limiting
+#   
+#   # Global limit (all clients combined)
+#   global:
+#     requestsPerMinute: 100  # Max requests per minute for all clients
+#     
+#   # Per-client limit (by X-Client-ID header or IP)
+#   perClient:
+#     enabled: true
+#     requestsPerMinute: 20   # Max requests per minute per client
+#     burstSize: 5            # Extra tokens for burst traffic
+#     
+#   # Per-model limit (protection against skew)
+#   perModel:
+#     enabled: true
+#     requestsPerMinute: 30   # Max requests per minute per model
+
