@@ -1,6 +1,8 @@
+
 import { Injectable, Logger } from '@nestjs/common';
 import { ModelsService } from '../models/models.service.js';
 import { SmartStrategy } from './strategies/smart.strategy.js';
+import { CircuitBreakerService } from '../state/circuit-breaker.service.js';
 import type { ModelDefinition } from '../models/interfaces/model.interface.js';
 import type { SelectionCriteria } from './interfaces/selector.interface.js';
 
@@ -15,7 +17,8 @@ export class SelectorService {
   constructor(
     private readonly modelsService: ModelsService,
     private readonly smartStrategy: SmartStrategy,
-  ) {}
+    private readonly circuitBreaker: CircuitBreakerService,
+  ) { }
 
   /**
    * Select a model based on criteria
@@ -27,6 +30,11 @@ export class SelectorService {
     if (criteria.model) {
       const model = this.modelsService.findByName(criteria.model);
       if (model?.available) {
+        // Check Circuit Breaker
+        if (!this.circuitBreaker.canRequest(model.name)) {
+          this.logger.warn(`Requested model "${model.name}" is unavailable (Circuit Breaker)`);
+          return null;
+        }
         this.logger.debug(`Found specific model: ${model.name}`);
         return model;
       }

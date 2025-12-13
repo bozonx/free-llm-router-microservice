@@ -1,3 +1,4 @@
+
 import { Injectable, Logger, Inject } from '@nestjs/common';
 import { SelectorService } from '../selector/selector.service.js';
 import { StateService } from '../state/state.service.js';
@@ -38,7 +39,7 @@ export class RouterService {
     private readonly circuitBreaker: CircuitBreakerService,
     @Inject(PROVIDERS_MAP) private readonly providersMap: ProvidersMap,
     @Inject(ROUTER_CONFIG) private readonly config: RouterConfig,
-  ) {}
+  ) { }
 
   /**
    * Handle chat completion request with retry and fallback logic
@@ -102,13 +103,12 @@ export class RouterService {
           `Model ${model.name} failed: ${errorInfo.error} (code: ${errorInfo.code ?? 'N/A'})`,
         );
 
-        // Don't retry on client errors (4xx except 429 and 404)
+        // Don't retry on client errors (4xx except 429)
         if (
           errorInfo.code &&
           errorInfo.code >= 400 &&
           errorInfo.code < 500 &&
-          errorInfo.code !== 429 &&
-          errorInfo.code !== 404
+          errorInfo.code !== 429
         ) {
           this.logger.error('Client error detected, not retrying');
           throw error;
@@ -312,23 +312,37 @@ export class RouterService {
     let errorMessage = 'Unknown error';
     let errorCode: number | undefined;
 
+    const extractCode = (err: any): number | undefined => {
+      if (!err || typeof err !== 'object') return undefined;
+      // Axios error structure
+      if (err.response?.status && typeof err.response.status === 'number') {
+        return err.response.status;
+      }
+      if (err.statusCode && typeof err.statusCode === 'number') {
+        return err.statusCode;
+      }
+      if (err.status && typeof err.status === 'number') {
+        return err.status;
+      }
+      if (err.code && typeof err.code === 'number') {
+        return err.code;
+      }
+      return undefined;
+    };
+
     if (error instanceof Error) {
       errorMessage = error.message;
+      // Check wrapped error
+      if ((error as any).cause) {
+        errorCode = extractCode((error as any).cause);
+      }
     } else if (typeof error === 'string') {
       errorMessage = error;
     }
 
-    // Try to extract HTTP status code
-    if (typeof error === 'object' && error !== null) {
-      const err = error as Record<string, unknown>;
-      const response = err.response as Record<string, unknown> | undefined;
-      if (response?.status && typeof response.status === 'number') {
-        errorCode = response.status;
-      } else if (err.status && typeof err.status === 'number') {
-        errorCode = err.status;
-      } else if (err.code && typeof err.code === 'number') {
-        errorCode = err.code;
-      }
+    // If still no code, check the error object itself
+    if (errorCode === undefined) {
+      errorCode = extractCode(error);
     }
 
     return {

@@ -1,6 +1,6 @@
 import { Logger } from '@nestjs/common';
 import type { HttpService } from '@nestjs/axios';
-import { AxiosError } from 'axios';
+import { AxiosError, isAxiosError } from 'axios';
 import type {
   LlmProvider,
   ChatCompletionParams,
@@ -68,7 +68,7 @@ export abstract class BaseProvider implements LlmProvider {
    * Handle HTTP errors and convert to standard error response
    */
   protected handleHttpError(error: unknown): HttpErrorResponse {
-    if (error instanceof AxiosError) {
+    if (isAxiosError(error)) {
       const statusCode = error.response?.status ?? 500;
       const message =
         error.response?.data?.error?.message ??

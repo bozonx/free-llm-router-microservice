@@ -72,4 +72,3 @@ routing:
 #   perModel:
 #     enabled: true
 #     requestsPerMinute: 30   # Max requests per minute per model
-
