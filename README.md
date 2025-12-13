@@ -180,7 +180,7 @@ OpenAI-совместимый endpoint для chat completions.
     "provider": "openrouter",
     "model_name": "llama-3.3-70b",
     "attempts": 1,
-    "fallback_used": false,
+    "fallback_used": false, // Использовалась ли платная модель (fallback)
     "errors": []  // Ошибки предыдущих попыток (если были)
   }
 }
