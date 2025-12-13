@@ -44,6 +44,11 @@ export class ProvidersModule {
           new OpenRouterProvider(httpService, openRouterConfig),
         inject: [HttpService],
       });
+    } else {
+      providers.push({
+        provide: 'OpenRouterProvider',
+        useValue: undefined,
+      });
     }
 
     // Register DeepSeek if enabled
@@ -58,6 +63,11 @@ export class ProvidersModule {
         provide: 'DeepSeekProvider',
         useFactory: (httpService: HttpService) => new DeepSeekProvider(httpService, deepSeekConfig),
         inject: [HttpService],
+      });
+    } else {
+      providers.push({
+        provide: 'DeepSeekProvider',
+        useValue: undefined,
       });
     }
 
