@@ -1,7 +1,9 @@
 import { Controller, Get, Res } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { FastifyReply } from 'fastify';
 import { join } from 'path';
 import { existsSync, readFileSync } from 'fs';
+import type { AppConfig } from '../../config/app.config.js';
 
 /**
  * Controller for serving static UI dashboard files
@@ -10,10 +12,15 @@ import { existsSync, readFileSync } from 'fs';
 @Controller()
 export class DashboardController {
     private readonly publicPath: string;
+    private readonly apiBasePath: string;
 
-    constructor() {
+    constructor(private readonly configService: ConfigService) {
         // Public directory is at the root of the project
         this.publicPath = join(process.cwd(), 'public');
+
+        // Get API base path from config
+        const appConfig = this.configService.get<AppConfig>('app');
+        this.apiBasePath = `/${appConfig?.apiBasePath || 'api'}/v1`;
     }
 
     /**
@@ -22,7 +29,26 @@ export class DashboardController {
      */
     @Get()
     public serveDashboard(@Res() reply: FastifyReply): void {
-        this.serveFile('index.html', reply);
+        const filePath = join(this.publicPath, 'index.html');
+
+        if (!existsSync(filePath)) {
+            reply.code(404).send({ error: 'File not found' });
+            return;
+        }
+
+        try {
+            let content = readFileSync(filePath, 'utf-8');
+
+            // Inject API base path into the meta tag
+            content = content.replace(
+                '<meta name="api-base-path" content="">',
+                `<meta name="api-base-path" content="${this.apiBasePath}">`,
+            );
+
+            reply.header('Content-Type', 'text/html; charset=utf-8').send(content);
+        } catch (error) {
+            reply.code(500).send({ error: 'Failed to read file' });
+        }
     }
 
     /**

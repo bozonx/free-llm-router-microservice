@@ -37,8 +37,11 @@ async function bootstrap() {
   );
 
   // Configure global API prefix from configuration
+  // Exclude DashboardController from the prefix so it can serve at root /
   const globalPrefix = `${appConfig.apiBasePath}/v1`;
-  app.setGlobalPrefix(globalPrefix);
+  app.setGlobalPrefix(globalPrefix, {
+    exclude: ['/', '/styles.css', '/app.js'],
+  });
 
   // Enable graceful shutdown
   app.enableShutdownHooks();

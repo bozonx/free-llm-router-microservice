@@ -100,6 +100,7 @@ import { ShutdownModule } from './modules/shutdown/shutdown.module.js';
     }),
     ShutdownModule,
     RateLimiterModule,
+    DashboardModule,
     AdminModule,
     HealthModule,
     RouterModule,
