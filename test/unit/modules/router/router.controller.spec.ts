@@ -123,12 +123,20 @@ describe('RouterController', () => {
       // Arrange
       routerService.chatCompletion.mockResolvedValue(mockResponse);
 
+      const mockReq = {
+        raw: {
+          on: jest.fn(),
+          off: jest.fn(),
+          complete: true,
+        },
+      } as any;
+
       // Act
-      const result = await controller.chatCompletion(mockRequest);
+      const result = await controller.chatCompletion(mockRequest, mockReq);
 
       // Assert
       expect(result).toEqual(mockResponse);
-      expect(routerService.chatCompletion).toHaveBeenCalledWith(mockRequest);
+      expect(routerService.chatCompletion).toHaveBeenCalledWith(mockRequest, expect.any(AbortSignal));
       expect(routerService.chatCompletion).toHaveBeenCalledTimes(1);
     });
 
@@ -136,10 +144,17 @@ describe('RouterController', () => {
       // Arrange
       const error = new Error('Service unavailable');
       routerService.chatCompletion.mockRejectedValue(error);
+      const mockReq = {
+        raw: {
+          on: jest.fn(),
+          off: jest.fn(),
+          complete: true,
+        },
+      } as any;
 
       // Act & Assert
-      await expect(controller.chatCompletion(mockRequest)).rejects.toThrow('Service unavailable');
-      expect(routerService.chatCompletion).toHaveBeenCalledWith(mockRequest);
+      await expect(controller.chatCompletion(mockRequest, mockReq)).rejects.toThrow('Service unavailable');
+      expect(routerService.chatCompletion).toHaveBeenCalledWith(mockRequest, expect.any(AbortSignal));
     });
 
     it('should handle request with all optional parameters', async () => {
@@ -163,13 +178,20 @@ describe('RouterController', () => {
       };
 
       routerService.chatCompletion.mockResolvedValue(mockResponse);
+      const mockReq = {
+        raw: {
+          on: jest.fn(),
+          off: jest.fn(),
+          complete: true,
+        },
+      } as any;
 
       // Act
-      const result = await controller.chatCompletion(fullRequest);
+      const result = await controller.chatCompletion(fullRequest, mockReq);
 
       // Assert
       expect(result).toEqual(mockResponse);
-      expect(routerService.chatCompletion).toHaveBeenCalledWith(fullRequest);
+      expect(routerService.chatCompletion).toHaveBeenCalledWith(fullRequest, expect.any(AbortSignal));
     });
   });
 

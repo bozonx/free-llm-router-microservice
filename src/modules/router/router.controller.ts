@@ -7,7 +7,9 @@ import {
   HttpStatus,
   Logger,
   UseGuards,
+  Req,
 } from '@nestjs/common';
+import type { FastifyRequest } from 'fastify';
 import { RouterService } from './router.service.js';
 import { ModelsService } from '../models/models.service.js';
 import { RateLimiterGuard } from '../rate-limiter/rate-limiter.guard.js';
@@ -27,7 +29,7 @@ export class RouterController {
   constructor(
     private readonly routerService: RouterService,
     private readonly modelsService: ModelsService,
-  ) {}
+  ) { }
 
   /**
    * Chat completion endpoint (OpenAI compatible)
@@ -39,21 +41,42 @@ export class RouterController {
   @UseGuards(RateLimiterGuard)
   public async chatCompletion(
     @Body() request: ChatCompletionRequestDto,
+    @Req() req: FastifyRequest,
   ): Promise<ChatCompletionResponseDto> {
     this.logger.log('Received chat completion request');
     this.logger.debug(`Request details: ${JSON.stringify(request)}`);
 
+    const abortController = new AbortController();
+    const signal = abortController.signal;
+
+    // Handle client disconnection
+    const closeListener = () => {
+      if (!signal.aborted) {
+        this.logger.warn('Client disconnected, cancelling request');
+        abortController.abort();
+      }
+    };
+
+    req.raw.on('close', closeListener);
+
     try {
-      const response = await this.routerService.chatCompletion(request);
+      const response = await this.routerService.chatCompletion(request, signal);
       this.logger.log(
         `Request completed successfully using ${response._router.model_name} (${response._router.provider})`,
       );
       return response;
     } catch (error) {
-      this.logger.error(
-        `Chat completion failed: ${error instanceof Error ? error.message : String(error)}`,
-      );
+      if (signal.aborted) {
+        this.logger.warn('Request processed failed due to client disconnection');
+      } else {
+        this.logger.error(
+          `Chat completion failed: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
       throw error;
+    } finally {
+      // Clean up listener to avoid memory leaks
+      req.raw.off('close', closeListener);
     }
   }
 

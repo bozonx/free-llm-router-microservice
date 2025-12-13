@@ -47,12 +47,13 @@ export class RouterService {
    */
   public async chatCompletion(
     request: ChatCompletionRequestDto,
+    clientSignal?: AbortSignal,
   ): Promise<ChatCompletionResponseDto> {
     // Register request for graceful shutdown tracking
     this.shutdownService.registerRequest();
 
     try {
-      return await this.executeWithShutdownHandling(request);
+      return await this.executeWithShutdownHandling(request, clientSignal);
     } finally {
       // Always unregister request when done
       this.shutdownService.unregisterRequest();
@@ -64,8 +65,13 @@ export class RouterService {
    */
   private async executeWithShutdownHandling(
     request: ChatCompletionRequestDto,
+    clientSignal?: AbortSignal,
   ): Promise<ChatCompletionResponseDto> {
-    const abortSignal = this.shutdownService.createRequestSignal();
+    const shutdownSignal = this.shutdownService.createRequestSignal();
+    // Combine signals: abort if either shutdown occurs or client cancels
+    const abortSignal = clientSignal
+      ? AbortSignal.any([shutdownSignal, clientSignal])
+      : shutdownSignal;
     const errors: ErrorInfo[] = [];
     const excludedModels: string[] = [];
     let attemptCount = 0;
@@ -113,6 +119,11 @@ export class RouterService {
           fallbackUsed: false,
         });
       } catch (error) {
+        // Stop if request was cancelled
+        if (abortSignal.aborted) {
+          throw error;
+        }
+
         // Add model to exclusion list
         excludedModels.push(model.name);
 
@@ -142,7 +153,7 @@ export class RouterService {
       this.logger.warn('All free models failed, attempting fallback to paid model');
 
       try {
-        const fallbackResult = await this.executeFallback(request, errors);
+        const fallbackResult = await this.executeFallback(request, errors, abortSignal);
 
         return this.buildSuccessResponse({
           result: fallbackResult.result,
@@ -190,9 +201,12 @@ export class RouterService {
       ) {
         // Check if shutdown abort was triggered
         if (abortSignal.aborted) {
-          throw new ServiceUnavailableException(
-            'Request cancelled: server is shutting down',
-          );
+          if (this.shutdownService.shuttingDown) {
+            throw new ServiceUnavailableException(
+              'Request cancelled: server is shutting down',
+            );
+          }
+          throw new Error('Request cancelled by client');
         }
 
         const startTime = Date.now();
@@ -227,11 +241,14 @@ export class RouterService {
 
           return result;
         } catch (error) {
-          // Check if this is an abort error from shutdown
+          // Check if this is an abort error from shutdown/client
           if (this.isAbortError(error)) {
-            throw new ServiceUnavailableException(
-              'Request cancelled: server is shutting down',
-            );
+            if (this.shutdownService.shuttingDown) {
+              throw new ServiceUnavailableException(
+                'Request cancelled: server is shutting down',
+              );
+            }
+            throw new Error('Request cancelled by client');
           }
 
           const latencyMs = Date.now() - startTime;
@@ -265,7 +282,11 @@ export class RouterService {
   /**
    * Execute fallback to paid model
    */
-  private async executeFallback(request: ChatCompletionRequestDto, _errors: ErrorInfo[]) {
+  private async executeFallback(
+    request: ChatCompletionRequestDto,
+    _errors: ErrorInfo[],
+    abortSignal: AbortSignal,
+  ) {
     const fallbackProvider = this.providersMap.get(this.config.routing.fallback.provider);
     if (!fallbackProvider) {
       throw new Error(`Fallback provider ${this.config.routing.fallback.provider} not found`);
@@ -284,6 +305,7 @@ export class RouterService {
       presencePenalty: request.presence_penalty,
       stop: request.stop,
       jsonMode: request.json_response,
+      abortSignal,
     };
 
     const result = await fallbackProvider.chatCompletion(completionParams);
