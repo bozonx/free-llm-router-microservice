@@ -1,0 +1,28 @@
+import { Injectable } from '@nestjs/common';
+import type { ChatCompletionRequestDto } from '../dto/chat-completion.request.dto.js';
+import type { ChatCompletionParams } from '../../providers/interfaces/provider.interface.js';
+
+@Injectable()
+export class RequestBuilderService {
+  buildChatCompletionParams(
+    request: ChatCompletionRequestDto,
+    modelId: string,
+    abortSignal?: AbortSignal,
+  ): ChatCompletionParams {
+    return {
+      model: modelId,
+      messages: request.messages.map(msg => ({
+        role: msg.role,
+        content: msg.content,
+      })),
+      temperature: request.temperature,
+      maxTokens: request.max_tokens,
+      topP: request.top_p,
+      frequencyPenalty: request.frequency_penalty,
+      presencePenalty: request.presence_penalty,
+      stop: request.stop,
+      jsonMode: request.json_response,
+      abortSignal,
+    };
+  }
+}

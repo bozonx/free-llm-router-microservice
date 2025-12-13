@@ -5,11 +5,13 @@ import { ROUTER_CONFIG } from '../../../config/router-config.provider.js';
 import type { RouterConfig } from '../../../config/router-config.interface.js';
 import type { ModelDefinition } from '../../models/interfaces/model.interface.js';
 import type { SelectionStrategy, SelectionCriteria } from '../interfaces/selector.interface.js';
-
-/**
- * Minimum latency in milliseconds for weight calculation
- */
-const MIN_LATENCY_MS_FOR_CALCULATION = 100;
+import {
+  MIN_LATENCY_MS_FOR_CALCULATION,
+  DEFAULT_MODEL_PRIORITY,
+  DEFAULT_MODEL_WEIGHT,
+  DEFAULT_SUCCESS_RATE,
+  LATENCY_NORMALIZATION_FACTOR,
+} from './constants.js';
 
 /**
  * Smart selection strategy.
@@ -31,119 +33,113 @@ export class SmartStrategy implements SelectionStrategy {
     @Inject(ROUTER_CONFIG) private readonly config: RouterConfig,
   ) {}
 
-  /**
-   * Select best model based on criteria and current state
-   */
   public select(models: ModelDefinition[], criteria: SelectionCriteria): ModelDefinition | null {
     if (models.length === 0) {
       return null;
     }
 
-    // 1. Filter out excluded models
-    let candidates = this.filterExcluded(models, criteria.excludeModels);
+    const candidates = this.applyFilters(models, criteria);
 
-    // 2. Filter by Circuit Breaker (exclude OPEN and PERMANENTLY_UNAVAILABLE)
-    candidates = this.circuitBreaker.filterAvailable(candidates);
-
-    // 3. Filter by maxConcurrent capacity
-    candidates = this.filterByCapacity(candidates);
-
-    // 4. Filter by min_success_rate (if specified in request)
-    if (criteria.minSuccessRate !== undefined) {
-      candidates = this.filterBySuccessRate(candidates, criteria.minSuccessRate);
-    }
-
-    // 5. If nothing remains — return null (will trigger fallback)
     if (candidates.length === 0) {
       this.logger.debug('No candidates after filtering');
       return null;
     }
 
-    // 6. If prefer_fast — select model with lowest latency
     if (criteria.preferFast) {
       return this.selectFastest(candidates);
     }
 
-    // 7. Group by priority (overrides already applied in ModelsService)
-    const priorityGroups = this.groupByPriority(candidates);
-
-    // 9. Take the highest priority group (maximum priority value)
-    const topPriorityGroup = priorityGroups[0];
-
-    // 10. Within group — weighted random selection
-    return this.weightedRandomSelect(topPriorityGroup);
+    return this.selectByPriorityAndWeight(candidates);
   }
 
-  /**
-   * Filter out excluded models
-   */
+  private applyFilters(models: ModelDefinition[], criteria: SelectionCriteria): ModelDefinition[] {
+    let candidates = this.filterExcluded(models, criteria.excludeModels);
+    candidates = this.circuitBreaker.filterAvailable(candidates);
+    candidates = this.filterByCapacity(candidates);
+
+    if (criteria.minSuccessRate !== undefined) {
+      candidates = this.filterBySuccessRate(candidates, criteria.minSuccessRate);
+    }
+
+    return candidates;
+  }
+
   private filterExcluded(models: ModelDefinition[], excludeModels?: string[]): ModelDefinition[] {
     if (!excludeModels || excludeModels.length === 0) {
       return models;
     }
-    return models.filter(m => {
-      // Check absolute exclusion by name
-      if (excludeModels.includes(m.name)) {
-        return false;
-      }
-      // Check specific provider/model instance exclusion
-      if (excludeModels.includes(`${m.provider}/${m.name}`)) {
-        return false;
-      }
-      return true;
-    });
+
+    return models.filter(model => !this.isModelExcluded(model, excludeModels));
   }
 
-  /**
-   * Filter models that have capacity for more requests
-   */
+  private isModelExcluded(model: ModelDefinition, excludeModels: string[]): boolean {
+    return (
+      excludeModels.includes(model.name) ||
+      excludeModels.includes(`${model.provider}/${model.name}`)
+    );
+  }
+
   private filterByCapacity(models: ModelDefinition[]): ModelDefinition[] {
-    return models.filter(m => {
-      const state = this.stateService.getState(m.name);
-      const maxConcurrent = m.maxConcurrent ?? Infinity;
-      return state.activeRequests < maxConcurrent;
-    });
+    return models.filter(model => this.hasCapacity(model));
   }
 
-  /**
-   * Filter models with success rate above threshold
-   */
+  private hasCapacity(model: ModelDefinition): boolean {
+    const state = this.stateService.getState(model.name);
+    const maxConcurrent = model.maxConcurrent ?? Infinity;
+    return state.activeRequests < maxConcurrent;
+  }
+
   private filterBySuccessRate(models: ModelDefinition[], minRate: number): ModelDefinition[] {
-    return models.filter(m => {
-      const state = this.stateService.getState(m.name);
-      // If no statistics — assume success rate = 1.0 (give a chance)
-      const successRate = state.stats.totalRequests > 0 ? state.stats.successRate : 1.0;
-      return successRate >= minRate;
-    });
+    return models.filter(model => this.meetsSuccessRateThreshold(model, minRate));
   }
 
-  /**
-   * Select model with lowest average latency
-   */
+  private meetsSuccessRateThreshold(model: ModelDefinition, minRate: number): boolean {
+    const state = this.stateService.getState(model.name);
+    const successRate =
+      state.stats.totalRequests > 0 ? state.stats.successRate : DEFAULT_SUCCESS_RATE;
+    return successRate >= minRate;
+  }
+
   private selectFastest(models: ModelDefinition[]): ModelDefinition {
     return models.reduce((fastest, current) => {
-      const fastestLatency = this.stateService.getState(fastest.name).stats.avgLatency || Infinity;
-      const currentLatency = this.stateService.getState(current.name).stats.avgLatency || Infinity;
+      const fastestLatency = this.getModelLatency(fastest);
+      const currentLatency = this.getModelLatency(current);
       return currentLatency < fastestLatency ? current : fastest;
     });
   }
 
-  /**
-   * Group models by priority (sorted descending - higher priority first)
-   */
-  private groupByPriority(models: ModelDefinition[]): ModelDefinition[][] {
-    // Sort by priority (higher = higher priority)
-    const sorted = [...models].sort((a, b) => (b.priority ?? 1) - (a.priority ?? 1));
+  private getModelLatency(model: ModelDefinition): number {
+    return this.stateService.getState(model.name).stats.avgLatency || Infinity;
+  }
 
-    // Group
+  private selectByPriorityAndWeight(models: ModelDefinition[]): ModelDefinition | null {
+    const priorityGroups = this.groupByPriority(models);
+    const topPriorityGroup = priorityGroups[0];
+    return this.weightedRandomSelect(topPriorityGroup);
+  }
+
+  private groupByPriority(models: ModelDefinition[]): ModelDefinition[][] {
+    const sorted = this.sortByPriorityDescending(models);
+    return this.groupConsecutiveByPriority(sorted);
+  }
+
+  private sortByPriorityDescending(models: ModelDefinition[]): ModelDefinition[] {
+    return [...models].sort((a, b) => {
+      const priorityA = a.priority ?? DEFAULT_MODEL_PRIORITY;
+      const priorityB = b.priority ?? DEFAULT_MODEL_PRIORITY;
+      return priorityB - priorityA;
+    });
+  }
+
+  private groupConsecutiveByPriority(sortedModels: ModelDefinition[]): ModelDefinition[][] {
     const groups: ModelDefinition[][] = [];
     let currentPriority = -1;
 
-    for (const model of sorted) {
-      const p = model.priority ?? 1;
-      if (p !== currentPriority) {
+    for (const model of sortedModels) {
+      const priority = model.priority ?? DEFAULT_MODEL_PRIORITY;
+      if (priority !== currentPriority) {
         groups.push([]);
-        currentPriority = p;
+        currentPriority = priority;
       }
       groups[groups.length - 1].push(model);
     }
@@ -151,47 +147,64 @@ export class SmartStrategy implements SelectionStrategy {
     return groups;
   }
 
-  /**
-   * Weighted random selection within priority group
-   */
   private weightedRandomSelect(models: ModelDefinition[]): ModelDefinition | null {
-    if (models.length === 0) return null;
-    if (models.length === 1) return models[0];
-
-    // Calculate effective weight based on statistics
-    const weighted = models.map(m => ({
-      model: m,
-      weight: this.calculateEffectiveWeight(m),
-    }));
-
-    const totalWeight = weighted.reduce((sum, i) => sum + i.weight, 0);
-    if (totalWeight === 0) return models[0]; // fallback to first
-
-    let random = Math.random() * totalWeight;
-    for (const item of weighted) {
-      random -= item.weight;
-      if (random <= 0) return item.model;
+    if (models.length === 0) {
+      return null;
+    }
+    if (models.length === 1) {
+      return models[0];
     }
 
-    return models[models.length - 1];
+    const weightedModels = this.calculateWeights(models);
+    return this.selectRandomWeighted(weightedModels, models);
   }
 
-  /**
-   * Calculate effective weight considering static weight and statistics
-   */
+  private calculateWeights(
+    models: ModelDefinition[],
+  ): Array<{ model: ModelDefinition; weight: number }> {
+    return models.map(model => ({
+      model,
+      weight: this.calculateEffectiveWeight(model),
+    }));
+  }
+
+  private selectRandomWeighted(
+    weightedModels: Array<{ model: ModelDefinition; weight: number }>,
+    fallbackModels: ModelDefinition[],
+  ): ModelDefinition {
+    const totalWeight = weightedModels.reduce((sum, item) => sum + item.weight, 0);
+
+    if (totalWeight === 0) {
+      return fallbackModels[0];
+    }
+
+    let random = Math.random() * totalWeight;
+    for (const item of weightedModels) {
+      random -= item.weight;
+      if (random <= 0) {
+        return item.model;
+      }
+    }
+
+    return fallbackModels[fallbackModels.length - 1];
+  }
+
   private calculateEffectiveWeight(model: ModelDefinition): number {
     const state = this.stateService.getState(model.name);
-    const staticWeight = model.weight ?? 1;
+    const staticWeight = model.weight ?? DEFAULT_MODEL_WEIGHT;
 
-    // If no statistics — use only static weight
     if (state.stats.totalRequests === 0) {
       return staticWeight;
     }
 
     const successRate = state.stats.successRate;
-    // Latency normalization: lower latency = higher multiplier
-    const latencyFactor = 1000 / Math.max(state.stats.avgLatency, MIN_LATENCY_MS_FOR_CALCULATION);
+    const latencyFactor = this.calculateLatencyFactor(state.stats.avgLatency);
 
     return staticWeight * successRate * latencyFactor;
+  }
+
+  private calculateLatencyFactor(avgLatency: number): number {
+    const normalizedLatency = Math.max(avgLatency, MIN_LATENCY_MS_FOR_CALCULATION);
+    return LATENCY_NORMALIZATION_FACTOR / normalizedLatency;
   }
 }
