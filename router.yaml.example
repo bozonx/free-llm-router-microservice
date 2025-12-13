@@ -2,6 +2,7 @@
 modelsFile: ./models.yaml
 
 # Provider settings
+# Note: Use ${ENV_VAR_NAME} to reference any environment variable from .env file
 providers:
   openrouter:
     enabled: true

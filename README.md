@@ -30,9 +30,10 @@ pnpm install
 cp router.yaml.example router.yaml
 cp env.production.example .env.production
 
-# 3) Настройте API ключи в .env.production
+# 3) Добавьте в .env.production переменные окружения, используемые в router.yaml
+# Пример для дефолтной конфигурации:
 # OPENROUTER_API_KEY=your_key_here
-# DEEPSEEK_API_KEY=your_key_here (опционально, для fallback)
+# DEEPSEEK_API_KEY=your_key_here  (опционально, для fallback)
 
 # 4) Сборка и запуск
 pnpm build
@@ -61,7 +62,8 @@ TZ=UTC
 # Путь к конфигу роутера
 ROUTER_CONFIG_PATH=./router.yaml
 
-# API ключи провайдеров
+# Произвольные переменные для использования в router.yaml
+# Названия могут быть любыми — в конфиге они подставляются через ${VAR_NAME}
 OPENROUTER_API_KEY=your_openrouter_key
 DEEPSEEK_API_KEY=your_deepseek_key
 ```
