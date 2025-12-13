@@ -77,10 +77,14 @@ export abstract class BaseProvider implements LlmProvider {
         'Unknown error';
       const code = error.response?.data?.error?.code ?? error.code;
 
-      this.logger.error(
-        `HTTP error: ${statusCode} - ${message}`,
-        error.response?.data ?? error.message,
-      );
+      if (statusCode >= 500) {
+        this.logger.error(
+          `HTTP error: ${statusCode} - ${message}`,
+          error.response?.data ?? error.message,
+        );
+      } else {
+        this.logger.warn(`HTTP error: ${statusCode} - ${message}`);
+      }
 
       return {
         statusCode,

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Param, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Post, Param, NotFoundException, Logger } from '@nestjs/common';
 import { StateService } from '../state/state.service.js';
 import { RateLimiterService } from '../rate-limiter/rate-limiter.service.js';
 import type { ModelState } from '../state/interfaces/state.interface.js';
@@ -6,6 +6,8 @@ import type { RateLimitStatus } from '../rate-limiter/interfaces/rate-limiter.in
 
 @Controller('admin')
 export class AdminController {
+  private readonly logger = new Logger(AdminController.name);
+
   constructor(
     private readonly stateService: StateService,
     private readonly rateLimiterService: RateLimiterService,
@@ -32,6 +34,7 @@ export class AdminController {
     if (!this.stateService.hasState(modelName)) {
       throw new NotFoundException(`Model "${modelName}" not found`);
     }
+    this.logger.warn(`Admin action: Resetting state for model ${modelName}`);
     this.stateService.resetState(modelName);
     return { message: `State for model ${modelName} reset` };
   }

@@ -43,16 +43,15 @@ export class RouterController {
     @Body() request: ChatCompletionRequestDto,
     @Req() req: FastifyRequest,
   ): Promise<ChatCompletionResponseDto> {
-    this.logger.log('Received chat completion request');
+    this.logger.debug('Received chat completion request');
     this.logger.debug(`Request details: ${JSON.stringify(request)}`);
 
     const abortController = new AbortController();
     const signal = abortController.signal;
 
-    // Handle client disconnection
     const closeListener = () => {
       if (!signal.aborted) {
-        this.logger.warn('Client disconnected, cancelling request');
+        this.logger.debug('Client disconnected, cancelling request');
         abortController.abort();
       }
     };
@@ -61,13 +60,13 @@ export class RouterController {
 
     try {
       const response = await this.routerService.chatCompletion(request, signal);
-      this.logger.log(
+      this.logger.debug(
         `Request completed successfully using ${response._router.model_name} (${response._router.provider})`,
       );
       return response;
     } catch (error) {
       if (signal.aborted) {
-        this.logger.warn('Request processed failed due to client disconnection');
+        this.logger.debug('Request cancelled due to client disconnection');
       } else {
         this.logger.error(
           `Chat completion failed: ${error instanceof Error ? error.message : String(error)}`,
@@ -75,7 +74,6 @@ export class RouterController {
       }
       throw error;
     } finally {
-      // Clean up listener to avoid memory leaks
       req.raw.off('close', closeListener);
     }
   }
@@ -86,7 +84,7 @@ export class RouterController {
    */
   @Get('models')
   public getModels(): ModelsResponseDto {
-    this.logger.log('Received models list request');
+    this.logger.debug('Received models list request');
 
     const models = this.modelsService.getAvailable();
 

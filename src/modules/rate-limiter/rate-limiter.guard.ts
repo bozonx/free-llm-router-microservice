@@ -4,6 +4,7 @@ import {
   ExecutionContext,
   HttpException,
   HttpStatus,
+  Logger,
 } from '@nestjs/common';
 import { RateLimiterService } from './rate-limiter.service.js';
 import type { FastifyRequest, FastifyReply } from 'fastify';
@@ -14,6 +15,8 @@ import type { FastifyRequest, FastifyReply } from 'fastify';
  */
 @Injectable()
 export class RateLimiterGuard implements CanActivate {
+  private readonly logger = new Logger(RateLimiterGuard.name);
+
   constructor(private readonly rateLimiterService: RateLimiterService) {}
 
   public canActivate(context: ExecutionContext): boolean {
