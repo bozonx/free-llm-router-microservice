@@ -118,7 +118,6 @@ export interface TokenBucket {
   refillRate: number;
 }
 
-
 /**
  * Rate limit status for admin API
  */

@@ -710,10 +710,10 @@ rateLimiting:
 13. ✅ **Admin Module** — контроллер и DTO
 14. ✅ Эндпоинты /admin/state, /admin/metrics, /admin/rate-limits
 
-### Этап 5: Документация и тесты
-15. ✅ Обновление README.md (Circuit Breaker, Smart Strategy, Rate Limiting)
+### Этап 5: Документация и тесты ✅ ЗАВЕРШЕНО (без E2E)
+15. ✅ Обновление README.md (Circuit Breaker, Smart Strategy, Rate Limiting, Admin API)
 16. ✅ Unit тесты для State Module, SmartStrategy и RateLimiter
-17. E2E тесты для сценариев отказа
+17. ⏸️ E2E тесты для сценариев отказа (пропущено по требованию)
 
 ---
 
