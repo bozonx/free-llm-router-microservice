@@ -83,6 +83,11 @@ export class ErrorExtractor {
     return false;
   }
 
+  /**
+   * Check if error is a client error (4xx) but NOT rate limit (429).
+   * 400-499 errors usually indicate invalid requests and should not be retried.
+   * 429 is excluded because it is a rate limit error which MAY be retried.
+   */
   static isClientError(code?: number): boolean {
     return code !== undefined && code >= 400 && code < 500 && code !== 429;
   }

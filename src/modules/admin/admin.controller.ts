@@ -11,8 +11,12 @@ export class AdminController {
   constructor(
     private readonly stateService: StateService,
     private readonly rateLimiterService: RateLimiterService,
-  ) {}
+  ) { }
 
+  /**
+   * Get current state of all models.
+   * Returns a list of models with their current stats, circuit breaker status, etc.
+   */
   @Get('state')
   public getStates(): { models: ModelState[]; timestamp: string } {
     return {
@@ -21,6 +25,9 @@ export class AdminController {
     };
   }
 
+  /**
+   * Get state for a specific model by name.
+   */
   @Get('state/:modelName')
   public getState(@Param('modelName') modelName: string): ModelState {
     if (!this.stateService.hasState(modelName)) {
@@ -29,6 +36,10 @@ export class AdminController {
     return this.stateService.getState(modelName);
   }
 
+  /**
+   * Manually reset the state of a model.
+   * Useful for clearing 'PERMANENTLY_UNAVAILABLE' state or resetting stats.
+   */
   @Post('state/:modelName/reset')
   public resetState(@Param('modelName') modelName: string): { message: string } {
     if (!this.stateService.hasState(modelName)) {
@@ -48,12 +59,14 @@ export class AdminController {
     const failedRequests = states.reduce((sum, s) => sum + s.stats.errorCount, 0);
     const activeConnections = states.reduce((sum, s) => sum + s.activeRequests, 0);
 
-    // Weighted Average Latency
+    // Weighted Average Latency calculation:
+    // We weigh the average latency of each model by its number of successful requests.
+    // This gives a more accurate global average latency metric.
     let totalLatencyProduct = 0;
     let totalLatencyCount = 0;
 
     states.forEach(s => {
-      // Use success count for weighting properly
+      // Only include models with successful requests to avoid skewing data
       if (s.stats.successCount > 0) {
         totalLatencyProduct += s.stats.avgLatency * s.stats.successCount;
         totalLatencyCount += s.stats.successCount;

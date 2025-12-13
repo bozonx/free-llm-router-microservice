@@ -38,7 +38,7 @@ export class RouterService {
     private readonly requestBuilder: RequestBuilderService,
     @Inject(PROVIDERS_MAP) private readonly providersMap: ProvidersMap,
     @Inject(ROUTER_CONFIG) private readonly config: RouterConfig,
-  ) {}
+  ) { }
 
   /**
    * Handle chat completion request with retry and fallback logic
@@ -59,12 +59,17 @@ export class RouterService {
   }
 
   /**
-   * Execute chat completion with shutdown abort signal support
+   * Execute chat completion with shutdown abort signal support.
+   * This method orchestrates the model selection, retry loop, and fallback logic.
+   *
+   * @param request The chat completion request
+   * @param clientSignal Optional abort signal from the client
    */
   private async executeWithShutdownHandling(
     request: ChatCompletionRequestDto,
     clientSignal?: AbortSignal,
   ): Promise<ChatCompletionResponseDto> {
+    // Combine client signal with shutdown signal to handle both cases
     const abortSignal = this.createCombinedAbortSignal(clientSignal);
     const errors: ErrorInfo[] = [];
     const excludedModels: string[] = [];
@@ -102,6 +107,7 @@ export class RouterService {
           throw this.handleAbortError();
         }
 
+        // Track models that failed to avoid selecting them again in the next retry
         excludedModels.push(`${model.provider}/${model.name}`);
         const errorInfo = ErrorExtractor.extractErrorInfo(error, model);
         errors.push(errorInfo);
@@ -117,6 +123,7 @@ export class RouterService {
       }
     }
 
+    // If all retries failed, check if fallback is enabled
     if (this.config.routing.fallback.enabled) {
       const fallbackResponse = await this.tryFallback(request, abortSignal, errors, attemptCount);
       if (fallbackResponse) {
@@ -228,6 +235,7 @@ export class RouterService {
 
   private createCombinedAbortSignal(clientSignal?: AbortSignal): AbortSignal {
     const shutdownSignal = this.shutdownService.createRequestSignal();
+    // If client provides a signal, we want to abort if EITHER the client cancels OR the server shuts down
     return clientSignal ? AbortSignal.any([shutdownSignal, clientSignal]) : shutdownSignal;
   }
 

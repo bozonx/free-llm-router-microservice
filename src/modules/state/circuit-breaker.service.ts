@@ -99,7 +99,7 @@ export class CircuitBreakerService {
         return true;
 
       case 'HALF_OPEN':
-        // Allow test requests in HALF_OPEN state
+        // Allow test requests in HALF_OPEN state to verify recovery
         return true;
 
       case 'OPEN':
@@ -107,15 +107,17 @@ export class CircuitBreakerService {
         if (state.openedAt) {
           const elapsed = Date.now() - state.openedAt;
           if (elapsed >= this.config.cooldownPeriodSecs * 1000) {
-            // Transition to HALF_OPEN for testing
+            // Transition to HALF_OPEN to test if the service has recovered
             this.stateService.setCircuitState(modelName, 'HALF_OPEN');
             this.logger.log(`Model ${modelName} cooldown expired, transitioning to HALF_OPEN`);
             return true;
           }
         }
+        // Still in cooldown period
         return false;
 
       case 'PERMANENTLY_UNAVAILABLE':
+        // Never allow requests to models that are permanently broken (e.g. 404s)
         return false;
 
       default:

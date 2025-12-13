@@ -31,7 +31,7 @@ export class SmartStrategy implements SelectionStrategy {
     private readonly stateService: StateService,
     private readonly circuitBreaker: CircuitBreakerService,
     @Inject(ROUTER_CONFIG) private readonly config: RouterConfig,
-  ) {}
+  ) { }
 
   public select(models: ModelDefinition[], criteria: SelectionCriteria): ModelDefinition | null {
     if (models.length === 0) {
@@ -164,6 +164,7 @@ export class SmartStrategy implements SelectionStrategy {
   ): Array<{ model: ModelDefinition; weight: number }> {
     return models.map(model => ({
       model,
+      // Calculate weight based on static config, success rate, and latency
       weight: this.calculateEffectiveWeight(model),
     }));
   }
@@ -178,6 +179,10 @@ export class SmartStrategy implements SelectionStrategy {
       return fallbackModels[0];
     }
 
+    // Weighted random selection:
+    // 1. Generate a random number between 0 and totalWeight
+    // 2. Iterate through models, subtracting their weight
+    // 3. Pick the model where the random number drops below zero
     let random = Math.random() * totalWeight;
     for (const item of weightedModels) {
       random -= item.weight;
@@ -200,11 +205,17 @@ export class SmartStrategy implements SelectionStrategy {
     const successRate = state.stats.successRate;
     const latencyFactor = this.calculateLatencyFactor(state.stats.avgLatency);
 
+    // Final weight combines:
+    // - Static weight from config (base importance)
+    // - Success rate (reliability)
+    // - Latency factor (performance speed)
     return staticWeight * successRate * latencyFactor;
   }
 
   private calculateLatencyFactor(avgLatency: number): number {
+    // Avoid division by zero or extremely small numbers
     const normalizedLatency = Math.max(avgLatency, MIN_LATENCY_MS_FOR_CALCULATION);
+    // Inverse relationship: lower latency -> higher factor
     return LATENCY_NORMALIZATION_FACTOR / normalizedLatency;
   }
 }
