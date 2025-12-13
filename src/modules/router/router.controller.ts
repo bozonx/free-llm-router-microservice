@@ -43,9 +43,6 @@ export class RouterController {
     @Body() request: ChatCompletionRequestDto,
     @Req() req: FastifyRequest,
   ): Promise<ChatCompletionResponseDto> {
-    this.logger.debug('Received chat completion request');
-    this.logger.debug(`Request details: ${JSON.stringify(request)}`);
-
     const abortController = new AbortController();
     const signal = abortController.signal;
 
@@ -60,9 +57,6 @@ export class RouterController {
 
     try {
       const response = await this.routerService.chatCompletion(request, signal);
-      this.logger.debug(
-        `Request completed successfully using ${response._router.model_name} (${response._router.provider})`,
-      );
       return response;
     } catch (error) {
       if (signal.aborted) {
@@ -84,8 +78,6 @@ export class RouterController {
    */
   @Get('models')
   public getModels(): ModelsResponseDto {
-    this.logger.debug('Received models list request');
-
     const models = this.modelsService.getAvailable();
 
     return {

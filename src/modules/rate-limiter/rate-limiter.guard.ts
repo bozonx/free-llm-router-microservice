@@ -43,10 +43,13 @@ export class RateLimiterGuard implements CanActivate {
     void response.header('X-RateLimit-Reset', String(rateLimitInfo.reset));
 
     if (!result.allowed) {
-      // Add Retry-After header
       if (rateLimitInfo.retryAfter) {
         void response.header('Retry-After', String(rateLimitInfo.retryAfter));
       }
+
+      this.logger.warn(
+        `Rate limit exceeded for ${result.limitType} (client: ${clientId ?? 'unknown'}, retry after: ${rateLimitInfo.retryAfter ?? 'N/A'}s)`,
+      );
 
       throw new HttpException(
         {

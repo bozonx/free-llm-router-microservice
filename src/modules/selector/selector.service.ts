@@ -23,8 +23,6 @@ export class SelectorService {
    * Select a model based on criteria
    */
   public selectModel(criteria: SelectionCriteria): ModelDefinition | null {
-    this.logger.debug(`Selecting model with criteria: ${JSON.stringify(criteria)}`);
-
     // 1. Handle Priority List (new way)
     if (criteria.models && criteria.models.length > 0) {
       for (const modelRef of criteria.models) {
@@ -34,19 +32,21 @@ export class SelectorService {
           modelRef.provider,
         );
 
-        // Try to find a valid candidate among matches
         for (const candidate of candidates) {
-          // Check if excluded (cheaper check first)
           if (this.isExcluded(candidate, criteria.excludeModels)) {
+            this.logger.debug(
+              `Model "${candidate.name}" (${candidate.provider}) excluded from selection`,
+            );
             continue;
           }
 
-          // Check availability
           if (!candidate.available) {
+            this.logger.debug(
+              `Model "${candidate.name}" (${candidate.provider}) is not available (marked as unavailable)`,
+            );
             continue;
           }
 
-          // Check Circuit Breaker
           if (!this.circuitBreaker.canRequest(candidate.name)) {
             this.logger.debug(
               `Model "${candidate.name}" (${candidate.provider}) is unavailable (Circuit Breaker)`,
@@ -91,9 +91,7 @@ export class SelectorService {
     // Note: SmartStrategy should also respect excludeModels passed in criteria
     const selectedModel = this.smartStrategy.select(filteredModels, criteria);
 
-    if (selectedModel) {
-      this.logger.debug(`Selected model: ${selectedModel.name} (${selectedModel.provider})`);
-    } else {
+    if (!selectedModel) {
       this.logger.warn('Selection strategy returned no model');
     }
 
