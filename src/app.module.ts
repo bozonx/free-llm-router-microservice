@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER } from '@nestjs/core';
 import { LoggerModule } from 'nestjs-pino';
+import { RouterConfigModule } from './config/router-config.module.js';
 import { ShutdownModule } from './modules/shutdown/shutdown.module.js';
 import { HealthModule } from './modules/health/health.module.js';
 import { RouterModule } from './modules/router/router.module.js';
@@ -14,6 +15,7 @@ import pkg from '../package.json' with { type: 'json' };
 
 @Module({
   imports: [
+    RouterConfigModule,
     ConfigModule.forRoot({
       isGlobal: true,
       load: [appConfig],
