@@ -1,7 +1,8 @@
+import { describe, it, expect } from '@jest/globals';
 import {
   parseModelInput,
   hasMultipleModels,
-} from '../../src/modules/selector/utils/model-parser.js';
+} from '../../../../../src/modules/selector/utils/model-parser.js';
 
 describe('model-parser', () => {
   describe('parseModelInput', () => {

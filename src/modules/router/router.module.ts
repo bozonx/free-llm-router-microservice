@@ -15,4 +15,4 @@ import { StateModule } from '../state/state.module.js';
   providers: [RouterService],
   exports: [RouterService],
 })
-export class RouterModule { }
+export class RouterModule {}

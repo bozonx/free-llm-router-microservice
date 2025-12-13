@@ -3,7 +3,7 @@ import { SelectorService } from '../selector/selector.service.js';
 import { StateService } from '../state/state.service.js';
 import { CircuitBreakerService } from '../state/circuit-breaker.service.js';
 import { ShutdownService } from '../shutdown/shutdown.service.js';
-import { RETRY_JITTER_PERCENT } from '../../config/router.config.js';
+import { RETRY_JITTER_PERCENT } from '../../common/constants/retry.constants.js';
 import { ROUTER_CONFIG } from '../../config/router-config.provider.js';
 import type { ProvidersMap } from '../providers/providers.module.js';
 import { PROVIDERS_MAP } from '../providers/providers.module.js';

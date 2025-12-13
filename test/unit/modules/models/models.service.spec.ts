@@ -238,7 +238,9 @@ models:
     });
 
     it('should throw error on fetch failure', async () => {
-      global.fetch = jest.fn(() => Promise.reject(new Error('Network error'))) as typeof global.fetch;
+      global.fetch = jest.fn(() =>
+        Promise.reject(new Error('Network error')),
+      ) as typeof global.fetch;
 
       const module: TestingModule = await Test.createTestingModule({
         providers: [

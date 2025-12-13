@@ -64,7 +64,6 @@ describe('SmartStrategy', () => {
       openrouter: { enabled: true, apiKey: 'test', baseUrl: 'https://test.com' },
     },
     routing: {
-
       maxRetries: 3,
       rateLimitRetries: 2,
       retryDelay: 1000,

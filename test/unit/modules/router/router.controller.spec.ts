@@ -136,7 +136,10 @@ describe('RouterController', () => {
 
       // Assert
       expect(result).toEqual(mockResponse);
-      expect(routerService.chatCompletion).toHaveBeenCalledWith(mockRequest, expect.any(AbortSignal));
+      expect(routerService.chatCompletion).toHaveBeenCalledWith(
+        mockRequest,
+        expect.any(AbortSignal),
+      );
       expect(routerService.chatCompletion).toHaveBeenCalledTimes(1);
     });
 
@@ -153,8 +156,13 @@ describe('RouterController', () => {
       } as any;
 
       // Act & Assert
-      await expect(controller.chatCompletion(mockRequest, mockReq)).rejects.toThrow('Service unavailable');
-      expect(routerService.chatCompletion).toHaveBeenCalledWith(mockRequest, expect.any(AbortSignal));
+      await expect(controller.chatCompletion(mockRequest, mockReq)).rejects.toThrow(
+        'Service unavailable',
+      );
+      expect(routerService.chatCompletion).toHaveBeenCalledWith(
+        mockRequest,
+        expect.any(AbortSignal),
+      );
     });
 
     it('should handle request with all optional parameters', async () => {
@@ -191,7 +199,10 @@ describe('RouterController', () => {
 
       // Assert
       expect(result).toEqual(mockResponse);
-      expect(routerService.chatCompletion).toHaveBeenCalledWith(fullRequest, expect.any(AbortSignal));
+      expect(routerService.chatCompletion).toHaveBeenCalledWith(
+        fullRequest,
+        expect.any(AbortSignal),
+      );
     });
   });
 

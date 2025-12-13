@@ -7,7 +7,7 @@ import { routerConfigProvider } from './router-config.provider.js';
  */
 @Global()
 @Module({
-    providers: [routerConfigProvider],
-    exports: [routerConfigProvider],
+  providers: [routerConfigProvider],
+  exports: [routerConfigProvider],
 })
-export class RouterConfigModule { }
+export class RouterConfigModule {}

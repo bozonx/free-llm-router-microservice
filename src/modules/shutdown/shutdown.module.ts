@@ -6,7 +6,7 @@ import { ShutdownService } from './shutdown.service.js';
  */
 @Global()
 @Module({
-    providers: [ShutdownService],
-    exports: [ShutdownService],
+  providers: [ShutdownService],
+  exports: [ShutdownService],
 })
-export class ShutdownModule { }
+export class ShutdownModule {}

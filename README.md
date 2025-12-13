@@ -29,7 +29,7 @@ pnpm install
 
 # 2) Настройка конфигурации
 cp router.yaml.example router.yaml
-cp env.production.example .env.production
+cp .env.production.example .env.production
 
 # 3) Добавьте в .env.production переменные окружения, используемые в router.yaml
 # Пример для дефолтной конфигурации:

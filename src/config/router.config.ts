@@ -4,11 +4,6 @@ import { load as parseYaml } from 'js-yaml';
 import type { RouterConfig } from './router-config.interface.js';
 
 /**
- * Retry jitter percentage (±20%)
- */
-export const RETRY_JITTER_PERCENT = 20;
-
-/**
  * Load router configuration from YAML file
  */
 export function loadRouterConfig(): RouterConfig {
