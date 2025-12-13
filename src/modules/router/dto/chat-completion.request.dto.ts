@@ -90,4 +90,23 @@ export class ChatCompletionRequestDto {
   @IsOptional()
   @IsBoolean()
   public json_response?: boolean;
+
+  // Smart routing fields
+  /**
+   * Prefer models with lowest latency
+   * If true, selects model with best avgLatency
+   */
+  @IsOptional()
+  @IsBoolean()
+  public prefer_fast?: boolean;
+
+  /**
+   * Minimum success rate for model selection (0-1)
+   * Filters out models with success rate below this threshold
+   */
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(1)
+  public min_success_rate?: number;
 }

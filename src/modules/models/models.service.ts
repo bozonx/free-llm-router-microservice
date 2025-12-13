@@ -95,7 +95,7 @@ export class ModelsService implements OnModuleInit {
    * Convert model from YAML format (snake_case) to TypeScript format (camelCase)
    */
   private convertModel(model: Record<string, unknown>): ModelDefinition {
-    return {
+    const result: ModelDefinition = {
       name: String(model['name']),
       provider: String(model['provider']),
       model: String(model['model']),
@@ -107,6 +107,19 @@ export class ModelsService implements OnModuleInit {
       jsonResponse: Boolean(model['jsonResponse']),
       available: Boolean(model['available']),
     };
+
+    // Optional fields for Smart Strategy
+    if (model['priority'] !== undefined) {
+      result.priority = Number(model['priority']);
+    }
+    if (model['weight'] !== undefined) {
+      result.weight = Number(model['weight']);
+    }
+    if (model['maxConcurrent'] !== undefined) {
+      result.maxConcurrent = Number(model['maxConcurrent']);
+    }
+
+    return result;
   }
 
   /**

@@ -692,12 +692,13 @@ rateLimiting:
 4. ✅ Интеграция с RouterService
 5. ✅ Unit тесты для State Module
 
-### Этап 2: Умный выбор (Приоритет: Высокий)
-5. **SmartStrategy** — единый алгоритм выбора
-6. Удаление round-robin.strategy.ts
-7. Обновление models.yaml (priority, weight, maxConcurrent)
-8. Поддержка modelOverrides в router.yaml
-9. Новые фильтры в запросе (prefer_fast, min_success_rate)
+### Этап 2: Умный выбор (Приоритет: Высокий) ✅ ЗАВЕРШЕНО
+5. ✅ **SmartStrategy** — единый алгоритм выбора
+6. ⏸️ Удаление round-robin.strategy.ts — отложено (тесты используют)
+7. ✅ Обновление models.yaml (priority, weight, maxConcurrent)
+8. ✅ Поддержка modelOverrides в router.yaml
+9. ✅ Новые фильтры в запросе (prefer_fast, min_success_rate)
+10. ✅ Unit тесты для SmartStrategy
 
 ### Этап 3: Защита (Приоритет: Средний)
 10. **Rate Limiter Module** — Token Bucket
@@ -709,8 +710,8 @@ rateLimiting:
 14. Эндпоинты /admin/state, /admin/metrics, /admin/rate-limits
 
 ### Этап 5: Документация и тесты
-15. ✅ Обновление README.md (Circuit Breaker)
-16. ✅ Unit тесты для State Module
+15. ✅ Обновление README.md (Circuit Breaker, Smart Strategy)
+16. ✅ Unit тесты для State Module и SmartStrategy
 17. E2E тесты для сценариев отказа
 
 ---

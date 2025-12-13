@@ -1,11 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ModelsService } from '../models/models.service.js';
-import { RoundRobinStrategy } from './strategies/round-robin.strategy.js';
+import { SmartStrategy } from './strategies/smart.strategy.js';
 import type { ModelDefinition } from '../models/interfaces/model.interface.js';
 import type { SelectionCriteria } from './interfaces/selector.interface.js';
 
 /**
- * Service for selecting models based on criteria
+ * Service for selecting models based on criteria.
+ * Uses SmartStrategy for intelligent model selection.
  */
 @Injectable()
 export class SelectorService {
@@ -13,7 +14,7 @@ export class SelectorService {
 
   constructor(
     private readonly modelsService: ModelsService,
-    private readonly roundRobinStrategy: RoundRobinStrategy,
+    private readonly smartStrategy: SmartStrategy,
   ) {}
 
   /**
@@ -46,8 +47,8 @@ export class SelectorService {
       return null;
     }
 
-    // Use selection strategy to pick a model
-    const selectedModel = this.roundRobinStrategy.select(filteredModels, criteria);
+    // Use smart strategy to pick a model
+    const selectedModel = this.smartStrategy.select(filteredModels, criteria);
 
     if (selectedModel) {
       this.logger.debug(`Selected model: ${selectedModel.name} (${selectedModel.provider})`);

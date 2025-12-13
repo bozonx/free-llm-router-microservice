@@ -33,6 +33,24 @@ export interface SelectionCriteria {
    * Models to exclude (already tried)
    */
   excludeModels?: string[];
+
+  /**
+   * Prefer models with lowest latency
+   */
+  preferFast?: boolean;
+
+  /**
+   * Minimum success rate for model selection (0-1)
+   */
+  minSuccessRate?: number;
+}
+
+/**
+ * Model with effective priority and weight after applying overrides
+ */
+export interface ModelWithEffectivePriority extends ModelDefinition {
+  effectivePriority: number;
+  effectiveWeight: number;
 }
 
 /**

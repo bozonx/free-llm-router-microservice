@@ -61,6 +61,24 @@ export interface ModelDefinition {
    * Model availability status
    */
   available: boolean;
+
+  /**
+   * Priority for model selection (lower = higher priority)
+   * Default: 1
+   */
+  priority?: number;
+
+  /**
+   * Weight for weighted random selection (1-100)
+   * Default: 1
+   */
+  weight?: number;
+
+  /**
+   * Maximum concurrent requests to this model
+   * Default: unlimited (Infinity)
+   */
+  maxConcurrent?: number;
 }
 
 /**

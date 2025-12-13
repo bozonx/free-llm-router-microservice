@@ -1,0 +1,248 @@
+import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import { Test, type TestingModule } from '@nestjs/testing';
+import { SmartStrategy } from '../../../../src/modules/selector/strategies/smart.strategy.js';
+import { StateService } from '../../../../src/modules/state/state.service.js';
+import { CircuitBreakerService } from '../../../../src/modules/state/circuit-breaker.service.js';
+import { ROUTER_CONFIG } from '../../../../src/config/router-config.provider.js';
+import type { ModelDefinition } from '../../../../src/modules/models/interfaces/model.interface.js';
+import type { RouterConfig } from '../../../../src/config/router-config.interface.js';
+
+describe('SmartStrategy', () => {
+  let strategy: SmartStrategy;
+  let stateService: jest.Mocked<StateService>;
+  let circuitBreaker: jest.Mocked<CircuitBreakerService>;
+
+  const mockModels: ModelDefinition[] = [
+    {
+      name: 'model-high-priority',
+      provider: 'openrouter',
+      model: 'test/model-1',
+      type: 'fast',
+      contextSize: 128000,
+      maxOutputTokens: 4096,
+      speed: 'fast',
+      tags: ['general'],
+      jsonResponse: true,
+      available: true,
+      priority: 1,
+      weight: 10,
+    },
+    {
+      name: 'model-low-priority',
+      provider: 'openrouter',
+      model: 'test/model-2',
+      type: 'reasoning',
+      contextSize: 64000,
+      maxOutputTokens: 8192,
+      speed: 'medium',
+      tags: ['code'],
+      jsonResponse: false,
+      available: true,
+      priority: 2,
+      weight: 5,
+    },
+    {
+      name: 'model-with-max-concurrent',
+      provider: 'deepseek',
+      model: 'test/model-3',
+      type: 'fast',
+      contextSize: 32000,
+      maxOutputTokens: 4096,
+      speed: 'fast',
+      tags: ['general'],
+      jsonResponse: true,
+      available: true,
+      priority: 1,
+      weight: 1,
+      maxConcurrent: 2,
+    },
+  ];
+
+  const mockRouterConfig: RouterConfig = {
+    modelsFile: './models.yaml',
+    providers: {
+      openrouter: { enabled: true, apiKey: 'test', baseUrl: 'https://test.com' },
+    },
+    routing: {
+      algorithm: 'round-robin',
+      maxRetries: 3,
+      rateLimitRetries: 2,
+      retryDelay: 1000,
+      timeout: 30000,
+      fallback: { enabled: true, provider: 'deepseek', model: 'deepseek-chat' },
+    },
+    modelOverrides: {
+      'model-low-priority': {
+        priority: 1,
+        weight: 20,
+      },
+    },
+  };
+
+  const createMockState = (overrides: Partial<ReturnType<StateService['getState']>> = {}) => ({
+    name: 'test-model',
+    circuitState: 'CLOSED' as const,
+    consecutiveFailures: 0,
+    consecutiveSuccesses: 0,
+    activeRequests: 0,
+    stats: {
+      totalRequests: 0,
+      successCount: 0,
+      errorCount: 0,
+      avgLatency: 0,
+      p95Latency: 0,
+      successRate: 1.0,
+      requests: [],
+    },
+    ...overrides,
+  });
+
+  beforeEach(async () => {
+    stateService = {
+      getState: jest
+        .fn()
+        .mockImplementation((name: unknown) => createMockState({ name: String(name) })),
+    } as any;
+
+    circuitBreaker = {
+      filterAvailable: jest.fn().mockImplementation(models => models),
+    } as any;
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        SmartStrategy,
+        { provide: StateService, useValue: stateService },
+        { provide: CircuitBreakerService, useValue: circuitBreaker },
+        { provide: ROUTER_CONFIG, useValue: mockRouterConfig },
+      ],
+    }).compile();
+
+    strategy = module.get<SmartStrategy>(SmartStrategy);
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('select', () => {
+    it('should return null for empty models list', () => {
+      const result = strategy.select([], {});
+      expect(result).toBeNull();
+    });
+
+    it('should filter excluded models', () => {
+      circuitBreaker.filterAvailable.mockImplementation(models => models);
+
+      const result = strategy.select(mockModels, {
+        excludeModels: ['model-high-priority', 'model-with-max-concurrent'],
+      });
+
+      expect(result?.name).toBe('model-low-priority');
+    });
+
+    it('should use Circuit Breaker filtering', () => {
+      circuitBreaker.filterAvailable.mockReturnValue([mockModels[1]]);
+
+      const result = strategy.select(mockModels, {});
+
+      expect(circuitBreaker.filterAvailable).toHaveBeenCalled();
+      expect(result?.name).toBe('model-low-priority');
+    });
+
+    it('should filter by maxConcurrent capacity', () => {
+      stateService.getState.mockImplementation((name: string) => {
+        if (name === 'model-with-max-concurrent') {
+          return createMockState({ name, activeRequests: 2 });
+        }
+        return createMockState({ name });
+      });
+
+      const result = strategy.select(mockModels, {});
+
+      // model-with-max-concurrent should be filtered out (2 >= 2)
+      expect(result?.name).not.toBe('model-with-max-concurrent');
+    });
+
+    it('should filter by minSuccessRate', () => {
+      stateService.getState.mockImplementation((name: string) => {
+        if (name === 'model-high-priority') {
+          return createMockState({
+            name,
+            stats: { ...createMockState().stats, totalRequests: 10, successRate: 0.5 },
+          });
+        }
+        return createMockState({
+          name,
+          stats: { ...createMockState().stats, totalRequests: 10, successRate: 0.9 },
+        });
+      });
+
+      const result = strategy.select(mockModels, { minSuccessRate: 0.8 });
+
+      expect(result?.name).not.toBe('model-high-priority');
+    });
+
+    it('should select fastest model when preferFast is true', () => {
+      stateService.getState.mockImplementation((name: string) => {
+        const latencies: Record<string, number> = {
+          'model-high-priority': 500,
+          'model-low-priority': 100,
+          'model-with-max-concurrent': 300,
+        };
+        return createMockState({
+          name,
+          stats: {
+            ...createMockState().stats,
+            totalRequests: 10,
+            avgLatency: latencies[name] ?? 200,
+          },
+        });
+      });
+
+      const result = strategy.select(mockModels, { preferFast: true });
+
+      expect(result?.name).toBe('model-low-priority');
+    });
+
+    it('should apply priority overrides from config', () => {
+      // model-low-priority has override to priority: 1
+      // so both model-high-priority and model-low-priority have priority 1
+      // but model-low-priority has higher weight (20 via override)
+      stateService.getState.mockImplementation((name: string) => createMockState({ name }));
+
+      // Run multiple times to get weighted distribution
+      const selections: Record<string, number> = {};
+      for (let i = 0; i < 100; i++) {
+        const result = strategy.select([mockModels[0], mockModels[1]], {});
+        if (result) {
+          selections[result.name] = (selections[result.name] ?? 0) + 1;
+        }
+      }
+
+      // With weight 10 vs 20, model-low-priority should be selected ~66% of time
+      expect(selections['model-low-priority']).toBeGreaterThan(50);
+    });
+
+    it('should return null when all models filtered out', () => {
+      circuitBreaker.filterAvailable.mockReturnValue([]);
+
+      const result = strategy.select(mockModels, {});
+
+      expect(result).toBeNull();
+    });
+
+    it('should group models by priority and select from top group', () => {
+      // Remove model-low-priority override effect by using models without config
+      const modelsWithDifferentPriorities: ModelDefinition[] = [
+        { ...mockModels[0], priority: 2 },
+        { ...mockModels[1], priority: 1 },
+      ];
+
+      const result = strategy.select(modelsWithDifferentPriorities, {});
+
+      // model-low-priority has priority 1 (after override), so should be selected
+      // But here we're testing the grouping logic directly
+      expect(result?.name).toBe('model-low-priority');
+    });
+  });
+});

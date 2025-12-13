@@ -2,13 +2,13 @@ import { Test, type TestingModule } from '@nestjs/testing';
 import { jest } from '@jest/globals';
 import { SelectorService } from '../../../../src/modules/selector/selector.service.js';
 import { ModelsService } from '../../../../src/modules/models/models.service.js';
-import { RoundRobinStrategy } from '../../../../src/modules/selector/strategies/round-robin.strategy.js';
+import { SmartStrategy } from '../../../../src/modules/selector/strategies/smart.strategy.js';
 import type { ModelDefinition } from '../../../../src/modules/models/interfaces/model.interface.js';
 
 describe('SelectorService', () => {
   let service: SelectorService;
   let modelsService: ModelsService;
-  let strategy: RoundRobinStrategy;
+  let strategy: SmartStrategy;
 
   const mockModel: ModelDefinition = {
     name: 'test-model',
@@ -37,13 +37,13 @@ describe('SelectorService', () => {
       providers: [
         SelectorService,
         { provide: ModelsService, useValue: mockModelsService },
-        { provide: RoundRobinStrategy, useValue: mockStrategy },
+        { provide: SmartStrategy, useValue: mockStrategy },
       ],
     }).compile();
 
     service = module.get<SelectorService>(SelectorService);
     modelsService = module.get<ModelsService>(ModelsService);
-    strategy = module.get<RoundRobinStrategy>(RoundRobinStrategy);
+    strategy = module.get<SmartStrategy>(SmartStrategy);
   });
 
   afterEach(() => {

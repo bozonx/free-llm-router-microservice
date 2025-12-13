@@ -62,6 +62,8 @@ export class RouterService {
           type: request.type,
           minContextSize: request.min_context_size,
           jsonResponse: request.json_response,
+          preferFast: request.prefer_fast,
+          minSuccessRate: request.min_success_rate,
         },
         excludedModels,
       );

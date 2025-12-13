@@ -10,6 +10,10 @@ models:
     tags: [reasoning, code, math]
     jsonResponse: true
     available: true
+    # Smart Strategy fields (optional, have defaults)
+    priority: 2          # Lower priority (default: 1)
+    weight: 5            # Selection weight (default: 1)
+    maxConcurrent: 3     # Max parallel requests (default: unlimited)
     
   - name: llama-3.3-70b
     provider: openrouter
@@ -21,6 +25,8 @@ models:
     tags: [general, code]
     jsonResponse: true
     available: true
+    priority: 1          # Higher priority
+    weight: 10           # Higher weight = more likely to be selected
 
   - name: llama-3.1-8b
     provider: openrouter
