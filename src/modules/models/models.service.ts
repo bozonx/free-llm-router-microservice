@@ -44,9 +44,7 @@ export class ModelsService implements OnModuleInit {
   private readonly logger = new Logger(ModelsService.name);
   private models: ModelDefinition[] = [];
 
-  constructor(
-    @Inject(ROUTER_CONFIG) private readonly config: RouterConfig,
-  ) { }
+  constructor(@Inject(ROUTER_CONFIG) private readonly config: RouterConfig) {}
 
   /**
    * Load models from YAML file or URL on module initialization
@@ -158,10 +156,11 @@ export class ModelsService implements OnModuleInit {
     }
 
     for (const override of overrides) {
-      const model = this.models.find(m =>
-        m.name === override.name &&
-        (!override.provider || m.provider === override.provider) &&
-        (!override.model || m.model === override.model)
+      const model = this.models.find(
+        m =>
+          m.name === override.name &&
+          (!override.provider || m.provider === override.provider) &&
+          (!override.model || m.model === override.model),
       );
 
       if (model) {
@@ -169,7 +168,8 @@ export class ModelsService implements OnModuleInit {
         if (override.weight !== undefined) model.weight = override.weight;
         if (override.tags !== undefined) model.tags = override.tags;
         if (override.contextSize !== undefined) model.contextSize = override.contextSize;
-        if (override.maxOutputTokens !== undefined) model.maxOutputTokens = override.maxOutputTokens;
+        if (override.maxOutputTokens !== undefined)
+          model.maxOutputTokens = override.maxOutputTokens;
         if (override.speedTier !== undefined) model.speedTier = override.speedTier;
         if (override.available !== undefined) model.available = override.available;
         if (override.maxConcurrent !== undefined) model.maxConcurrent = override.maxConcurrent;
@@ -185,28 +185,73 @@ export class ModelsService implements OnModuleInit {
    * Convert model from YAML format (snake_case) to TypeScript format (camelCase)
    */
   private convertModel(model: Record<string, unknown>): ModelDefinition {
+    // Validate required fields
+    if (typeof model['name'] !== 'string' || !model['name']) {
+      throw new Error('Model "name" must be a non-empty string');
+    }
+    if (typeof model['provider'] !== 'string' || !model['provider']) {
+      throw new Error(`Model "${model['name']}": "provider" must be a non-empty string`);
+    }
+    if (typeof model['model'] !== 'string' || !model['model']) {
+      throw new Error(`Model "${model['name']}": "model" must be a non-empty string`);
+    }
+    if (model['type'] !== 'fast' && model['type'] !== 'reasoning') {
+      throw new Error(`Model "${model['name']}": "type" must be "fast" or "reasoning"`);
+    }
+    if (typeof model['contextSize'] !== 'number' || model['contextSize'] <= 0) {
+      throw new Error(`Model "${model['name']}": "contextSize" must be a positive number`);
+    }
+    if (typeof model['maxOutputTokens'] !== 'number' || model['maxOutputTokens'] <= 0) {
+      throw new Error(`Model "${model['name']}": "maxOutputTokens" must be a positive number`);
+    }
+    if (
+      model['speedTier'] !== 'fast' &&
+      model['speedTier'] !== 'medium' &&
+      model['speedTier'] !== 'slow'
+    ) {
+      throw new Error(`Model "${model['name']}": "speedTier" must be "fast", "medium", or "slow"`);
+    }
+    if (!Array.isArray(model['tags'])) {
+      throw new Error(`Model "${model['name']}": "tags" must be an array`);
+    }
+    if (typeof model['jsonResponse'] !== 'boolean') {
+      throw new Error(`Model "${model['name']}": "jsonResponse" must be a boolean`);
+    }
+    if (typeof model['available'] !== 'boolean') {
+      throw new Error(`Model "${model['name']}": "available" must be a boolean`);
+    }
+
     const result: ModelDefinition = {
-      name: String(model['name']),
-      provider: String(model['provider']),
-      model: String(model['model']),
+      name: model['name'] as string,
+      provider: model['provider'] as string,
+      model: model['model'] as string,
       type: model['type'] as 'fast' | 'reasoning',
-      contextSize: Number(model['contextSize']),
-      maxOutputTokens: Number(model['maxOutputTokens']),
+      contextSize: model['contextSize'] as number,
+      maxOutputTokens: model['maxOutputTokens'] as number,
       speedTier: model['speedTier'] as 'fast' | 'medium' | 'slow',
-      tags: Array.isArray(model['tags']) ? model['tags'].map(String) : [],
-      jsonResponse: Boolean(model['jsonResponse']),
-      available: Boolean(model['available']),
+      tags: (model['tags'] as unknown[]).map(String),
+      jsonResponse: model['jsonResponse'] as boolean,
+      available: model['available'] as boolean,
     };
 
     // Optional fields for Smart Strategy
     if (model['priority'] !== undefined) {
-      result.priority = Number(model['priority']);
+      if (typeof model['priority'] !== 'number' || model['priority'] < 0) {
+        throw new Error(`Model "${model['name']}": "priority" must be a non-negative number`);
+      }
+      result.priority = model['priority'] as number;
     }
     if (model['weight'] !== undefined) {
-      result.weight = Number(model['weight']);
+      if (typeof model['weight'] !== 'number' || model['weight'] <= 0 || model['weight'] > 100) {
+        throw new Error(`Model "${model['name']}": "weight" must be a number between 1 and 100`);
+      }
+      result.weight = model['weight'] as number;
     }
     if (model['maxConcurrent'] !== undefined) {
-      result.maxConcurrent = Number(model['maxConcurrent']);
+      if (typeof model['maxConcurrent'] !== 'number' || model['maxConcurrent'] <= 0) {
+        throw new Error(`Model "${model['name']}": "maxConcurrent" must be a positive number`);
+      }
+      result.maxConcurrent = model['maxConcurrent'] as number;
     }
 
     return result;
@@ -242,10 +287,7 @@ export class ModelsService implements OnModuleInit {
    * @param provider - Optional provider filter
    * @returns Array of matching models (may be empty)
    */
-  public findByNameAndProvider(
-    name: string,
-    provider?: string,
-  ): ModelDefinition[] {
+  public findByNameAndProvider(name: string, provider?: string): ModelDefinition[] {
     return this.models.filter(model => {
       if (model.name !== name) {
         return false;

@@ -6,12 +6,6 @@ import type { ModelReference } from '../utils/model-parser.js';
  */
 export interface SelectionCriteria {
   /**
-   * Specific model name (if provided, use this model)
-   * @deprecated Use `models` array instead for multi-model support
-   */
-  model?: string;
-
-  /**
    * Priority list of models to try (in order).
    * Each entry can specify an optional provider.
    * If empty, Smart Strategy is used.

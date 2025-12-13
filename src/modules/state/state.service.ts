@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit, Inject, Logger } from '@nestjs/common';
+import { Injectable, OnModuleInit, OnModuleDestroy, Inject, Logger } from '@nestjs/common';
 import { ModelsService } from '../models/models.service.js';
 import { ROUTER_CONFIG } from '../../config/router-config.provider.js';
 import type { RouterConfig } from '../../config/router-config.interface.js';
@@ -10,7 +10,7 @@ import { DEFAULT_CIRCUIT_BREAKER_CONFIG } from './interfaces/state.interface.js'
  * Tracks Circuit Breaker state, active requests, and statistics.
  */
 @Injectable()
-export class StateService implements OnModuleInit {
+export class StateService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(StateService.name);
   private readonly states: Map<string, ModelState> = new Map();
   private readonly config: CircuitBreakerConfig;

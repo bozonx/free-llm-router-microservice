@@ -42,8 +42,6 @@ export interface FallbackConfig {
  * Routing configuration
  */
 export interface RoutingConfig {
-
-
   /**
    * Maximum retries on free models
    */

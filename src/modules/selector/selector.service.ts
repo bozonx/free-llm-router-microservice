@@ -17,7 +17,7 @@ export class SelectorService {
     private readonly modelsService: ModelsService,
     private readonly smartStrategy: SmartStrategy,
     private readonly circuitBreaker: CircuitBreakerService,
-  ) { }
+  ) {}
 
   /**
    * Select a model based on criteria
@@ -36,7 +36,7 @@ export class SelectorService {
 
         // Try to find a valid candidate among matches
         for (const candidate of candidates) {
-          // Check if excluded
+          // Check if excluded (cheaper check first)
           if (this.isExcluded(candidate, criteria.excludeModels)) {
             continue;
           }
@@ -72,30 +72,8 @@ export class SelectorService {
 
       this.logger.debug('Priority list exhausted, falling back to Smart Strategy');
     }
-    // 2. Handle specific single model (legacy way)
-    else if (criteria.model) {
-      const model = this.modelsService.findByName(criteria.model);
-      if (model?.available) {
-        // Check Circuit Breaker
-        if (!this.circuitBreaker.canRequest(model.name)) {
-          this.logger.warn(`Requested model "${model.name}" is unavailable (Circuit Breaker)`);
-          return null;
-        }
 
-        // Check exclusion
-        if (this.isExcluded(model, criteria.excludeModels)) {
-          this.logger.warn(`Requested model "${criteria.model}" is in exclude list`);
-          return null;
-        }
-
-        this.logger.debug(`Found specific model: ${model.name}`);
-        return model;
-      }
-      this.logger.warn(`Requested model "${criteria.model}" not found or unavailable`);
-      return null;
-    }
-
-    // 3. Fallback: Filter and Smart Strategy
+    // 2. Fallback: Filter and Smart Strategy
     // Filter models by criteria
     const filteredModels = this.modelsService.filter({
       tags: criteria.tags,

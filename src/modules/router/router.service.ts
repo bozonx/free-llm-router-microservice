@@ -41,7 +41,7 @@ export class RouterService {
     private readonly shutdownService: ShutdownService,
     @Inject(PROVIDERS_MAP) private readonly providersMap: ProvidersMap,
     @Inject(ROUTER_CONFIG) private readonly config: RouterConfig,
-  ) { }
+  ) {}
 
   /**
    * Handle chat completion request with retry and fallback logic
@@ -60,8 +60,6 @@ export class RouterService {
       this.shutdownService.unregisterRequest();
     }
   }
-
-
 
   /**
    * Execute chat completion with shutdown abort signal support
@@ -91,8 +89,6 @@ export class RouterService {
         {
           models: parsedModel.models,
           allowAutoFallback: parsedModel.allowAutoFallback,
-          // Legacy support (though handled by parsing, keeping original value doesn't hurt if single string)
-          model: typeof request.model === 'string' ? request.model : undefined,
           tags: request.tags,
           type: request.type,
           minContextSize: request.min_context_size,
@@ -162,7 +158,7 @@ export class RouterService {
       this.logger.warn('All free models failed, attempting fallback to paid model');
 
       try {
-        const fallbackResult = await this.executeFallback(request, errors, abortSignal);
+        const fallbackResult = await this.executeFallback(request, abortSignal);
 
         return this.buildSuccessResponse({
           result: fallbackResult.result,
@@ -211,9 +207,7 @@ export class RouterService {
         // Check if shutdown abort was triggered
         if (abortSignal.aborted) {
           if (this.shutdownService.shuttingDown) {
-            throw new ServiceUnavailableException(
-              'Request cancelled: server is shutting down',
-            );
+            throw new ServiceUnavailableException('Request cancelled: server is shutting down');
           }
           throw new Error('Request cancelled by client');
         }
@@ -253,9 +247,7 @@ export class RouterService {
           // Check if this is an abort error from shutdown/client
           if (this.isAbortError(error)) {
             if (this.shutdownService.shuttingDown) {
-              throw new ServiceUnavailableException(
-                'Request cancelled: server is shutting down',
-              );
+              throw new ServiceUnavailableException('Request cancelled: server is shutting down');
             }
             throw new Error('Request cancelled by client');
           }
@@ -291,11 +283,7 @@ export class RouterService {
   /**
    * Execute fallback to paid model
    */
-  private async executeFallback(
-    request: ChatCompletionRequestDto,
-    _errors: ErrorInfo[],
-    abortSignal: AbortSignal,
-  ) {
+  private async executeFallback(request: ChatCompletionRequestDto, abortSignal: AbortSignal) {
     const fallbackProvider = this.providersMap.get(this.config.routing.fallback.provider);
     if (!fallbackProvider) {
       throw new Error(`Fallback provider ${this.config.routing.fallback.provider} not found`);

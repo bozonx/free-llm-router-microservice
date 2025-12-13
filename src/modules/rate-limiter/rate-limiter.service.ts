@@ -1,4 +1,4 @@
-import { Injectable, Inject, Logger } from '@nestjs/common';
+import { Injectable, OnModuleDestroy, Inject, Logger } from '@nestjs/common';
 import { ROUTER_CONFIG } from '../../config/router-config.provider.js';
 import type { RouterConfig } from '../../config/router-config.interface.js';
 import type {
@@ -10,11 +10,16 @@ import type {
 import { DEFAULT_RATE_LIMITING_CONFIG } from './interfaces/rate-limiter.interface.js';
 
 /**
+ * Stale bucket cleanup threshold (10 minutes)
+ */
+const STALE_BUCKET_THRESHOLD_MS = 600_000;
+
+/**
  * Rate Limiter Service implementing Token Bucket algorithm.
  * Provides global, per-client, and per-model rate limiting.
  */
 @Injectable()
-export class RateLimiterService {
+export class RateLimiterService implements OnModuleDestroy {
   private readonly logger = new Logger(RateLimiterService.name);
   private readonly config: RateLimitingConfig;
 
@@ -259,18 +264,17 @@ export class RateLimiterService {
    */
   private cleanupStaleBuckets(): void {
     const now = Date.now();
-    const staleThreshold = 600000; // 10 minutes
     let cleaned = 0;
 
     for (const [clientId, bucket] of this.clientBuckets.entries()) {
-      if (now - bucket.lastRefill > staleThreshold) {
+      if (now - bucket.lastRefill > STALE_BUCKET_THRESHOLD_MS) {
         this.clientBuckets.delete(clientId);
         cleaned++;
       }
     }
 
     for (const [modelName, bucket] of this.modelBuckets.entries()) {
-      if (now - bucket.lastRefill > staleThreshold) {
+      if (now - bucket.lastRefill > STALE_BUCKET_THRESHOLD_MS) {
         this.modelBuckets.delete(modelName);
         cleaned++;
       }

@@ -7,6 +7,11 @@ import type { ModelDefinition } from '../../models/interfaces/model.interface.js
 import type { SelectionStrategy, SelectionCriteria } from '../interfaces/selector.interface.js';
 
 /**
+ * Minimum latency in milliseconds for weight calculation
+ */
+const MIN_LATENCY_MS_FOR_CALCULATION = 100;
+
+/**
  * Smart selection strategy.
  * Replaces round-robin and considers:
  * - Circuit Breaker state
@@ -185,7 +190,7 @@ export class SmartStrategy implements SelectionStrategy {
 
     const successRate = state.stats.successRate;
     // Latency normalization: lower latency = higher multiplier
-    const latencyFactor = 1000 / Math.max(state.stats.avgLatency, 100);
+    const latencyFactor = 1000 / Math.max(state.stats.avgLatency, MIN_LATENCY_MS_FOR_CALCULATION);
 
     return staticWeight * successRate * latencyFactor;
   }

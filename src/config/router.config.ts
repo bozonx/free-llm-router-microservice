@@ -100,7 +100,6 @@ function validateRouterConfig(config: unknown): asserts config is RouterConfig {
 
   const routing = cfg['routing'] as Record<string, unknown>;
 
-
   if (typeof routing['maxRetries'] !== 'number' || routing['maxRetries'] < 0) {
     throw new Error('Router config: routing.maxRetries must be a non-negative number');
   }
@@ -213,6 +212,75 @@ function validateRouterConfig(config: unknown): asserts config is RouterConfig {
       }
       if (mo['maxConcurrent'] !== undefined && typeof mo['maxConcurrent'] !== 'number') {
         throw new Error(`Router config: modelOverrides[${index}].maxConcurrent must be a number`);
+      }
+    }
+  }
+
+  // Validate rateLimiting (optional)
+  if (cfg['rateLimiting'] !== undefined) {
+    if (typeof cfg['rateLimiting'] !== 'object' || cfg['rateLimiting'] === null) {
+      throw new Error('Router config: rateLimiting must be an object');
+    }
+
+    const rl = cfg['rateLimiting'] as Record<string, unknown>;
+
+    if (rl['enabled'] !== undefined && typeof rl['enabled'] !== 'boolean') {
+      throw new Error('Router config: rateLimiting.enabled must be a boolean');
+    }
+
+    // Validate global rate limiting
+    if (rl['global'] !== undefined) {
+      if (typeof rl['global'] !== 'object' || rl['global'] === null) {
+        throw new Error('Router config: rateLimiting.global must be an object');
+      }
+      const global = rl['global'] as Record<string, unknown>;
+      if (typeof global['requestsPerMinute'] !== 'number' || global['requestsPerMinute'] < 0) {
+        throw new Error(
+          'Router config: rateLimiting.global.requestsPerMinute must be a non-negative number',
+        );
+      }
+    }
+
+    // Validate per-client rate limiting
+    if (rl['perClient'] !== undefined) {
+      if (typeof rl['perClient'] !== 'object' || rl['perClient'] === null) {
+        throw new Error('Router config: rateLimiting.perClient must be an object');
+      }
+      const perClient = rl['perClient'] as Record<string, unknown>;
+      if (perClient['enabled'] !== undefined && typeof perClient['enabled'] !== 'boolean') {
+        throw new Error('Router config: rateLimiting.perClient.enabled must be a boolean');
+      }
+      if (
+        typeof perClient['requestsPerMinute'] !== 'number' ||
+        perClient['requestsPerMinute'] < 0
+      ) {
+        throw new Error(
+          'Router config: rateLimiting.perClient.requestsPerMinute must be a non-negative number',
+        );
+      }
+      if (
+        perClient['burstSize'] !== undefined &&
+        (typeof perClient['burstSize'] !== 'number' || perClient['burstSize'] < 0)
+      ) {
+        throw new Error(
+          'Router config: rateLimiting.perClient.burstSize must be a non-negative number',
+        );
+      }
+    }
+
+    // Validate per-model rate limiting
+    if (rl['perModel'] !== undefined) {
+      if (typeof rl['perModel'] !== 'object' || rl['perModel'] === null) {
+        throw new Error('Router config: rateLimiting.perModel must be an object');
+      }
+      const perModel = rl['perModel'] as Record<string, unknown>;
+      if (perModel['enabled'] !== undefined && typeof perModel['enabled'] !== 'boolean') {
+        throw new Error('Router config: rateLimiting.perModel.enabled must be a boolean');
+      }
+      if (typeof perModel['requestsPerMinute'] !== 'number' || perModel['requestsPerMinute'] < 0) {
+        throw new Error(
+          'Router config: rateLimiting.perModel.requestsPerMinute must be a non-negative number',
+        );
       }
     }
   }
