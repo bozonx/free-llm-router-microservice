@@ -1,4 +1,5 @@
 import { Test, type TestingModule } from '@nestjs/testing';
+import { jest } from '@jest/globals';
 import { ModelsService } from '../../../../src/modules/models/models.service.js';
 import { writeFileSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
@@ -47,7 +48,6 @@ models:
   beforeEach(async () => {
     // Create test models file
     writeFileSync(testModelsFile, testModelsYaml, 'utf-8');
-    process.env['MODELS_FILE_PATH'] = testModelsFile;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -55,6 +55,7 @@ models:
         {
           provide: ROUTER_CONFIG,
           useValue: {
+            modelsFile: testModelsFile,
             modelOverrides: [],
           },
         },
@@ -62,7 +63,7 @@ models:
     }).compile();
 
     service = module.get<ModelsService>(ModelsService);
-    service.onModuleInit();
+    await service.onModuleInit();
   });
 
   afterEach(() => {
@@ -72,7 +73,6 @@ models:
     } catch {
       // ignore
     }
-    delete process.env['MODELS_FILE_PATH'];
   });
 
   it('should be defined', () => {
@@ -173,6 +173,7 @@ models:
           {
             provide: ROUTER_CONFIG,
             useValue: {
+              modelsFile: testModelsFile,
               modelOverrides: [
                 {
                   name: 'test-fast-model',
@@ -186,13 +187,106 @@ models:
       }).compile();
 
       const overrideService = module.get<ModelsService>(ModelsService);
-      process.env['MODELS_FILE_PATH'] = testModelsFile;
-      overrideService.onModuleInit();
+      await overrideService.onModuleInit();
 
       const model = overrideService.findByName('test-fast-model');
       expect(model).toBeDefined();
       expect(model?.priority).toBe(10);
       expect(model?.available).toBe(false);
+    });
+  });
+
+  describe('URL loading', () => {
+    let originalFetch: typeof global.fetch;
+
+    beforeEach(() => {
+      originalFetch = global.fetch;
+    });
+
+    afterEach(() => {
+      global.fetch = originalFetch;
+    });
+
+    it('should load models from HTTP URL', async () => {
+      const mockResponse = {
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        text: () => Promise.resolve(testModelsYaml),
+      } as Response;
+
+      global.fetch = jest.fn(() => Promise.resolve(mockResponse)) as typeof global.fetch;
+
+      const module: TestingModule = await Test.createTestingModule({
+        providers: [
+          ModelsService,
+          {
+            provide: ROUTER_CONFIG,
+            useValue: {
+              modelsFile: 'https://example.com/models.yaml',
+              modelOverrides: [],
+            },
+          },
+        ],
+      }).compile();
+
+      const urlService = module.get<ModelsService>(ModelsService);
+      await urlService.onModuleInit();
+
+      expect(global.fetch).toHaveBeenCalledWith('https://example.com/models.yaml');
+      expect(urlService.getAll()).toHaveLength(3);
+    });
+
+    it('should throw error on fetch failure', async () => {
+      global.fetch = jest.fn(() => Promise.reject(new Error('Network error'))) as typeof global.fetch;
+
+      const module: TestingModule = await Test.createTestingModule({
+        providers: [
+          ModelsService,
+          {
+            provide: ROUTER_CONFIG,
+            useValue: {
+              modelsFile: 'https://example.com/models.yaml',
+              modelOverrides: [],
+            },
+          },
+        ],
+      }).compile();
+
+      const urlService = module.get<ModelsService>(ModelsService);
+
+      await expect(urlService.onModuleInit()).rejects.toThrow(
+        'Failed to fetch models file from https://example.com/models.yaml: Network error',
+      );
+    });
+
+    it('should throw error on non-OK response', async () => {
+      const mockResponse = {
+        ok: false,
+        status: 404,
+        statusText: 'Not Found',
+      } as Response;
+
+      global.fetch = jest.fn(() => Promise.resolve(mockResponse)) as typeof global.fetch;
+
+      const module: TestingModule = await Test.createTestingModule({
+        providers: [
+          ModelsService,
+          {
+            provide: ROUTER_CONFIG,
+            useValue: {
+              modelsFile: 'https://example.com/models.yaml',
+              modelOverrides: [],
+            },
+          },
+        ],
+      }).compile();
+
+      const urlService = module.get<ModelsService>(ModelsService);
+
+      await expect(urlService.onModuleInit()).rejects.toThrow(
+        'Failed to fetch models file from https://example.com/models.yaml: HTTP 404 Not Found',
+      );
     });
   });
 });

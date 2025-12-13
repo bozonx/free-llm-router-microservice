@@ -166,7 +166,10 @@ import type { RateLimitingConfig } from '../modules/rate-limiter/interfaces/rate
  */
 export interface RouterConfig {
   /**
-   * Path to models file
+   * Path to models file or URL (http/https)
+   * Examples:
+   *   - ./models.yaml (local file)
+   *   - https://example.com/models.yaml (remote file)
    */
   modelsFile: string;
 

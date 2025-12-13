@@ -1,4 +1,8 @@
-# Path to models file (optional, defaults to ./models.yaml)
+# Path to models file - can be a local path or HTTP/HTTPS URL
+# Examples:
+#   modelsFile: ./models.yaml
+#   modelsFile: https://example.com/models.yaml
+# When using URL, the file is fetched at startup (not saved to disk)
 modelsFile: ./models.yaml
 
 # Provider settings

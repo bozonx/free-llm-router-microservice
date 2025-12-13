@@ -48,19 +48,61 @@ export class ModelsService implements OnModuleInit {
     @Inject(ROUTER_CONFIG) private readonly config: RouterConfig,
   ) { }
 
-  // Constructor added to inject a config object, making `this.config` valid.
-  // This is necessary for the provided change to be syntactically correct.
   /**
-   * Load models from YAML file on module initialization
+   * Load models from YAML file or URL on module initialization
    */
-  public onModuleInit(): void {
-    const modelsFilePath = process.env['MODELS_FILE_PATH'] ?? './models.yaml';
-    this.loadModelsFromFile(modelsFilePath);
-    this.logger.log(`Loaded ${this.models.length} models from ${modelsFilePath}`);
+  public async onModuleInit(): Promise<void> {
+    const modelsSource = this.config.modelsFile;
+
+    if (this.isUrl(modelsSource)) {
+      await this.loadModelsFromUrl(modelsSource);
+      this.logger.log(`Loaded ${this.models.length} models from URL: ${modelsSource}`);
+    } else {
+      this.loadModelsFromFile(modelsSource);
+      this.logger.log(`Loaded ${this.models.length} models from file: ${modelsSource}`);
+    }
   }
 
   /**
-   * Load models from YAML file
+   * Check if the source is a URL (http/https)
+   */
+  private isUrl(source: string): boolean {
+    return source.startsWith('http://') || source.startsWith('https://');
+  }
+
+  /**
+   * Load models from remote URL
+   */
+  private async loadModelsFromUrl(url: string): Promise<void> {
+    let response: Response;
+    try {
+      response = await fetch(url);
+    } catch (error) {
+      throw new Error(
+        `Failed to fetch models file from ${url}: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch models file from ${url}: HTTP ${response.status} ${response.statusText}`,
+      );
+    }
+
+    let content: string;
+    try {
+      content = await response.text();
+    } catch (error) {
+      throw new Error(
+        `Failed to read models file content from ${url}: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+
+    this.parseModelsContent(content, url);
+  }
+
+  /**
+   * Load models from local YAML file
    */
   private loadModelsFromFile(filePath: string): void {
     const absolutePath = resolve(filePath);
@@ -74,22 +116,29 @@ export class ModelsService implements OnModuleInit {
       );
     }
 
+    this.parseModelsContent(fileContent, absolutePath);
+  }
+
+  /**
+   * Parse YAML content and populate models
+   */
+  private parseModelsContent(content: string, source: string): void {
     let config: unknown;
     try {
-      config = parseYaml(fileContent);
+      config = parseYaml(content);
     } catch (error) {
       throw new Error(
-        `Failed to parse YAML models file at ${absolutePath}: ${error instanceof Error ? error.message : String(error)}`,
+        `Failed to parse YAML models file from ${source}: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
 
     if (typeof config !== 'object' || config === null || !('models' in config)) {
-      throw new Error('Models file must contain "models" array');
+      throw new Error(`Models file from ${source} must contain "models" array`);
     }
 
     const modelsConfig = config as ModelsConfig;
     if (!Array.isArray(modelsConfig.models)) {
-      throw new Error('Models "models" property must be an array');
+      throw new Error(`Models "models" property from ${source} must be an array`);
     }
 
     this.models = modelsConfig.models.map(model =>
