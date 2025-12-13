@@ -45,6 +45,8 @@ routing:
 # Model priority/weight overrides (optional)
 # Allows adjusting priorities without editing models.yaml
 # modelOverrides:
+#   # Note: Only 'priority' and 'weight' can be overridden here.
+#   # Other fields (tags, available, etc.) are NOT supported.
 #   llama-3.3-70b:
 #     priority: 2             # Lower priority (higher number)
 #     weight: 5               # Lower weight
