@@ -13,7 +13,7 @@
 - Добавлены зависимости: `js-yaml`, `@nestjs/axios`, `axios`
 - Созданы TypeScript интерфейсы для моделей и конфигурации
 - Реализован загрузчик YAML конфигурации с поддержкой переменных окружения
-- Добавлены конфигурационные файлы: `config/router.yaml`, `config/models.yaml`
+- Добавлены конфигурационные файлы: `config/config.yaml`, `config/models.yaml`
 - Обновлены переменные окружения: `ROUTER_CONFIG_PATH`, `OPENROUTER_API_KEY`, `DEEPSEEK_API_KEY`
 
 #### Фаза 2: Модуль моделей (Models)

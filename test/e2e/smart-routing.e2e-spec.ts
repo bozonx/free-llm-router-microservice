@@ -10,7 +10,7 @@ describe('Smart Routing (e2e)', () => {
 
   beforeAll(async () => {
     // Set config path to test config
-    process.env['ROUTER_CONFIG_PATH'] = 'test/setup/router.yaml';
+    process.env['ROUTER_CONFIG_PATH'] = 'test/setup/config.yaml';
     // Ensure API keys are set for config substitution
     process.env['OPENROUTER_API_KEY'] = 'test-key';
     process.env['DEEPSEEK_API_KEY'] = 'test-key';

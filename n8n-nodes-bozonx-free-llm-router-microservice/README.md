@@ -40,7 +40,7 @@ Quick start with Docker:
 ```bash
 git clone https://github.com/bozonx/free-llm-router-microservice.git
 cd free-llm-router-microservice
-cp router.yaml.example router.yaml
+cp config.yaml.example config.yaml
 cp .env.production.example .env.production
 # Edit .env.production to add your API keys
 docker compose -f docker/docker-compose.yml up -d

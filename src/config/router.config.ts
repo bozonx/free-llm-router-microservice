@@ -12,7 +12,7 @@ export function loadRouterConfig(): RouterConfig {
   // Load environment variables from .env files
   loadEnvironmentVariables();
 
-  const configPath = process.env['ROUTER_CONFIG_PATH'] ?? './router.yaml';
+  const configPath = process.env['ROUTER_CONFIG_PATH'] ?? './config.yaml';
   const absolutePath = resolve(configPath);
 
   const fileContent = readConfigFile(absolutePath);

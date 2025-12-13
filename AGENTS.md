@@ -16,4 +16,4 @@
 - Update `docs/CHANGELOG.md` for significant changes
 - jsdoc, messages and strings have to be in English
 - Environment variables: `.env.production.example` is the source of truth for expected variables
-- Souce of truth for models and router config is `models.yaml` and `router.yaml.example`
+- Souce of truth for models and router config is `models.yaml` and `config.yaml.example`

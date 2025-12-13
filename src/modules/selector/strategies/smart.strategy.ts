@@ -17,7 +17,7 @@ import {
  * Smart selection strategy.
  * Replaces round-robin and considers:
  * - Circuit Breaker state
- * - Priorities (from models.yaml + overrides from router.yaml)
+ * - Priorities (from models.yaml + overrides from config.yaml)
  * - Model weights
  * - Statistics (latency, success rate)
  * - Request filters (tags, type, min_context_size, prefer_fast, min_success_rate)
@@ -31,7 +31,7 @@ export class SmartStrategy implements SelectionStrategy {
     private readonly stateService: StateService,
     private readonly circuitBreaker: CircuitBreakerService,
     @Inject(ROUTER_CONFIG) private readonly config: RouterConfig,
-  ) {}
+  ) { }
 
   public select(models: ModelDefinition[], criteria: SelectionCriteria): ModelDefinition | null {
     if (models.length === 0) {

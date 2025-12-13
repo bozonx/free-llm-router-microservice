@@ -12,12 +12,12 @@ services:
       - API_BASE_PATH=api
       - LOG_LEVEL=warn
       # Configuration file path inside container
-      - ROUTER_CONFIG_PATH=/app/config/router.yaml
+      - ROUTER_CONFIG_PATH=/app/config/config.yaml
     volumes:
       # Mount configuration files (required)
-      - ./router.yaml:/app/config/router.yaml:ro
+      - ./config.yaml:/app/config/config.yaml:ro
       - ./models.yaml:/app/config/models.yaml:ro
-      # Mount .env file if using environment variable substitution in router.yaml
+      # Mount .env file if using environment variable substitution in config.yaml
       # - ./.env.production:/app/.env.production:ro
     healthcheck:
       test: [ 'CMD-SHELL', 'wget -qO- http://127.0.0.1:8080/api/v1/health || exit 1' ]

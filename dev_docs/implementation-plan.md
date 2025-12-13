@@ -102,7 +102,7 @@ export interface RouterConfig {
 **Зависимости**: `js-yaml`, `class-validator`, `class-transformer`
 
 **Логика**:
-1. Читать путь из `ROUTER_CONFIG_PATH` (default: `./router.yaml`)
+1. Читать путь из `ROUTER_CONFIG_PATH` (default: `./config.yaml`)
 2. Парсить YAML
 3. Подставлять переменные окружения (`${VAR_NAME}`)
 4. Валидировать структуру
@@ -115,7 +115,7 @@ export interface RouterConfig {
 **Цель**: Создать примеры YAML файлов.
 
 **Файлы для создания**:
-- `router.yaml.example`
+- `config.yaml.example`
 - `models.yaml`
 
 **Примечание**: `models.yaml` содержит реальный список бесплатных моделей OpenRouter.
@@ -132,7 +132,7 @@ export interface RouterConfig {
 
 **Добавить**:
 ```bash
-ROUTER_CONFIG_PATH=./router.yaml
+ROUTER_CONFIG_PATH=./config.yaml
 OPENROUTER_API_KEY=
 DEEPSEEK_API_KEY=
 ```
