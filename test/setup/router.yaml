@@ -29,8 +29,8 @@ routing:
   # Retry delay in milliseconds
   retryDelay: 1000
 
-  # Request timeout in milliseconds
-  timeout: 30000
+  # Request timeout in seconds
+  timeoutSecs: 30
 
   # Fallback configuration
   fallback:

@@ -110,8 +110,8 @@ function validateRouterConfig(config: unknown): asserts config is RouterConfig {
   if (typeof routing['retryDelay'] !== 'number' || routing['retryDelay'] < 0) {
     throw new Error('Router config: routing.retryDelay must be a non-negative number');
   }
-  if (typeof routing['timeout'] !== 'number' || routing['timeout'] < 0) {
-    throw new Error('Router config: routing.timeout must be a non-negative number');
+  if (typeof routing['timeoutSecs'] !== 'number' || routing['timeoutSecs'] < 0) {
+    throw new Error('Router config: routing.timeoutSecs must be a non-negative number');
   }
 
   // Validate fallback
@@ -143,10 +143,10 @@ function validateRouterConfig(config: unknown): asserts config is RouterConfig {
         throw new Error('Router config: circuitBreaker.failureThreshold must be a positive number');
       }
     }
-    if (cb['cooldownPeriod'] !== undefined) {
-      if (typeof cb['cooldownPeriod'] !== 'number' || cb['cooldownPeriod'] < 0) {
+    if (cb['cooldownPeriodSecs'] !== undefined) {
+      if (typeof cb['cooldownPeriodSecs'] !== 'number' || cb['cooldownPeriodSecs'] < 0) {
         throw new Error(
-          'Router config: circuitBreaker.cooldownPeriod must be a non-negative number',
+          'Router config: circuitBreaker.cooldownPeriodSecs must be a non-negative number',
         );
       }
     }
@@ -155,10 +155,10 @@ function validateRouterConfig(config: unknown): asserts config is RouterConfig {
         throw new Error('Router config: circuitBreaker.successThreshold must be a positive number');
       }
     }
-    if (cb['statsWindowSize'] !== undefined) {
-      if (typeof cb['statsWindowSize'] !== 'number' || cb['statsWindowSize'] < 0) {
+    if (cb['statsWindowSizeMins'] !== undefined) {
+      if (typeof cb['statsWindowSizeMins'] !== 'number' || cb['statsWindowSizeMins'] < 0) {
         throw new Error(
-          'Router config: circuitBreaker.statsWindowSize must be a non-negative number',
+          'Router config: circuitBreaker.statsWindowSizeMins must be a non-negative number',
         );
       }
     }

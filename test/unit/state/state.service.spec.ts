@@ -42,18 +42,18 @@ describe('StateService', () => {
       openrouter: { enabled: true, apiKey: 'test', baseUrl: 'https://test.com' },
     },
     routing: {
-      algorithm: 'round-robin',
+
       maxRetries: 3,
       rateLimitRetries: 2,
       retryDelay: 1000,
-      timeout: 30000,
+      timeoutSecs: 30,
       fallback: { enabled: true, provider: 'deepseek', model: 'deepseek-chat' },
     },
     circuitBreaker: {
       failureThreshold: 3,
-      cooldownPeriod: 60000,
+      cooldownPeriodSecs: 60,
       successThreshold: 2,
-      statsWindowSize: 300000,
+      statsWindowSizeMins: 5,
     },
   };
 

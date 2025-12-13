@@ -35,7 +35,7 @@ export class ProvidersModule {
       const openRouterConfig: BaseProviderConfig = {
         apiKey: routerConfig.providers['openrouter'].apiKey,
         baseUrl: routerConfig.providers['openrouter'].baseUrl,
-        timeout: routerConfig.routing.timeout,
+        timeoutSecs: routerConfig.routing.timeoutSecs,
       };
 
       providers.push({
@@ -56,7 +56,7 @@ export class ProvidersModule {
       const deepSeekConfig: BaseProviderConfig = {
         apiKey: routerConfig.providers['deepseek'].apiKey,
         baseUrl: routerConfig.providers['deepseek'].baseUrl,
-        timeout: routerConfig.routing.timeout,
+        timeoutSecs: routerConfig.routing.timeoutSecs,
       };
 
       providers.push({

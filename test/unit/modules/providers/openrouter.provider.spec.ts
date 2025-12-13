@@ -13,7 +13,7 @@ describe('OpenRouterProvider', () => {
   const mockConfig: BaseProviderConfig = {
     apiKey: 'test-key',
     baseUrl: 'https://test.api',
-    timeout: 5000,
+    timeoutSecs: 5,
   };
 
   const mockHttpService = {

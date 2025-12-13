@@ -79,14 +79,14 @@ export interface CircuitBreakerConfig {
   /** Number of failures to open circuit (default: 3) */
   failureThreshold: number;
 
-  /** Cooldown period in milliseconds (default: 60000) */
-  cooldownPeriod: number;
+  /** Cooldown period in seconds (default: 60) */
+  cooldownPeriodSecs: number;
 
   /** Number of successes to close circuit from HALF_OPEN (default: 2) */
   successThreshold: number;
 
-  /** Statistics window size in milliseconds (default: 300000 = 5 min) */
-  statsWindowSize: number;
+  /** Statistics window size in minutes (default: 5) */
+  statsWindowSizeMins: number;
 }
 
 /**
@@ -94,7 +94,7 @@ export interface CircuitBreakerConfig {
  */
 export const DEFAULT_CIRCUIT_BREAKER_CONFIG: CircuitBreakerConfig = {
   failureThreshold: 3,
-  cooldownPeriod: 60000,
+  cooldownPeriodSecs: 60,
   successThreshold: 2,
-  statsWindowSize: 300000,
+  statsWindowSizeMins: 5,
 };

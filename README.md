@@ -94,7 +94,7 @@ routing:
   maxRetries: 3              # Максимум попыток на бесплатных моделях
   rateLimitRetries: 2        # Максимум повторов при 429 для одной модели
   retryDelay: 1000           # Задержка между попытками (мс)
-  timeout: 30000             # Таймаут запроса к провайдеру (мс)
+  timeoutSecs: 30            # Таймаут запроса к провайдеру (в секундах)
   
   # Fallback на платную модель
   fallback:
@@ -105,9 +105,9 @@ routing:
 # Circuit Breaker (опционально, есть дефолты)
 # circuitBreaker:
 #   failureThreshold: 3       # Ошибок для открытия circuit (default: 3)
-#   cooldownPeriod: 60000     # Время в OPEN состоянии, мс (default: 60000)
+#   cooldownPeriodSecs: 60    # Время в OPEN состоянии, сек (default: 60)
 #   successThreshold: 2       # Успехов для закрытия из HALF_OPEN (default: 2)
-#   statsWindowSize: 300000   # Окно статистики, мс (default: 300000 = 5 мин)
+#   statsWindowSizeMins: 5    # Окно статистики, мин (default: 5)
 
 # Rate Limiting (опционально, выключен по умолчанию)
 # rateLimiting:

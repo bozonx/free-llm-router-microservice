@@ -16,8 +16,6 @@ providers:
 
 # Routing settings
 routing:
-
-  
   # Maximum retries on free models
   maxRetries: 3
   
@@ -29,7 +27,7 @@ routing:
   # Note: Jitter ±20% is hardcoded in RETRY_JITTER_PERCENT constant
   
   # Provider request timeout (ms)
-  timeout: 30000
+  timeoutSecs: 30 # - в секундах
   
   # Fallback to paid model
   fallback:
@@ -40,9 +38,9 @@ routing:
 # Circuit Breaker settings (optional, has defaults)
 # circuitBreaker:
 #   failureThreshold: 3       # Failures to open circuit (default: 3)
-#   cooldownPeriod: 60000     # Cooldown in ms (default: 60000 = 1 min)
+#   cooldownPeriodSecs: 60    # Cooldown in seconds (default: 60 = 1 min)
 #   successThreshold: 2       # Successes to close from HALF_OPEN (default: 2)
-#   statsWindowSize: 300000   # Statistics window in ms (default: 300000 = 5 min)
+#   statsWindowSizeMins: 5    # Statistics window in minutes (default: 5 mins)
 
 # Model priority/weight overrides (optional)
 # Allows adjusting priorities without editing models.yaml

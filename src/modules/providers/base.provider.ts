@@ -22,9 +22,9 @@ export interface BaseProviderConfig {
   baseUrl: string;
 
   /**
-   * Request timeout in milliseconds
+   * Request timeout in seconds
    */
-  timeout: number;
+  timeoutSecs: number;
 }
 
 /**

@@ -60,9 +60,9 @@ export interface RoutingConfig {
   retryDelay: number;
 
   /**
-   * Request timeout in milliseconds
+   * Request timeout in seconds
    */
-  timeout: number;
+  timeoutSecs: number;
 
   /**
    * Fallback configuration
@@ -80,9 +80,9 @@ export interface CircuitBreakerConfig {
   failureThreshold?: number;
 
   /**
-   * Cooldown period in milliseconds before trying HALF_OPEN (default: 60000)
+   * Cooldown period in seconds before trying HALF_OPEN (default: 60)
    */
-  cooldownPeriod?: number;
+  cooldownPeriodSecs?: number;
 
   /**
    * Number of consecutive successes to close circuit from HALF_OPEN (default: 2)
@@ -90,9 +90,9 @@ export interface CircuitBreakerConfig {
   successThreshold?: number;
 
   /**
-   * Statistics sliding window size in milliseconds (default: 300000 = 5 min)
+   * Statistics sliding window size in minutes (default: 5)
    */
-  statsWindowSize?: number;
+  statsWindowSizeMins?: number;
 }
 
 /**

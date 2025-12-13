@@ -240,7 +240,7 @@ export class StateService implements OnModuleInit {
    */
   private recalculateStats(state: ModelState): void {
     const now = Date.now();
-    const windowStart = now - this.config.statsWindowSize;
+    const windowStart = now - this.config.statsWindowSizeMins * 60 * 1000;
 
     // Filter records within window
     state.stats.requests = state.stats.requests.filter(r => r.timestamp >= windowStart);
@@ -282,7 +282,7 @@ export class StateService implements OnModuleInit {
    */
   private cleanupStaleData(): void {
     const now = Date.now();
-    const windowStart = now - this.config.statsWindowSize;
+    const windowStart = now - this.config.statsWindowSizeMins * 60 * 1000;
     let totalCleaned = 0;
 
     for (const state of this.states.values()) {

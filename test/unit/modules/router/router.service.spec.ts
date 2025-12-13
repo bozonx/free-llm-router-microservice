@@ -38,7 +38,7 @@ describe('RouterService', () => {
       maxRetries: 3,
       rateLimitRetries: 2,
       retryDelay: 100,
-      timeout: 30000,
+      timeoutSecs: 30,
       fallback: {
         enabled: true,
         provider: 'deepseek',
