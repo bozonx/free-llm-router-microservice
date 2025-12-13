@@ -69,8 +69,7 @@ export class ChatCompletionRequestDto {
 
   // Router-specific fields
   @IsOptional()
-  @IsString()
-  public model?: string;
+  public model?: string | string[];
 
   @IsOptional()
   @IsArray()

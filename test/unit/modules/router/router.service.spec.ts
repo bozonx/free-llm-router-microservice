@@ -36,7 +36,6 @@ describe('RouterService', () => {
       },
     },
     routing: {
-
       maxRetries: 3,
       rateLimitRetries: 2,
       retryDelay: 100,
@@ -323,8 +322,9 @@ describe('RouterService', () => {
       await service.chatCompletion(mockRequest);
 
       // Assert
+      // Now excludes with provider/model format for specific provider instance exclusion
       expect(selectorService.selectNextModel).toHaveBeenNthCalledWith(2, expect.anything(), [
-        'model-1',
+        'openrouter/model-1',
       ]);
     });
 

@@ -15,6 +15,7 @@ import type {
 } from '../providers/interfaces/provider.interface.js';
 import type { RouterConfig } from '../../config/router-config.interface.js';
 import type { ModelDefinition } from '../models/interfaces/model.interface.js';
+import { parseModelInput } from '../selector/utils/model-parser.js';
 
 /**
  * Error information for retry tracking
@@ -60,6 +61,8 @@ export class RouterService {
     }
   }
 
+
+
   /**
    * Execute chat completion with shutdown abort signal support
    */
@@ -76,6 +79,9 @@ export class RouterService {
     const excludedModels: string[] = [];
     let attemptCount = 0;
 
+    // Parse model input to handle priorities and multiple models
+    const parsedModel = parseModelInput(request.model);
+
     // Try free models with retries
     for (let i = 0; i < this.config.routing.maxRetries; i++) {
       attemptCount++;
@@ -83,7 +89,10 @@ export class RouterService {
       // Select a model
       const model = this.selectorService.selectNextModel(
         {
-          model: request.model,
+          models: parsedModel.models,
+          allowAutoFallback: parsedModel.allowAutoFallback,
+          // Legacy support (though handled by parsing, keeping original value doesn't hurt if single string)
+          model: typeof request.model === 'string' ? request.model : undefined,
           tags: request.tags,
           type: request.type,
           minContextSize: request.min_context_size,
@@ -124,14 +133,14 @@ export class RouterService {
           throw error;
         }
 
-        // Add model to exclusion list
-        excludedModels.push(model.name);
+        // Add model to exclusion list (exclude specific provider instance)
+        excludedModels.push(`${model.provider}/${model.name}`);
 
         const errorInfo = this.extractErrorInfo(error, model);
         errors.push(errorInfo);
 
         this.logger.warn(
-          `Model ${model.name} failed: ${errorInfo.error} (code: ${errorInfo.code ?? 'N/A'})`,
+          `Model ${model.name} (${model.provider}) failed: ${errorInfo.error} (code: ${errorInfo.code ?? 'N/A'})`,
         );
 
         // Don't retry on client errors (4xx except 429)

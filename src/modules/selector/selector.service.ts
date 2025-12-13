@@ -17,7 +17,7 @@ export class SelectorService {
     private readonly modelsService: ModelsService,
     private readonly smartStrategy: SmartStrategy,
     private readonly circuitBreaker: CircuitBreakerService,
-  ) {}
+  ) { }
 
   /**
    * Select a model based on criteria
@@ -25,8 +25,55 @@ export class SelectorService {
   public selectModel(criteria: SelectionCriteria): ModelDefinition | null {
     this.logger.debug(`Selecting model with criteria: ${JSON.stringify(criteria)}`);
 
-    // If specific model is requested, try to find it
-    if (criteria.model) {
+    // 1. Handle Priority List (new way)
+    if (criteria.models && criteria.models.length > 0) {
+      for (const modelRef of criteria.models) {
+        // Find matching models (optionally filtered by provider)
+        const candidates = this.modelsService.findByNameAndProvider(
+          modelRef.name,
+          modelRef.provider,
+        );
+
+        // Try to find a valid candidate among matches
+        for (const candidate of candidates) {
+          // Check if excluded
+          if (this.isExcluded(candidate, criteria.excludeModels)) {
+            continue;
+          }
+
+          // Check availability
+          if (!candidate.available) {
+            continue;
+          }
+
+          // Check Circuit Breaker
+          if (!this.circuitBreaker.canRequest(candidate.name)) {
+            this.logger.debug(
+              `Model "${candidate.name}" (${candidate.provider}) is unavailable (Circuit Breaker)`,
+            );
+            continue;
+          }
+
+          this.logger.debug(
+            `Selected specific model from priority list: ${candidate.name} (${candidate.provider})`,
+          );
+          return candidate;
+        }
+      }
+
+      // If we are here, no specific models worked.
+      // Check if we should fall back to auto/smart strategy
+      if (!criteria.allowAutoFallback) {
+        this.logger.warn(
+          'All requested models in priority list are unavailable, and auto fallback is disabled',
+        );
+        return null;
+      }
+
+      this.logger.debug('Priority list exhausted, falling back to Smart Strategy');
+    }
+    // 2. Handle specific single model (legacy way)
+    else if (criteria.model) {
       const model = this.modelsService.findByName(criteria.model);
       if (model?.available) {
         // Check Circuit Breaker
@@ -34,6 +81,13 @@ export class SelectorService {
           this.logger.warn(`Requested model "${model.name}" is unavailable (Circuit Breaker)`);
           return null;
         }
+
+        // Check exclusion
+        if (this.isExcluded(model, criteria.excludeModels)) {
+          this.logger.warn(`Requested model "${criteria.model}" is in exclude list`);
+          return null;
+        }
+
         this.logger.debug(`Found specific model: ${model.name}`);
         return model;
       }
@@ -41,6 +95,7 @@ export class SelectorService {
       return null;
     }
 
+    // 3. Fallback: Filter and Smart Strategy
     // Filter models by criteria
     const filteredModels = this.modelsService.filter({
       tags: criteria.tags,
@@ -55,6 +110,7 @@ export class SelectorService {
     }
 
     // Use smart strategy to pick a model
+    // Note: SmartStrategy should also respect excludeModels passed in criteria
     const selectedModel = this.smartStrategy.select(filteredModels, criteria);
 
     if (selectedModel) {
@@ -64,6 +120,29 @@ export class SelectorService {
     }
 
     return selectedModel;
+  }
+
+  /**
+   * Check if a model is in the exclusion list.
+   * Checks against "name" and "provider/name".
+   */
+  private isExcluded(model: ModelDefinition, excludeModels?: string[]): boolean {
+    if (!excludeModels || excludeModels.length === 0) {
+      return false;
+    }
+
+    // Check exact name match
+    if (excludeModels.includes(model.name)) {
+      return true;
+    }
+
+    // Check provider/name match (e.g. "openrouter/deepseek-r1")
+    const providerRef = `${model.provider}/${model.name}`;
+    if (excludeModels.includes(providerRef)) {
+      return true;
+    }
+
+    return false;
   }
 
   /**

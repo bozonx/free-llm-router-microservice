@@ -1,4 +1,5 @@
 import type { ModelDefinition } from '../../models/interfaces/model.interface.js';
+import type { ModelReference } from '../utils/model-parser.js';
 
 /**
  * Selection criteria for model choosing
@@ -6,8 +7,22 @@ import type { ModelDefinition } from '../../models/interfaces/model.interface.js
 export interface SelectionCriteria {
   /**
    * Specific model name (if provided, use this model)
+   * @deprecated Use `models` array instead for multi-model support
    */
   model?: string;
+
+  /**
+   * Priority list of models to try (in order).
+   * Each entry can specify an optional provider.
+   * If empty, Smart Strategy is used.
+   */
+  models?: ModelReference[];
+
+  /**
+   * If true, fall back to Smart Strategy after exhausting `models`.
+   * If false, go directly to paid fallback after `models` are exhausted.
+   */
+  allowAutoFallback?: boolean;
 
   /**
    * Tags filter (all must match)

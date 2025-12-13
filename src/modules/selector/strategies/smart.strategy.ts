@@ -4,10 +4,7 @@ import { CircuitBreakerService } from '../../state/circuit-breaker.service.js';
 import { ROUTER_CONFIG } from '../../../config/router-config.provider.js';
 import type { RouterConfig } from '../../../config/router-config.interface.js';
 import type { ModelDefinition } from '../../models/interfaces/model.interface.js';
-import type {
-  SelectionStrategy,
-  SelectionCriteria,
-} from '../interfaces/selector.interface.js';
+import type { SelectionStrategy, SelectionCriteria } from '../interfaces/selector.interface.js';
 
 /**
  * Smart selection strategy.
@@ -27,7 +24,7 @@ export class SmartStrategy implements SelectionStrategy {
     private readonly stateService: StateService,
     private readonly circuitBreaker: CircuitBreakerService,
     @Inject(ROUTER_CONFIG) private readonly config: RouterConfig,
-  ) { }
+  ) {}
 
   /**
    * Select best model based on criteria and current state
@@ -79,7 +76,17 @@ export class SmartStrategy implements SelectionStrategy {
     if (!excludeModels || excludeModels.length === 0) {
       return models;
     }
-    return models.filter(m => !excludeModels.includes(m.name));
+    return models.filter(m => {
+      // Check absolute exclusion by name
+      if (excludeModels.includes(m.name)) {
+        return false;
+      }
+      // Check specific provider/model instance exclusion
+      if (excludeModels.includes(`${m.provider}/${m.name}`)) {
+        return false;
+      }
+      return true;
+    });
   }
 
   /**
@@ -115,8 +122,6 @@ export class SmartStrategy implements SelectionStrategy {
       return currentLatency < fastestLatency ? current : fastest;
     });
   }
-
-
 
   /**
    * Group models by priority (sorted descending - higher priority first)

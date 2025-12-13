@@ -234,6 +234,36 @@ export class ModelsService implements OnModuleInit {
   }
 
   /**
+   * Find models by name, optionally filtered by provider.
+   * If provider is specified, returns only the model from that provider.
+   * If provider is not specified, returns all models with that name from all providers.
+   *
+   * @param name - Model name (unified name, not provider-specific ID)
+   * @param provider - Optional provider filter
+   * @returns Array of matching models (may be empty)
+   */
+  public findByNameAndProvider(
+    name: string,
+    provider?: string,
+  ): ModelDefinition[] {
+    return this.models.filter(model => {
+      if (model.name !== name) {
+        return false;
+      }
+
+      if (!model.available) {
+        return false;
+      }
+
+      if (provider && model.provider !== provider) {
+        return false;
+      }
+
+      return true;
+    });
+  }
+
+  /**
    * Filter models by criteria
    */
   public filter(criteria: FilterCriteria): ModelDefinition[] {
