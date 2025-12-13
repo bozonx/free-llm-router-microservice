@@ -36,3 +36,20 @@ routing:
     enabled: true
     provider: deepseek        # or openrouter
     model: deepseek-chat      # model for fallback
+
+# Circuit Breaker settings (optional, has defaults)
+# circuitBreaker:
+#   failureThreshold: 3       # Failures to open circuit (default: 3)
+#   cooldownPeriod: 60000     # Cooldown in ms (default: 60000 = 1 min)
+#   successThreshold: 2       # Successes to close from HALF_OPEN (default: 2)
+#   statsWindowSize: 300000   # Statistics window in ms (default: 300000 = 5 min)
+
+# Model priority/weight overrides (optional)
+# Allows adjusting priorities without editing models.yaml
+# modelOverrides:
+#   llama-3.3-70b:
+#     priority: 2             # Lower priority (higher number)
+#     weight: 5               # Lower weight
+#   deepseek-r1:
+#     priority: 1             # Higher priority
+#     weight: 15              # Higher weight

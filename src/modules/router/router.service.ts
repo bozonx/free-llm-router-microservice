@@ -1,5 +1,7 @@
 import { Injectable, Logger, Inject } from '@nestjs/common';
 import { SelectorService } from '../selector/selector.service.js';
+import { StateService } from '../state/state.service.js';
+import { CircuitBreakerService } from '../state/circuit-breaker.service.js';
 import { RETRY_JITTER_PERCENT } from '../../config/router.config.js';
 import { ROUTER_CONFIG } from '../../config/router-config.provider.js';
 import type { ProvidersMap } from '../providers/providers.module.js';
@@ -32,9 +34,11 @@ export class RouterService {
 
   constructor(
     private readonly selectorService: SelectorService,
+    private readonly stateService: StateService,
+    private readonly circuitBreaker: CircuitBreakerService,
     @Inject(PROVIDERS_MAP) private readonly providersMap: ProvidersMap,
     @Inject(ROUTER_CONFIG) private readonly config: RouterConfig,
-  ) { }
+  ) {}
 
   /**
    * Handle chat completion request with retry and fallback logic
@@ -142,7 +146,8 @@ export class RouterService {
   }
 
   /**
-   * Execute request with rate limit retry logic
+   * Execute request with rate limit retry logic.
+   * Tracks latency and reports success/failure to Circuit Breaker.
    */
   private async executeWithRateLimitRetry(params: {
     model: ModelDefinition;
@@ -151,53 +156,72 @@ export class RouterService {
   }) {
     const { model, request } = params;
 
-    for (
-      let rateLimitAttempt = 0;
-      rateLimitAttempt <= this.config.routing.rateLimitRetries;
-      rateLimitAttempt++
-    ) {
-      try {
-        const provider = this.providersMap.get(model.provider);
-        if (!provider) {
-          throw new Error(`Provider ${model.provider} not found`);
+    // Track active requests
+    this.stateService.incrementActiveRequests(model.name);
+
+    try {
+      for (
+        let rateLimitAttempt = 0;
+        rateLimitAttempt <= this.config.routing.rateLimitRetries;
+        rateLimitAttempt++
+      ) {
+        const startTime = Date.now();
+
+        try {
+          const provider = this.providersMap.get(model.provider);
+          if (!provider) {
+            throw new Error(`Provider ${model.provider} not found`);
+          }
+
+          const completionParams: ChatCompletionParams = {
+            model: model.model,
+            messages: request.messages.map(msg => ({
+              role: msg.role,
+              content: msg.content,
+            })),
+            temperature: request.temperature,
+            maxTokens: request.max_tokens,
+            topP: request.top_p,
+            frequencyPenalty: request.frequency_penalty,
+            presencePenalty: request.presence_penalty,
+            stop: request.stop,
+            jsonMode: request.json_response,
+          };
+
+          const result = await provider.chatCompletion(completionParams);
+
+          // Record success with latency
+          const latencyMs = Date.now() - startTime;
+          this.circuitBreaker.onSuccess(model.name, latencyMs);
+
+          return result;
+        } catch (error) {
+          const latencyMs = Date.now() - startTime;
+          const errorInfo = this.extractErrorInfo(error, model);
+
+          // Report failure to Circuit Breaker
+          this.circuitBreaker.onFailure(model.name, errorInfo.code, latencyMs);
+
+          // Retry on 429 (rate limit)
+          if (errorInfo.code === 429 && rateLimitAttempt < this.config.routing.rateLimitRetries) {
+            const delay = this.calculateRetryDelay(this.config.routing.retryDelay);
+            this.logger.debug(
+              `Rate limit hit for ${model.name}, retrying in ${delay}ms (attempt ${rateLimitAttempt + 1}/${this.config.routing.rateLimitRetries})`,
+            );
+            await this.sleep(delay);
+            continue;
+          }
+
+          // Rethrow for other errors or exhausted retries
+          throw error;
         }
-
-        const completionParams: ChatCompletionParams = {
-          model: model.model,
-          messages: request.messages.map(msg => ({
-            role: msg.role,
-            content: msg.content,
-          })),
-          temperature: request.temperature,
-          maxTokens: request.max_tokens,
-          topP: request.top_p,
-          frequencyPenalty: request.frequency_penalty,
-          presencePenalty: request.presence_penalty,
-          stop: request.stop,
-          jsonMode: request.json_response,
-        };
-
-        const result = await provider.chatCompletion(completionParams);
-        return result;
-      } catch (error) {
-        const errorInfo = this.extractErrorInfo(error, model);
-
-        // Retry on 429 (rate limit)
-        if (errorInfo.code === 429 && rateLimitAttempt < this.config.routing.rateLimitRetries) {
-          const delay = this.calculateRetryDelay(this.config.routing.retryDelay);
-          this.logger.debug(
-            `Rate limit hit for ${model.name}, retrying in ${delay}ms (attempt ${rateLimitAttempt + 1}/${this.config.routing.rateLimitRetries})`,
-          );
-          await this.sleep(delay);
-          continue;
-        }
-
-        // Rethrow for other errors or exhausted retries
-        throw error;
       }
-    }
 
-    throw new Error('Rate limit retries exhausted');
+      throw new Error('Rate limit retries exhausted');
+    } finally {
+      // Always decrement active requests
+      this.stateService.decrementActiveRequests(model.name);
+    }
   }
 
   /**

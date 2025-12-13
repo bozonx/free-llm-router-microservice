@@ -2,6 +2,8 @@ import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals
 import { Test, type TestingModule } from '@nestjs/testing';
 import { RouterService } from '../../../../src/modules/router/router.service.js';
 import { SelectorService } from '../../../../src/modules/selector/selector.service.js';
+import { StateService } from '../../../../src/modules/state/state.service.js';
+import { CircuitBreakerService } from '../../../../src/modules/state/circuit-breaker.service.js';
 import { PROVIDERS_MAP } from '../../../../src/modules/providers/providers.module.js';
 import { ROUTER_CONFIG } from '../../../../src/config/router-config.provider.js';
 import type { ChatCompletionRequestDto } from '../../../../src/modules/router/dto/chat-completion.request.dto.js';
@@ -12,6 +14,8 @@ import type { RouterConfig } from '../../../../src/config/router-config.interfac
 describe('RouterService', () => {
   let service: RouterService;
   let selectorService: jest.Mocked<SelectorService>;
+  let stateService: jest.Mocked<StateService>;
+  let circuitBreaker: jest.Mocked<CircuitBreakerService>;
   let providersMap: Map<string, LlmProvider>;
   let mockProvider: jest.Mocked<LlmProvider>;
 
@@ -89,12 +93,52 @@ describe('RouterService', () => {
       selectNextModel: jest.fn(),
     } as any;
 
+    // Create mock state service
+    stateService = {
+      incrementActiveRequests: jest.fn(),
+      decrementActiveRequests: jest.fn(),
+      recordSuccess: jest.fn(),
+      recordFailure: jest.fn(),
+      getState: jest.fn().mockReturnValue({
+        name: 'test-model',
+        circuitState: 'CLOSED',
+        consecutiveFailures: 0,
+        consecutiveSuccesses: 0,
+        activeRequests: 0,
+        stats: {
+          totalRequests: 0,
+          successCount: 0,
+          errorCount: 0,
+          avgLatency: 0,
+          p95Latency: 0,
+          successRate: 1,
+          requests: [],
+        },
+      }),
+    } as any;
+
+    // Create mock circuit breaker service
+    circuitBreaker = {
+      onSuccess: jest.fn(),
+      onFailure: jest.fn(),
+      canRequest: jest.fn().mockReturnValue(true),
+      filterAvailable: jest.fn().mockImplementation(models => models),
+    } as any;
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         RouterService,
         {
           provide: SelectorService,
           useValue: selectorService,
+        },
+        {
+          provide: StateService,
+          useValue: stateService,
+        },
+        {
+          provide: CircuitBreakerService,
+          useValue: circuitBreaker,
         },
         {
           provide: PROVIDERS_MAP,

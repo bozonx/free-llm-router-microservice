@@ -74,6 +74,46 @@ export interface RoutingConfig {
 }
 
 /**
+ * Circuit Breaker configuration (optional, has defaults)
+ */
+export interface CircuitBreakerConfig {
+  /**
+   * Number of consecutive failures to open circuit (default: 3)
+   */
+  failureThreshold?: number;
+
+  /**
+   * Cooldown period in milliseconds before trying HALF_OPEN (default: 60000)
+   */
+  cooldownPeriod?: number;
+
+  /**
+   * Number of consecutive successes to close circuit from HALF_OPEN (default: 2)
+   */
+  successThreshold?: number;
+
+  /**
+   * Statistics sliding window size in milliseconds (default: 300000 = 5 min)
+   */
+  statsWindowSize?: number;
+}
+
+/**
+ * Model override configuration (for priority/weight adjustments)
+ */
+export interface ModelOverrideConfig {
+  /**
+   * Override priority (lower = higher priority)
+   */
+  priority?: number;
+
+  /**
+   * Override weight (1-100)
+   */
+  weight?: number;
+}
+
+/**
  * Router configuration
  */
 export interface RouterConfig {
@@ -91,4 +131,14 @@ export interface RouterConfig {
    * Routing configuration
    */
   routing: RoutingConfig;
+
+  /**
+   * Circuit Breaker configuration (optional)
+   */
+  circuitBreaker?: CircuitBreakerConfig;
+
+  /**
+   * Model priority/weight overrides (optional)
+   */
+  modelOverrides?: Record<string, ModelOverrideConfig>;
 }

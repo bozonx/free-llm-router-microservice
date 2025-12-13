@@ -131,4 +131,60 @@ function validateRouterConfig(config: unknown): asserts config is RouterConfig {
   if (typeof fallback['model'] !== 'string') {
     throw new Error('Router config: routing.fallback.model must be a string');
   }
+
+  // Validate circuitBreaker (optional)
+  if (cfg['circuitBreaker'] !== undefined) {
+    if (typeof cfg['circuitBreaker'] !== 'object' || cfg['circuitBreaker'] === null) {
+      throw new Error('Router config: circuitBreaker must be an object');
+    }
+
+    const cb = cfg['circuitBreaker'] as Record<string, unknown>;
+
+    if (cb['failureThreshold'] !== undefined) {
+      if (typeof cb['failureThreshold'] !== 'number' || cb['failureThreshold'] < 1) {
+        throw new Error('Router config: circuitBreaker.failureThreshold must be a positive number');
+      }
+    }
+    if (cb['cooldownPeriod'] !== undefined) {
+      if (typeof cb['cooldownPeriod'] !== 'number' || cb['cooldownPeriod'] < 0) {
+        throw new Error(
+          'Router config: circuitBreaker.cooldownPeriod must be a non-negative number',
+        );
+      }
+    }
+    if (cb['successThreshold'] !== undefined) {
+      if (typeof cb['successThreshold'] !== 'number' || cb['successThreshold'] < 1) {
+        throw new Error('Router config: circuitBreaker.successThreshold must be a positive number');
+      }
+    }
+    if (cb['statsWindowSize'] !== undefined) {
+      if (typeof cb['statsWindowSize'] !== 'number' || cb['statsWindowSize'] < 0) {
+        throw new Error(
+          'Router config: circuitBreaker.statsWindowSize must be a non-negative number',
+        );
+      }
+    }
+  }
+
+  // Validate modelOverrides (optional)
+  if (cfg['modelOverrides'] !== undefined) {
+    if (typeof cfg['modelOverrides'] !== 'object' || cfg['modelOverrides'] === null) {
+      throw new Error('Router config: modelOverrides must be an object');
+    }
+
+    const overrides = cfg['modelOverrides'] as Record<string, unknown>;
+    for (const [modelName, override] of Object.entries(overrides)) {
+      if (typeof override !== 'object' || override === null) {
+        throw new Error(`Router config: modelOverrides.${modelName} must be an object`);
+      }
+
+      const mo = override as Record<string, unknown>;
+      if (mo['priority'] !== undefined && typeof mo['priority'] !== 'number') {
+        throw new Error(`Router config: modelOverrides.${modelName}.priority must be a number`);
+      }
+      if (mo['weight'] !== undefined && typeof mo['weight'] !== 'number') {
+        throw new Error(`Router config: modelOverrides.${modelName}.weight must be a number`);
+      }
+    }
+  }
 }
