@@ -1,8 +1,8 @@
 import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import { Test, type TestingModule } from '@nestjs/testing';
-import { RateLimiterService } from '../../../src/modules/rate-limiter/rate-limiter.service.js';
-import { ROUTER_CONFIG } from '../../../src/config/router-config.provider.js';
-import type { RouterConfig } from '../../../src/config/router-config.interface.js';
+import { RateLimiterService } from '../../../../src/modules/rate-limiter/rate-limiter.service.js';
+import { ROUTER_CONFIG } from '../../../../src/config/router-config.provider.js';
+import type { RouterConfig } from '../../../../src/config/router-config.interface.js';
 
 describe('RateLimiterService', () => {
   let service: RateLimiterService;
@@ -15,12 +15,11 @@ describe('RateLimiterService', () => {
       openrouter: { enabled: true, apiKey: 'test', baseUrl: 'https://test.com' },
     },
     routing: {
-      algorithm: 'round-robin',
       maxRetries: 3,
       rateLimitRetries: 2,
-      retryDelay: 1000,
-      timeout: 30000,
-      fallback: { enabled: true, provider: 'deepseek', model: 'deepseek-chat' },
+      retryDelay: 100,
+      timeoutSecs: 30,
+      fallback: { enabled: false, provider: 'deepseek', model: 'deepseek-chat' },
     },
     rateLimiting: {
       enabled: true,

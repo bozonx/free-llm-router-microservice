@@ -1,11 +1,11 @@
 import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import { Test, type TestingModule } from '@nestjs/testing';
-import { CircuitBreakerService } from '../../../src/modules/state/circuit-breaker.service.js';
-import { StateService } from '../../../src/modules/state/state.service.js';
-import { ModelsService } from '../../../src/modules/models/models.service.js';
-import { ROUTER_CONFIG } from '../../../src/config/router-config.provider.js';
-import type { RouterConfig } from '../../../src/config/router-config.interface.js';
-import type { ModelDefinition } from '../../../src/modules/models/interfaces/model.interface.js';
+import { CircuitBreakerService } from '../../../../src/modules/state/circuit-breaker.service.js';
+import { StateService } from '../../../../src/modules/state/state.service.js';
+import { ModelsService } from '../../../../src/modules/models/models.service.js';
+import { ROUTER_CONFIG } from '../../../../src/config/router-config.provider.js';
+import type { RouterConfig } from '../../../../src/config/router-config.interface.js';
+import type { ModelDefinition } from '../../../../src/modules/models/interfaces/model.interface.js';
 
 describe('CircuitBreakerService', () => {
   let service: CircuitBreakerService;
