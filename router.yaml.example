@@ -15,8 +15,8 @@ providers:
 
 # Routing settings
 routing:
-  # Selection algorithm: round-robin (MVP)
-  algorithm: round-robin
+  # Selection algorithm: smart
+  algorithm: smart
   
   # Maximum retries on free models
   maxRetries: 3

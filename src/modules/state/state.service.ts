@@ -56,6 +56,14 @@ export class StateService implements OnModuleInit {
    * Get state for a specific model.
    * Creates initial state if model doesn't exist.
    */
+  public hasState(modelName: string): boolean {
+    return this.states.has(modelName);
+  }
+
+  /**
+   * Get state for a specific model.
+   * Creates initial state if model doesn't exist.
+   */
   public getState(modelName: string): ModelState {
     let state = this.states.get(modelName);
 

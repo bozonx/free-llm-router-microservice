@@ -19,7 +19,7 @@ providers:
 # Routing configuration
 routing:
   # Selection algorithm
-  algorithm: round-robin
+  algorithm: smart
 
   # Maximum retries on free models
   maxRetries: 3

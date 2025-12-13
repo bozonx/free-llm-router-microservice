@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Param } from '@nestjs/common';
+import { Controller, Get, Post, Param, NotFoundException } from '@nestjs/common';
 import { StateService } from '../state/state.service.js';
 import { RateLimiterService } from '../rate-limiter/rate-limiter.service.js';
 import type { ModelState } from '../state/interfaces/state.interface.js';
@@ -9,7 +9,7 @@ export class AdminController {
   constructor(
     private readonly stateService: StateService,
     private readonly rateLimiterService: RateLimiterService,
-  ) {}
+  ) { }
 
   @Get('state')
   public getStates(): { models: ModelState[]; timestamp: string } {
@@ -21,16 +21,17 @@ export class AdminController {
 
   @Get('state/:modelName')
   public getState(@Param('modelName') modelName: string): ModelState {
-    const state = this.stateService.getState(modelName);
-    // If state is default (empty stats) and wasn't interacting, it might be auto-created
-    // but the requirement says "model doesn't exist" -> 404.
-    // However, StateService.getState creates it if missing.
-    // We can assume if it's returned, it exists.
-    return state;
+    if (!this.stateService.hasState(modelName)) {
+      throw new NotFoundException(`Model "${modelName}" not found`);
+    }
+    return this.stateService.getState(modelName);
   }
 
   @Post('state/:modelName/reset')
   public resetState(@Param('modelName') modelName: string): { message: string } {
+    if (!this.stateService.hasState(modelName)) {
+      throw new NotFoundException(`Model "${modelName}" not found`);
+    }
     this.stateService.resetState(modelName);
     return { message: `State for model ${modelName} reset` };
   }
