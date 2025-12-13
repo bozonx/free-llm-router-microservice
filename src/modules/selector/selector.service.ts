@@ -1,4 +1,3 @@
-
 import { Injectable, Logger } from '@nestjs/common';
 import { ModelsService } from '../models/models.service.js';
 import { SmartStrategy } from './strategies/smart.strategy.js';
@@ -18,7 +17,7 @@ export class SelectorService {
     private readonly modelsService: ModelsService,
     private readonly smartStrategy: SmartStrategy,
     private readonly circuitBreaker: CircuitBreakerService,
-  ) { }
+  ) {}
 
   /**
    * Select a model based on criteria

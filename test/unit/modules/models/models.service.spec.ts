@@ -15,7 +15,7 @@ models:
     type: fast
     contextSize: 8000
     maxOutputTokens: 2000
-    speed: fast
+    speedTier: fast
     tags: [general, code]
     jsonResponse: true
     available: true
@@ -26,7 +26,7 @@ models:
     type: reasoning
     contextSize: 64000
     maxOutputTokens: 8000
-    speed: slow
+    speedTier: slow
     tags: [reasoning, math]
     jsonResponse: true
     available: true
@@ -37,7 +37,7 @@ models:
     type: fast
     contextSize: 4000
     maxOutputTokens: 1000
-    speed: fast
+    speedTier: fast
     tags: [simple]
     jsonResponse: false
     available: false

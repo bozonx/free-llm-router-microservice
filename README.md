@@ -133,12 +133,12 @@ models:
     type: reasoning
     contextSize: 64000
     maxOutputTokens: 8000
-    speed: slow
+    speedTier: slow
     tags: [reasoning, code, math]
     jsonResponse: true
     available: true
     # Smart Strategy поля (опционально, есть дефолты)
-    priority: 2          # Приоритет (меньше = выше), default: 1
+    # priority: 1        # Приоритет (больше = выше, >= 0), default: 1
     weight: 5            # Вес для случайного выбора (1-100), default: 1
     maxConcurrent: 3     # Макс. параллельных запросов, default: unlimited
 ```

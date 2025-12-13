@@ -17,7 +17,7 @@ describe('SelectorService', () => {
     type: 'fast',
     contextSize: 8000,
     maxOutputTokens: 2000,
-    speed: 'fast',
+    speedTier: 'fast',
     tags: ['general'],
     jsonResponse: true,
     available: true,

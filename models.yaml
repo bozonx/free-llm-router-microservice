@@ -6,12 +6,12 @@ models:
     type: reasoning
     contextSize: 64000
     maxOutputTokens: 8000
-    speed: slow
+    speedTier: slow
     tags: [reasoning, code, math]
     jsonResponse: true
     available: true
     # Smart Strategy fields (optional, have defaults)
-    priority: 2          # Lower priority (default: 1)
+    # priority: 1        # Standard priority (default: 1, higher = higher priority)
     weight: 5            # Selection weight (default: 1)
     maxConcurrent: 3     # Max parallel requests (default: unlimited)
     
@@ -21,11 +21,11 @@ models:
     type: fast
     contextSize: 128000
     maxOutputTokens: 4096
-    speed: fast
+    speedTier: fast
     tags: [general, code]
     jsonResponse: true
     available: true
-    priority: 1          # Higher priority
+    priority: 2          # Higher priority (default: 1)
     weight: 10           # Higher weight = more likely to be selected
 
   - name: llama-3.1-8b
@@ -34,7 +34,7 @@ models:
     type: fast
     contextSize: 128000
     maxOutputTokens: 2048
-    speed: fast
+    speedTier: fast
     tags: [general, code, simple]
     jsonResponse: true
     available: true
@@ -45,7 +45,7 @@ models:
     type: fast
     contextSize: 8192
     maxOutputTokens: 2048
-    speed: fast
+    speedTier: fast
     tags: [general, simple]
     jsonResponse: true
     available: true
@@ -56,7 +56,7 @@ models:
     type: fast
     contextSize: 32000
     maxOutputTokens: 2048
-    speed: fast
+    speedTier: fast
     tags: [general, code, multilingual]
     jsonResponse: true
     available: true
@@ -67,7 +67,7 @@ models:
     type: fast
     contextSize: 128000
     maxOutputTokens: 2048
-    speed: fast
+    speedTier: fast
     tags: [general, code]
     jsonResponse: true
     available: true
@@ -79,7 +79,7 @@ models:
     type: fast
     contextSize: 64000
     maxOutputTokens: 8000
-    speed: fast
+    speedTier: fast
     tags: [general, code, paid]
     jsonResponse: true
     available: true

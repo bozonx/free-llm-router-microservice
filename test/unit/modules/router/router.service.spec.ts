@@ -54,7 +54,7 @@ describe('RouterService', () => {
     type: 'fast',
     contextSize: 4096,
     maxOutputTokens: 2048,
-    speed: 'fast',
+    speedTier: 'fast',
     tags: ['general'],
     jsonResponse: true,
     available: true,

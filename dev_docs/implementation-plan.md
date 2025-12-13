@@ -31,7 +31,7 @@ pnpm add -D @types/js-yaml
 **Содержимое**:
 ```typescript
 export type ModelType = 'fast' | 'reasoning';
-export type ModelSpeed = 'fast' | 'medium' | 'slow';
+export type ModelSpeedTier = 'fast' | 'medium' | 'slow';
 
 export interface ModelDefinition {
   name: string;
@@ -40,7 +40,7 @@ export interface ModelDefinition {
   type: ModelType;
   contextSize: number;
   maxOutputTokens: number;
-  speed: ModelSpeed;
+  speedTier: ModelSpeedTier;
   tags: string[];
   jsonResponse: boolean;
   available: boolean;

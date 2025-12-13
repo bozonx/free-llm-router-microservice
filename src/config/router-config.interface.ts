@@ -103,7 +103,7 @@ export interface CircuitBreakerConfig {
  */
 export interface ModelOverrideConfig {
   /**
-   * Override priority (lower = higher priority)
+   * Override priority (higher = higher priority, >= 0, default: 1)
    */
   priority?: number;
 

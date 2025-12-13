@@ -9,7 +9,7 @@ export class AdminController {
   constructor(
     private readonly stateService: StateService,
     private readonly rateLimiterService: RateLimiterService,
-  ) { }
+  ) {}
 
   @Get('state')
   public getStates(): { models: ModelState[]; timestamp: string } {

@@ -69,7 +69,7 @@ export class SmartStrategy implements SelectionStrategy {
     // 8. Group by priority
     const priorityGroups = this.groupByPriority(withPriorities);
 
-    // 9. Take the highest priority group (minimum priority value)
+    // 9. Take the highest priority group (maximum priority value)
     const topPriorityGroup = priorityGroups[0];
 
     // 10. Within group — weighted random selection
@@ -135,11 +135,11 @@ export class SmartStrategy implements SelectionStrategy {
   }
 
   /**
-   * Group models by priority (sorted ascending)
+   * Group models by priority (sorted descending - higher priority first)
    */
   private groupByPriority(models: ModelWithEffectivePriority[]): ModelWithEffectivePriority[][] {
-    // Sort by priority (lower = higher priority)
-    const sorted = [...models].sort((a, b) => a.effectivePriority - b.effectivePriority);
+    // Sort by priority (higher = higher priority)
+    const sorted = [...models].sort((a, b) => b.effectivePriority - a.effectivePriority);
 
     // Group
     const groups: ModelWithEffectivePriority[][] = [];

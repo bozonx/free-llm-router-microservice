@@ -20,11 +20,11 @@ describe('SmartStrategy', () => {
       type: 'fast',
       contextSize: 128000,
       maxOutputTokens: 4096,
-      speed: 'fast',
+      speedTier: 'fast',
       tags: ['general'],
       jsonResponse: true,
       available: true,
-      priority: 1,
+      priority: 2, // Higher priority (bigger number)
       weight: 10,
     },
     {
@@ -34,11 +34,11 @@ describe('SmartStrategy', () => {
       type: 'reasoning',
       contextSize: 64000,
       maxOutputTokens: 8192,
-      speed: 'medium',
+      speedTier: 'medium',
       tags: ['code'],
       jsonResponse: false,
       available: true,
-      priority: 2,
+      priority: 1, // Lower priority (smaller number)
       weight: 5,
     },
     {
@@ -48,11 +48,11 @@ describe('SmartStrategy', () => {
       type: 'fast',
       contextSize: 32000,
       maxOutputTokens: 4096,
-      speed: 'fast',
+      speedTier: 'fast',
       tags: ['general'],
       jsonResponse: true,
       available: true,
-      priority: 1,
+      priority: 2, // Same as model-high-priority
       weight: 1,
       maxConcurrent: 2,
     },
@@ -73,7 +73,7 @@ describe('SmartStrategy', () => {
     },
     modelOverrides: {
       'model-low-priority': {
-        priority: 1,
+        priority: 2, // Override to high priority
         weight: 20,
       },
     },
@@ -232,16 +232,15 @@ describe('SmartStrategy', () => {
     });
 
     it('should group models by priority and select from top group', () => {
-      // Remove model-low-priority override effect by using models without config
+      // Test grouping logic: higher priority value = higher priority
       const modelsWithDifferentPriorities: ModelDefinition[] = [
-        { ...mockModels[0], priority: 2 },
-        { ...mockModels[1], priority: 1 },
+        { ...mockModels[0], priority: 1 }, // Lower priority (smaller number)
+        { ...mockModels[1], priority: 2 }, // Higher priority (bigger number)
       ];
 
       const result = strategy.select(modelsWithDifferentPriorities, {});
 
-      // model-low-priority has priority 1 (after override), so should be selected
-      // But here we're testing the grouping logic directly
+      // model-low-priority has priority 2 (higher), so should be selected
       expect(result?.name).toBe('model-low-priority');
     });
   });

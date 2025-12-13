@@ -102,7 +102,7 @@ export class ModelsService implements OnModuleInit {
       type: model['type'] as 'fast' | 'reasoning',
       contextSize: Number(model['contextSize']),
       maxOutputTokens: Number(model['maxOutputTokens']),
-      speed: model['speed'] as 'fast' | 'medium' | 'slow',
+      speedTier: model['speedTier'] as 'fast' | 'medium' | 'slow',
       tags: Array.isArray(model['tags']) ? model['tags'].map(String) : [],
       jsonResponse: Boolean(model['jsonResponse']),
       available: Boolean(model['available']),
