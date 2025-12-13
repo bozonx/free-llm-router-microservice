@@ -7,7 +7,7 @@
 ## Цели MVP
 
 1. Единый API совместимый с OpenAI Chat Completions для доступа к бесплатным LLM
-2. Автоматический выбор модели (round-robin)
+2. Smart Strategy для выбора модели
 3. Fallback при ошибках с финальным переключением на платную модель
 4. Поддержка провайдеров: OpenRouter (бесплатные модели), DeepSeek и OpenRouter (платные модели для fallback)
 
@@ -43,11 +43,11 @@ src/
 │   │   ├── base-provider.ts
 │   │   ├── openrouter.provider.ts
 │   │   └── deepseek.provider.ts
-│   └── selector/               # Алгоритмы выбора модели
+│   └── selector/               # Алгоритмы выбора
 │       ├── selector.module.ts
 │       ├── selector.service.ts
 │       └── strategies/
-│           └── round-robin.strategy.ts
+│           └── smart.strategy.ts
 └── common/
     ├── filters/                # Существующий
     └── interfaces/
@@ -138,7 +138,7 @@ interface ModelsResponse {
     name: string;
     provider: string;
     type: 'fast' | 'reasoning';
-    context_size: number;
+    contextSize: number;
     tags: string[];
     available: boolean;
   }>;
@@ -160,44 +160,43 @@ API_BASE_PATH=api
 LOG_LEVEL=warn
 
 # Новые
-CONFIG_PATH=./router.yaml  # Путь к конфигу роутера
+ROUTER_CONFIG_PATH=./router.yaml  # Путь к конфигу роутера
 ```
 
 ### Конфиг роутера (`router.yaml`)
 
 ```yaml
 # Путь к файлу со списком моделей (опционально, по умолчанию берется из корня репозитория models_file.yaml)
-models_file: ./models.yaml
+modelsFile: ./models.yaml
 
 # Настройки провайдеров
 providers:
   openrouter:
     enabled: true
-    api_key: ${OPENROUTER_API_KEY}
-    base_url: https://openrouter.ai/api/v1
+    apiKey: ${OPENROUTER_API_KEY}
+    baseUrl: https://openrouter.ai/api/v1
     
   deepseek:
     enabled: true
-    api_key: ${DEEPSEEK_API_KEY}
-    base_url: https://api.deepseek.com
+    apiKey: ${DEEPSEEK_API_KEY}
+    baseUrl: https://api.deepseek.com
 
 # Настройки роутинга
 routing:
-  # Алгоритм выбора: round-robin (MVP)
-  algorithm: round-robin
+  # Smart Strategy для выбора модели (алгоритм реализован в коде, без отдельного поля в конфиге)
   
   # Максимум попыток на бесплатных моделях
-  max_retries: 3
+  maxRetries: 3
   
   # Максимум повторов при 429 ошибке для одной модели
-  rate_limit_retries: 2
+  rateLimitRetries: 2
   
   # Задержка между попытками (мс)
-  retry_delay: 1000
+  retryDelay: 1000
   # Jitter ±20% захардкожен в константе RETRY_JITTER_PERCENT
   
   # Таймаут запроса к провайдеру (мс)
-  timeout: 30000
+  timeoutSecs: 30
   
   # Fallback на платную модель
   fallback:
@@ -214,22 +213,22 @@ models:
     provider: openrouter
     model: deepseek/deepseek-r1:free
     type: reasoning
-    context_size: 64000
-    max_output_tokens: 8000
+    contextSize: 64000
+    maxOutputTokens: 8000
     speedTier: slow
     tags: [reasoning, code, math]
-    json_response: true
+    jsonResponse: true
     available: true
     
   - name: llama-3.3-70b
     provider: openrouter
     model: meta-llama/llama-3.3-70b-instruct:free
     type: fast
-    context_size: 128000
-    max_output_tokens: 4096
+    contextSize: 128000
+    maxOutputTokens: 4096
     speedTier: fast
     tags: [general, code]
-    json_response: true
+    jsonResponse: true
     available: true
     
   # ... другие модели
@@ -245,11 +244,11 @@ models:
 | `provider` | string | Имя провайдера (openrouter, deepseek) |
 | `model` | string | Реальный ID модели у провайдера |
 | `type` | enum | fast / reasoning |
-| `context_size` | number | Размер контекста в токенах |
-| `max_output_tokens` | number | Максимум токенов в ответе |
+| `contextSize` | number | Размер контекста в токенах |
+| `maxOutputTokens` | number | Максимум токенов в ответе |
 | `speedTier` | enum | fast / medium / slow |
 | `tags` | string[] | Теги для фильтрации |
-| `json_response` | boolean | Поддержка JSON mode |
+| `jsonResponse` | boolean | Поддержка JSON mode |
 | `available` | boolean | Доступна ли модель |
 
 ---
@@ -261,13 +260,13 @@ models:
 1. Получаем запрос с фильтрами (tags, type, min_context_size, model)
 2. Если указан конкретный `model` — используем его, она может быть у нескольких провайдеров, выбор провайдера по указанному алгоритму в auto
 3. Иначе фильтруем доступные модели по критериям
-4. Применяем алгоритм выбора (round-robin)
+4. Применяем Smart Strategy для выбора модели
 
 ### Fallback
 
 1. Делаем запрос к выбранной модели
 2. При ошибке (5xx, timeout, rate limit) — выбираем следующую модель
-3. Повторяем до `max_retries`
+3. Повторяем до `maxRetries`
 4. Если все попытки исчерпаны и `fallback.enabled` — делаем запрос к платной модели
 5. Возвращаем результат с информацией о попытках в `_router`
 
@@ -275,7 +274,7 @@ models:
 
 | Код ошибки | Действие |
 |------------|----------|
-| 429 (Rate Limit) | Повторить `rate_limit_retries` раз с задержкой, затем переход к следующей модели |
+| 429 (Rate Limit) | Повторить `rateLimitRetries` раз с задержкой, затем переход к следующей модели |
 | 500-503 | Retry с другой моделью |
 | Timeout | Retry с другой моделью |
 | 400 (Bad Request) | Вернуть ошибку клиенту |

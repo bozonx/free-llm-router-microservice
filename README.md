@@ -91,7 +91,6 @@ providers:
 
 # Настройки роутинга
 routing:
-  algorithm: round-robin
   maxRetries: 3              # Максимум попыток на бесплатных моделях
   rateLimitRetries: 2        # Максимум повторов при 429 для одной модели
   retryDelay: 1000           # Задержка между повторами (только при 429 ошибке на той же модели) (мс)
@@ -240,7 +239,7 @@ OpenAI-совместимый endpoint для chat completions.
       "name": "llama-3.3-70b",
       "provider": "openrouter",
       "type": "fast",
-      "context_size": 128000,
+      "contextSize": 128000,
       "tags": ["general", "code"],
       "available": true
     },
