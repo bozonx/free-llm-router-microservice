@@ -22,69 +22,68 @@ export type ProvidersMap = Map<string, LlmProvider>;
  */
 @Module({})
 export class ProvidersModule {
-    /**
-     * Register providers dynamically based on configuration
-     */
-    static forRoot(): DynamicModule {
-        const routerConfig: RouterConfig = loadRouterConfig();
+  /**
+   * Register providers dynamically based on configuration
+   */
+  static forRoot(): DynamicModule {
+    const routerConfig: RouterConfig = loadRouterConfig();
 
-        const providers: Provider[] = [];
+    const providers: Provider[] = [];
 
-        // Register OpenRouter if enabled
-        if (routerConfig.providers['openrouter']?.enabled) {
-            const openRouterConfig: BaseProviderConfig = {
-                apiKey: routerConfig.providers['openrouter'].apiKey,
-                baseUrl: routerConfig.providers['openrouter'].baseUrl,
-                timeout: routerConfig.routing.timeout,
-            };
+    // Register OpenRouter if enabled
+    if (routerConfig.providers['openrouter']?.enabled) {
+      const openRouterConfig: BaseProviderConfig = {
+        apiKey: routerConfig.providers['openrouter'].apiKey,
+        baseUrl: routerConfig.providers['openrouter'].baseUrl,
+        timeout: routerConfig.routing.timeout,
+      };
 
-            providers.push({
-                provide: 'OpenRouterProvider',
-                useFactory: (httpService: HttpService) =>
-                    new OpenRouterProvider(httpService, openRouterConfig),
-                inject: [HttpService],
-            });
-        }
-
-        // Register DeepSeek if enabled
-        if (routerConfig.providers['deepseek']?.enabled) {
-            const deepSeekConfig: BaseProviderConfig = {
-                apiKey: routerConfig.providers['deepseek'].apiKey,
-                baseUrl: routerConfig.providers['deepseek'].baseUrl,
-                timeout: routerConfig.routing.timeout,
-            };
-
-            providers.push({
-                provide: 'DeepSeekProvider',
-                useFactory: (httpService: HttpService) =>
-                    new DeepSeekProvider(httpService, deepSeekConfig),
-                inject: [HttpService],
-            });
-        }
-
-        // Create providers map provider
-        providers.push({
-            provide: PROVIDERS_MAP,
-            useFactory: (openRouter?: OpenRouterProvider, deepSeek?: DeepSeekProvider) => {
-                const map = new Map<string, LlmProvider>();
-
-                if (openRouter) {
-                    map.set('openrouter', openRouter);
-                }
-                if (deepSeek) {
-                    map.set('deepseek', deepSeek);
-                }
-
-                return map;
-            },
-            inject: ['OpenRouterProvider', 'DeepSeekProvider'],
-        });
-
-        return {
-            module: ProvidersModule,
-            imports: [HttpModule],
-            providers,
-            exports: [PROVIDERS_MAP],
-        };
+      providers.push({
+        provide: 'OpenRouterProvider',
+        useFactory: (httpService: HttpService) =>
+          new OpenRouterProvider(httpService, openRouterConfig),
+        inject: [HttpService],
+      });
     }
+
+    // Register DeepSeek if enabled
+    if (routerConfig.providers['deepseek']?.enabled) {
+      const deepSeekConfig: BaseProviderConfig = {
+        apiKey: routerConfig.providers['deepseek'].apiKey,
+        baseUrl: routerConfig.providers['deepseek'].baseUrl,
+        timeout: routerConfig.routing.timeout,
+      };
+
+      providers.push({
+        provide: 'DeepSeekProvider',
+        useFactory: (httpService: HttpService) => new DeepSeekProvider(httpService, deepSeekConfig),
+        inject: [HttpService],
+      });
+    }
+
+    // Create providers map provider
+    providers.push({
+      provide: PROVIDERS_MAP,
+      useFactory: (openRouter?: OpenRouterProvider, deepSeek?: DeepSeekProvider) => {
+        const map = new Map<string, LlmProvider>();
+
+        if (openRouter) {
+          map.set('openrouter', openRouter);
+        }
+        if (deepSeek) {
+          map.set('deepseek', deepSeek);
+        }
+
+        return map;
+      },
+      inject: ['OpenRouterProvider', 'DeepSeekProvider'],
+    });
+
+    return {
+      module: ProvidersModule,
+      imports: [HttpModule],
+      providers,
+      exports: [PROVIDERS_MAP],
+    };
+  }
 }

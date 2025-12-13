@@ -36,6 +36,10 @@ export default [
                 require: 'readonly',
                 exports: 'readonly',
                 global: 'readonly',
+                setTimeout: 'readonly',
+                setInterval: 'readonly',
+                clearTimeout: 'readonly',
+                clearInterval: 'readonly',
                 // ES2022 globals
                 Promise: 'readonly',
                 Symbol: 'readonly',

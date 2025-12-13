@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER } from '@nestjs/core';
 import { LoggerModule } from 'nestjs-pino';
 import { HealthModule } from './modules/health/health.module.js';
+import { RouterModule } from './modules/router/router.module.js';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter.js';
 import appConfig from './config/app.config.js';
 import type { AppConfig } from './config/app.config.js';
@@ -89,6 +90,7 @@ import pkg from '../package.json' with { type: 'json' };
       },
     }),
     HealthModule,
+    RouterModule,
   ],
   controllers: [],
   providers: [

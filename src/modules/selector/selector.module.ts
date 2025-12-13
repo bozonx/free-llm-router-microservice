@@ -7,8 +7,8 @@ import { ModelsModule } from '../models/models.module.js';
  * Module for model selection
  */
 @Module({
-    imports: [ModelsModule],
-    providers: [SelectorService, RoundRobinStrategy],
-    exports: [SelectorService],
+  imports: [ModelsModule],
+  providers: [SelectorService, RoundRobinStrategy],
+  exports: [SelectorService],
 })
-export class SelectorModule { }
+export class SelectorModule {}
