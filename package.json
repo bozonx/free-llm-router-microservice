@@ -18,8 +18,8 @@
     "test:cov": "NODE_OPTIONS='--experimental-vm-modules' jest --coverage",
     "test:debug": "node --inspect-brk --loader ts-node/esm node_modules/.bin/jest --runInBand --detectOpenHandles",
     "test:unit:debug": "node --inspect-brk --loader ts-node/esm node_modules/.bin/jest --runInBand --selectProjects unit --detectOpenHandles",
-    "test:e2e:debug": "ROUTER_CONFIG_PATH='test/setup/router.yaml' node --inspect-brk --loader ts-node/esm node_modules/.bin/jest --runInBand --selectProjects e2e --detectOpenHandles",
-    "test:e2e": "ROUTER_CONFIG_PATH='test/setup/router.yaml' NODE_OPTIONS='--experimental-vm-modules' jest --selectProjects e2e"
+    "test:e2e:debug": "node --inspect-brk --loader ts-node/esm node_modules/.bin/jest --runInBand --selectProjects e2e --detectOpenHandles",
+    "test:e2e": "NODE_OPTIONS='--experimental-vm-modules' jest --selectProjects e2e"
   },
   "dependencies": {
     "@nestjs/axios": "^4.0.1",

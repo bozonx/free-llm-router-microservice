@@ -61,6 +61,7 @@ const config: Config = {
       moduleNameMapper: {
         '^(\\.{1,2}/.*)\\.js$': '$1',
       },
+      setupFiles: ['<rootDir>/test/setup/env.setup.ts'],
       // Global timeout for e2e tests (default: 30 seconds)
       testTimeout: 30000,
     },
