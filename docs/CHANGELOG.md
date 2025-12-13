@@ -84,6 +84,21 @@
 
 ## [Unreleased]
 
+### Добавлено
+
+#### n8n Интеграция
+- Создан пакет n8n community node: `n8n-nodes-bozonx-free-llm-router-microservice`
+- Реализована нода "Free LLM Router Model" для LangChain workflows
+- Добавлены credentials с поддержкой None, Basic Auth, Bearer Token
+- Реализовано три режима выбора моделей:
+  - Auto (Smart Strategy)
+  - Specific Model (конкретная модель)
+  - Priority List (приоритетный список)
+- Поддержка всех OpenAI-совместимых параметров
+- Полная поддержка фильтрации (tags, type, context size, success rate)
+- Создана документация: README, QUICKSTART, DEVELOPMENT
+- Добавлена иконка и конфигурационные файлы
+
 ### Планируется в v1.1
 - Streaming (SSE) поддержка для chat completions
 - Загрузка списка моделей по URL
@@ -104,3 +119,4 @@
 
 [1.0.0]: https://github.com/bozonx/free-llm-router-microservice/releases/tag/v1.0.0
 [Unreleased]: https://github.com/bozonx/free-llm-router-microservice/compare/v1.0.0...HEAD
+

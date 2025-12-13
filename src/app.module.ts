@@ -8,6 +8,7 @@ import appConfig from './config/app.config.js';
 import type { AppConfig } from './config/app.config.js';
 import { RouterConfigModule } from './config/router-config.module.js';
 import { AdminModule } from './modules/admin/admin.module.js';
+import { DashboardModule } from './modules/dashboard/dashboard.module.js';
 import { HealthModule } from './modules/health/health.module.js';
 import { RateLimiterModule } from './modules/rate-limiter/rate-limiter.module.js';
 import { RouterModule } from './modules/router/router.module.js';
@@ -41,15 +42,15 @@ import { ShutdownModule } from './modules/shutdown/shutdown.module.js';
             },
             transport: isDev
               ? {
-                  target: 'pino-pretty',
-                  options: {
-                    colorize: true,
-                    singleLine: false,
-                    translateTime: "UTC:yyyy-mm-dd'T'HH:MM:ss.l'Z'",
-                    ignore: 'pid,hostname',
-                    messageFormat: '[{context}] {msg}',
-                  },
-                }
+                target: 'pino-pretty',
+                options: {
+                  colorize: true,
+                  singleLine: false,
+                  translateTime: "UTC:yyyy-mm-dd'T'HH:MM:ss.l'Z'",
+                  ignore: 'pid,hostname',
+                  messageFormat: '[{context}] {msg}',
+                },
+              }
               : undefined,
             serializers: {
               req: req => ({
@@ -111,4 +112,4 @@ import { ShutdownModule } from './modules/shutdown/shutdown.module.js';
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }
