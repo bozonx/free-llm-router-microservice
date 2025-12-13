@@ -8,6 +8,7 @@ ENV LISTEN_HOST=0.0.0.0
 ENV LISTEN_PORT=8080
 ENV TZ=UTC
 ENV LOG_LEVEL=warn
+ENV ROUTER_CONFIG_PATH=/app/config.yaml
 
 # Install pnpm
 RUN corepack enable
