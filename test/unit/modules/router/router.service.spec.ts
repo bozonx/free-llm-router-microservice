@@ -4,6 +4,7 @@ import { RouterService } from '../../../../src/modules/router/router.service.js'
 import { SelectorService } from '../../../../src/modules/selector/selector.service.js';
 import { StateService } from '../../../../src/modules/state/state.service.js';
 import { CircuitBreakerService } from '../../../../src/modules/state/circuit-breaker.service.js';
+import { ShutdownService } from '../../../../src/modules/shutdown/shutdown.service.js';
 import { PROVIDERS_MAP } from '../../../../src/modules/providers/providers.module.js';
 import { ROUTER_CONFIG } from '../../../../src/config/router-config.provider.js';
 import type { ChatCompletionRequestDto } from '../../../../src/modules/router/dto/chat-completion.request.dto.js';
@@ -16,6 +17,7 @@ describe('RouterService', () => {
   let selectorService: jest.Mocked<SelectorService>;
   let stateService: jest.Mocked<StateService>;
   let circuitBreaker: jest.Mocked<CircuitBreakerService>;
+  let shutdownService: jest.Mocked<ShutdownService>;
   let providersMap: Map<string, LlmProvider>;
   let mockProvider: jest.Mocked<LlmProvider>;
 
@@ -126,6 +128,15 @@ describe('RouterService', () => {
       filterAvailable: jest.fn().mockImplementation(models => models),
     } as any;
 
+    // Create mock shutdown service
+    shutdownService = {
+      shuttingDown: false,
+      registerRequest: jest.fn(),
+      unregisterRequest: jest.fn(),
+      createRequestSignal: jest.fn().mockReturnValue(new AbortController().signal),
+      getAbortSignal: jest.fn().mockReturnValue(null),
+    } as any;
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         RouterService,
@@ -140,6 +151,10 @@ describe('RouterService', () => {
         {
           provide: CircuitBreakerService,
           useValue: circuitBreaker,
+        },
+        {
+          provide: ShutdownService,
+          useValue: shutdownService,
         },
         {
           provide: PROVIDERS_MAP,

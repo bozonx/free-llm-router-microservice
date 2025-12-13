@@ -87,6 +87,7 @@ export class DeepSeekProvider extends BaseProvider {
             Authorization: `Bearer ${this.config.apiKey}`,
             'Content-Type': 'application/json',
           },
+          signal: params.abortSignal,
         }),
       );
 

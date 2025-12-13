@@ -1,7 +1,8 @@
-import { Injectable, Logger, Inject } from '@nestjs/common';
+import { Injectable, Logger, Inject, ServiceUnavailableException } from '@nestjs/common';
 import { SelectorService } from '../selector/selector.service.js';
 import { StateService } from '../state/state.service.js';
 import { CircuitBreakerService } from '../state/circuit-breaker.service.js';
+import { ShutdownService } from '../shutdown/shutdown.service.js';
 import { RETRY_JITTER_PERCENT } from '../../config/router.config.js';
 import { ROUTER_CONFIG } from '../../config/router-config.provider.js';
 import type { ProvidersMap } from '../providers/providers.module.js';
@@ -36,9 +37,10 @@ export class RouterService {
     private readonly selectorService: SelectorService,
     private readonly stateService: StateService,
     private readonly circuitBreaker: CircuitBreakerService,
+    private readonly shutdownService: ShutdownService,
     @Inject(PROVIDERS_MAP) private readonly providersMap: ProvidersMap,
     @Inject(ROUTER_CONFIG) private readonly config: RouterConfig,
-  ) {}
+  ) { }
 
   /**
    * Handle chat completion request with retry and fallback logic
@@ -46,6 +48,24 @@ export class RouterService {
   public async chatCompletion(
     request: ChatCompletionRequestDto,
   ): Promise<ChatCompletionResponseDto> {
+    // Register request for graceful shutdown tracking
+    this.shutdownService.registerRequest();
+
+    try {
+      return await this.executeWithShutdownHandling(request);
+    } finally {
+      // Always unregister request when done
+      this.shutdownService.unregisterRequest();
+    }
+  }
+
+  /**
+   * Execute chat completion with shutdown abort signal support
+   */
+  private async executeWithShutdownHandling(
+    request: ChatCompletionRequestDto,
+  ): Promise<ChatCompletionResponseDto> {
+    const abortSignal = this.shutdownService.createRequestSignal();
     const errors: ErrorInfo[] = [];
     const excludedModels: string[] = [];
     let attemptCount = 0;
@@ -81,6 +101,7 @@ export class RouterService {
           model,
           request,
           errors,
+          abortSignal,
         });
 
         // Success!
@@ -154,8 +175,9 @@ export class RouterService {
     model: ModelDefinition;
     request: ChatCompletionRequestDto;
     errors: ErrorInfo[];
+    abortSignal: AbortSignal;
   }) {
-    const { model, request } = params;
+    const { model, request, abortSignal } = params;
 
     // Track active requests
     this.stateService.incrementActiveRequests(model.name);
@@ -166,6 +188,13 @@ export class RouterService {
         rateLimitAttempt <= this.config.routing.rateLimitRetries;
         rateLimitAttempt++
       ) {
+        // Check if shutdown abort was triggered
+        if (abortSignal.aborted) {
+          throw new ServiceUnavailableException(
+            'Request cancelled: server is shutting down',
+          );
+        }
+
         const startTime = Date.now();
 
         try {
@@ -187,6 +216,7 @@ export class RouterService {
             presencePenalty: request.presence_penalty,
             stop: request.stop,
             jsonMode: request.json_response,
+            abortSignal,
           };
 
           const result = await provider.chatCompletion(completionParams);
@@ -197,6 +227,13 @@ export class RouterService {
 
           return result;
         } catch (error) {
+          // Check if this is an abort error from shutdown
+          if (this.isAbortError(error)) {
+            throw new ServiceUnavailableException(
+              'Request cancelled: server is shutting down',
+            );
+          }
+
           const latencyMs = Date.now() - startTime;
           const errorInfo = this.extractErrorInfo(error, model);
 
@@ -367,5 +404,21 @@ export class RouterService {
     return new Promise<void>(resolve => {
       setTimeout(resolve, ms);
     });
+  }
+
+  /**
+   * Check if error is an abort error (request cancelled due to shutdown)
+   */
+  private isAbortError(error: unknown): boolean {
+    if (error instanceof Error) {
+      // Axios uses 'CanceledError' or 'ERR_CANCELED' code
+      if (error.name === 'CanceledError' || error.name === 'AbortError') {
+        return true;
+      }
+      if ((error as any).code === 'ERR_CANCELED' || (error as any).code === 'ECONNABORTED') {
+        return true;
+      }
+    }
+    return false;
   }
 }

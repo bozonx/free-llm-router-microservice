@@ -88,6 +88,7 @@ export class OpenRouterProvider extends BaseProvider {
             'HTTP-Referer': 'https://github.com/free-llm-router',
             'X-Title': 'Free LLM Router',
           },
+          signal: params.abortSignal,
         }),
       );
 

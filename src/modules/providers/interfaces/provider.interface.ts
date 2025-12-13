@@ -61,6 +61,11 @@ export interface ChatCompletionParams {
    * JSON mode enabled
    */
   jsonMode?: boolean;
+
+  /**
+   * Abort signal for request cancellation (graceful shutdown)
+   */
+  abortSignal?: AbortSignal;
 }
 
 /**

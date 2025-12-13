@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER } from '@nestjs/core';
 import { LoggerModule } from 'nestjs-pino';
+import { ShutdownModule } from './modules/shutdown/shutdown.module.js';
 import { HealthModule } from './modules/health/health.module.js';
 import { RouterModule } from './modules/router/router.module.js';
 import { RateLimiterModule } from './modules/rate-limiter/rate-limiter.module.js';
@@ -35,15 +36,15 @@ import pkg from '../package.json' with { type: 'json' };
             },
             transport: isDev
               ? {
-                  target: 'pino-pretty',
-                  options: {
-                    colorize: true,
-                    singleLine: false,
-                    translateTime: "UTC:yyyy-mm-dd'T'HH:MM:ss.l'Z'",
-                    ignore: 'pid,hostname',
-                    messageFormat: '[{context}] {msg}',
-                  },
-                }
+                target: 'pino-pretty',
+                options: {
+                  colorize: true,
+                  singleLine: false,
+                  translateTime: "UTC:yyyy-mm-dd'T'HH:MM:ss.l'Z'",
+                  ignore: 'pid,hostname',
+                  messageFormat: '[{context}] {msg}',
+                },
+              }
               : undefined,
             serializers: {
               req: req => ({
@@ -91,6 +92,7 @@ import pkg from '../package.json' with { type: 'json' };
         };
       },
     }),
+    ShutdownModule,
     RateLimiterModule,
     AdminModule,
     HealthModule,
@@ -104,4 +106,4 @@ import pkg from '../package.json' with { type: 'json' };
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }
