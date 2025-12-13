@@ -96,9 +96,24 @@ export interface CircuitBreakerConfig {
 }
 
 /**
- * Model override configuration (for priority/weight adjustments)
+ * Model override configuration
  */
 export interface ModelOverrideConfig {
+  /**
+   * Unified model name (required for identification)
+   */
+  name: string;
+
+  /**
+   * Provider name (optional, for identification/verification)
+   */
+  provider?: string;
+
+  /**
+   * Real model ID (optional, for identification/verification)
+   */
+  model?: string;
+
   /**
    * Override priority (higher = higher priority, >= 0, default: 1)
    */
@@ -108,6 +123,36 @@ export interface ModelOverrideConfig {
    * Override weight (1-100)
    */
   weight?: number;
+
+  /**
+   * Override tags
+   */
+  tags?: string[];
+
+  /**
+   * Override context size
+   */
+  contextSize?: number;
+
+  /**
+   * Override max output tokens
+   */
+  maxOutputTokens?: number;
+
+  /**
+   * Override speed tier
+   */
+  speedTier?: 'fast' | 'medium' | 'slow';
+
+  /**
+   * Override availability
+   */
+  available?: boolean;
+
+  /**
+   * Override max concurrent requests
+   */
+  maxConcurrent?: number;
 }
 
 /**
@@ -143,7 +188,7 @@ export interface RouterConfig {
   /**
    * Model priority/weight overrides (optional)
    */
-  modelOverrides?: Record<string, ModelOverrideConfig>;
+  modelOverrides?: ModelOverrideConfig[];
 
   /**
    * Rate limiting configuration (optional)

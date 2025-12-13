@@ -166,22 +166,53 @@ function validateRouterConfig(config: unknown): asserts config is RouterConfig {
 
   // Validate modelOverrides (optional)
   if (cfg['modelOverrides'] !== undefined) {
-    if (typeof cfg['modelOverrides'] !== 'object' || cfg['modelOverrides'] === null) {
-      throw new Error('Router config: modelOverrides must be an object');
+    if (!Array.isArray(cfg['modelOverrides'])) {
+      throw new Error('Router config: modelOverrides must be an array');
     }
 
-    const overrides = cfg['modelOverrides'] as Record<string, unknown>;
-    for (const [modelName, override] of Object.entries(overrides)) {
+    const overrides = cfg['modelOverrides'] as unknown[];
+    for (const [index, override] of overrides.entries()) {
       if (typeof override !== 'object' || override === null) {
-        throw new Error(`Router config: modelOverrides.${modelName} must be an object`);
+        throw new Error(`Router config: modelOverrides[${index}] must be an object`);
       }
 
       const mo = override as Record<string, unknown>;
+
+      // Validate identification fields
+      if (typeof mo['name'] !== 'string') {
+        throw new Error(`Router config: modelOverrides[${index}].name must be a string`);
+      }
+      if (mo['provider'] !== undefined && typeof mo['provider'] !== 'string') {
+        throw new Error(`Router config: modelOverrides[${index}].provider must be a string`);
+      }
+      if (mo['model'] !== undefined && typeof mo['model'] !== 'string') {
+        throw new Error(`Router config: modelOverrides[${index}].model must be a string`);
+      }
+
+      // Validate overridable fields
       if (mo['priority'] !== undefined && typeof mo['priority'] !== 'number') {
-        throw new Error(`Router config: modelOverrides.${modelName}.priority must be a number`);
+        throw new Error(`Router config: modelOverrides[${index}].priority must be a number`);
       }
       if (mo['weight'] !== undefined && typeof mo['weight'] !== 'number') {
-        throw new Error(`Router config: modelOverrides.${modelName}.weight must be a number`);
+        throw new Error(`Router config: modelOverrides[${index}].weight must be a number`);
+      }
+      if (mo['tags'] !== undefined && !Array.isArray(mo['tags'])) {
+        throw new Error(`Router config: modelOverrides[${index}].tags must be an array of strings`);
+      }
+      if (mo['contextSize'] !== undefined && typeof mo['contextSize'] !== 'number') {
+        throw new Error(`Router config: modelOverrides[${index}].contextSize must be a number`);
+      }
+      if (mo['maxOutputTokens'] !== undefined && typeof mo['maxOutputTokens'] !== 'number') {
+        throw new Error(`Router config: modelOverrides[${index}].maxOutputTokens must be a number`);
+      }
+      if (mo['speedTier'] !== undefined && typeof mo['speedTier'] !== 'string') {
+        throw new Error(`Router config: modelOverrides[${index}].speedTier must be a string`);
+      }
+      if (mo['available'] !== undefined && typeof mo['available'] !== 'boolean') {
+        throw new Error(`Router config: modelOverrides[${index}].available must be a boolean`);
+      }
+      if (mo['maxConcurrent'] !== undefined && typeof mo['maxConcurrent'] !== 'number') {
+        throw new Error(`Router config: modelOverrides[${index}].maxConcurrent must be a number`);
       }
     }
   }

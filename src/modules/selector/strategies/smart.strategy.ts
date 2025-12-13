@@ -7,7 +7,6 @@ import type { ModelDefinition } from '../../models/interfaces/model.interface.js
 import type {
   SelectionStrategy,
   SelectionCriteria,
-  ModelWithEffectivePriority,
 } from '../interfaces/selector.interface.js';
 
 /**
@@ -28,7 +27,7 @@ export class SmartStrategy implements SelectionStrategy {
     private readonly stateService: StateService,
     private readonly circuitBreaker: CircuitBreakerService,
     @Inject(ROUTER_CONFIG) private readonly config: RouterConfig,
-  ) {}
+  ) { }
 
   /**
    * Select best model based on criteria and current state
@@ -63,11 +62,8 @@ export class SmartStrategy implements SelectionStrategy {
       return this.selectFastest(candidates);
     }
 
-    // 7. Apply priority overrides (from models.yaml + router.yaml)
-    const withPriorities = this.applyPriorityOverrides(candidates);
-
-    // 8. Group by priority
-    const priorityGroups = this.groupByPriority(withPriorities);
+    // 7. Group by priority (overrides already applied in ModelsService)
+    const priorityGroups = this.groupByPriority(candidates);
 
     // 9. Take the highest priority group (maximum priority value)
     const topPriorityGroup = priorityGroups[0];
@@ -120,35 +116,24 @@ export class SmartStrategy implements SelectionStrategy {
     });
   }
 
-  /**
-   * Apply priority/weight overrides from router.yaml
-   */
-  private applyPriorityOverrides(models: ModelDefinition[]): ModelWithEffectivePriority[] {
-    return models.map(m => {
-      const override = this.config.modelOverrides?.[m.name];
-      return {
-        ...m,
-        effectivePriority: override?.priority ?? m.priority ?? 1,
-        effectiveWeight: override?.weight ?? m.weight ?? 1,
-      };
-    });
-  }
+
 
   /**
    * Group models by priority (sorted descending - higher priority first)
    */
-  private groupByPriority(models: ModelWithEffectivePriority[]): ModelWithEffectivePriority[][] {
+  private groupByPriority(models: ModelDefinition[]): ModelDefinition[][] {
     // Sort by priority (higher = higher priority)
-    const sorted = [...models].sort((a, b) => b.effectivePriority - a.effectivePriority);
+    const sorted = [...models].sort((a, b) => (b.priority ?? 1) - (a.priority ?? 1));
 
     // Group
-    const groups: ModelWithEffectivePriority[][] = [];
+    const groups: ModelDefinition[][] = [];
     let currentPriority = -1;
 
     for (const model of sorted) {
-      if (model.effectivePriority !== currentPriority) {
+      const p = model.priority ?? 1;
+      if (p !== currentPriority) {
         groups.push([]);
-        currentPriority = model.effectivePriority;
+        currentPriority = p;
       }
       groups[groups.length - 1].push(model);
     }
@@ -159,7 +144,7 @@ export class SmartStrategy implements SelectionStrategy {
   /**
    * Weighted random selection within priority group
    */
-  private weightedRandomSelect(models: ModelWithEffectivePriority[]): ModelDefinition | null {
+  private weightedRandomSelect(models: ModelDefinition[]): ModelDefinition | null {
     if (models.length === 0) return null;
     if (models.length === 1) return models[0];
 
@@ -184,9 +169,9 @@ export class SmartStrategy implements SelectionStrategy {
   /**
    * Calculate effective weight considering static weight and statistics
    */
-  private calculateEffectiveWeight(model: ModelWithEffectivePriority): number {
+  private calculateEffectiveWeight(model: ModelDefinition): number {
     const state = this.stateService.getState(model.name);
-    const staticWeight = model.effectiveWeight;
+    const staticWeight = model.weight ?? 1;
 
     // If no statistics — use only static weight
     if (state.stats.totalRequests === 0) {

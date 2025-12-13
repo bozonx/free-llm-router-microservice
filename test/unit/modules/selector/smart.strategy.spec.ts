@@ -71,12 +71,13 @@ describe('SmartStrategy', () => {
       timeoutSecs: 30,
       fallback: { enabled: true, provider: 'deepseek', model: 'deepseek-chat' },
     },
-    modelOverrides: {
-      'model-low-priority': {
+    modelOverrides: [
+      {
+        name: 'model-low-priority',
         priority: 2, // Override to high priority
         weight: 20,
       },
-    },
+    ],
   };
 
   const createMockState = (overrides: Partial<ReturnType<StateService['getState']>> = {}) => ({
@@ -204,16 +205,22 @@ describe('SmartStrategy', () => {
       expect(result?.name).toBe('model-low-priority');
     });
 
-    it('should apply priority overrides from config', () => {
-      // model-low-priority has override to priority: 1
-      // so both model-high-priority and model-low-priority have priority 1
-      // but model-low-priority has higher weight (20 via override)
+    it('should respect model priority and weights', () => {
+      // Simulate models with overrides applied (e.g. by ModelsService)
+      const models = [
+        { ...mockModels[0] }, // P=2, W=10
+        { ...mockModels[1], priority: 2, weight: 20 }, // Override applied: P=1->2, W=5->20
+      ];
+
       stateService.getState.mockImplementation((name: string) => createMockState({ name }));
+
+      // High (P=2, W=10) vs Low (P=2, W=20) -> Both P=2, so weighted selection
+      // W=10 vs W=20 -> Low should be selected ~66% of time
 
       // Run multiple times to get weighted distribution
       const selections: Record<string, number> = {};
       for (let i = 0; i < 100; i++) {
-        const result = strategy.select([mockModels[0], mockModels[1]], {});
+        const result = strategy.select(models, {});
         if (result) {
           selections[result.name] = (selections[result.name] ?? 0) + 1;
         }

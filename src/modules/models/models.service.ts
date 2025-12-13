@@ -1,7 +1,9 @@
-import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
+import { Injectable, OnModuleInit, Logger, Inject } from '@nestjs/common';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { load as parseYaml } from 'js-yaml';
+import { ROUTER_CONFIG } from '../../config/router-config.provider.js';
+import type { RouterConfig } from '../../config/router-config.interface.js';
 import type { ModelDefinition, ModelsConfig } from './interfaces/model.interface.js';
 
 /**
@@ -41,6 +43,10 @@ export interface FilterCriteria {
 export class ModelsService implements OnModuleInit {
   private readonly logger = new Logger(ModelsService.name);
   private models: ModelDefinition[] = [];
+
+  constructor(
+    @Inject(ROUTER_CONFIG) private readonly config: RouterConfig,
+  ) { }
 
   // Constructor added to inject a config object, making `this.config` valid.
   // This is necessary for the provided change to be syntactically correct.
@@ -89,6 +95,41 @@ export class ModelsService implements OnModuleInit {
     this.models = modelsConfig.models.map(model =>
       this.convertModel(model as unknown as Record<string, unknown>),
     );
+
+    this.applyOverrides();
+  }
+
+  /**
+   * Apply overrides from router configuration
+   */
+  private applyOverrides(): void {
+    const overrides = this.config.modelOverrides;
+    if (!overrides || !Array.isArray(overrides)) {
+      return;
+    }
+
+    for (const override of overrides) {
+      const model = this.models.find(m =>
+        m.name === override.name &&
+        (!override.provider || m.provider === override.provider) &&
+        (!override.model || m.model === override.model)
+      );
+
+      if (model) {
+        if (override.priority !== undefined) model.priority = override.priority;
+        if (override.weight !== undefined) model.weight = override.weight;
+        if (override.tags !== undefined) model.tags = override.tags;
+        if (override.contextSize !== undefined) model.contextSize = override.contextSize;
+        if (override.maxOutputTokens !== undefined) model.maxOutputTokens = override.maxOutputTokens;
+        if (override.speedTier !== undefined) model.speedTier = override.speedTier;
+        if (override.available !== undefined) model.available = override.available;
+        if (override.maxConcurrent !== undefined) model.maxConcurrent = override.maxConcurrent;
+
+        this.logger.debug(`Applied overrides for model ${model.name}`);
+      } else {
+        this.logger.warn(`Override specified for model ${override.name} but model not found`);
+      }
+    }
   }
 
   /**

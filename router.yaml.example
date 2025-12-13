@@ -45,14 +45,15 @@ routing:
 # Model priority/weight overrides (optional)
 # Allows adjusting priorities without editing models.yaml
 # modelOverrides:
-#   # Note: Only 'priority' and 'weight' can be overridden here.
-#   # Other fields (tags, available, etc.) are NOT supported.
-#   llama-3.3-70b:
+#   - name: llama-3.3-70b
 #     priority: 2             # Lower priority (higher number)
 #     weight: 5               # Lower weight
-#   deepseek-r1:
+#     maxConcurrent: 10       # Limit concurrency
+#   - name: deepseek-r1
+#     provider: deepseek      # Optional validation
 #     priority: 1             # Higher priority
 #     weight: 15              # Higher weight
+#     available: false        # Temporarily disable
 
 # Rate limiting settings (optional, disabled by default)
 # rateLimiting:

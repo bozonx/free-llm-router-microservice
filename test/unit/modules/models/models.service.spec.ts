@@ -2,6 +2,7 @@ import { Test, type TestingModule } from '@nestjs/testing';
 import { ModelsService } from '../../../../src/modules/models/models.service.js';
 import { writeFileSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
+import { ROUTER_CONFIG } from '../../../../src/config/router-config.provider.js';
 
 describe('ModelsService', () => {
   let service: ModelsService;
@@ -49,7 +50,15 @@ models:
     process.env['MODELS_FILE_PATH'] = testModelsFile;
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [ModelsService],
+      providers: [
+        ModelsService,
+        {
+          provide: ROUTER_CONFIG,
+          useValue: {
+            modelOverrides: [],
+          },
+        },
+      ],
     }).compile();
 
     service = module.get<ModelsService>(ModelsService);
@@ -153,6 +162,37 @@ models:
     it('should return empty array when no models match', () => {
       const models = service.filter({ tags: ['nonexistent'] });
       expect(models).toHaveLength(0);
+    });
+  });
+
+  describe('overrides', () => {
+    it('should apply overrides correctly', async () => {
+      const module: TestingModule = await Test.createTestingModule({
+        providers: [
+          ModelsService,
+          {
+            provide: ROUTER_CONFIG,
+            useValue: {
+              modelOverrides: [
+                {
+                  name: 'test-fast-model',
+                  priority: 10,
+                  available: false,
+                },
+              ],
+            },
+          },
+        ],
+      }).compile();
+
+      const overrideService = module.get<ModelsService>(ModelsService);
+      process.env['MODELS_FILE_PATH'] = testModelsFile;
+      overrideService.onModuleInit();
+
+      const model = overrideService.findByName('test-fast-model');
+      expect(model).toBeDefined();
+      expect(model?.priority).toBe(10);
+      expect(model?.available).toBe(false);
     });
   });
 });
