@@ -12,13 +12,15 @@ providers:
     enabled: true
     # API Key for OpenRouter service. Required if OpenRouter is enabled.
     apiKey: ${OPENROUTER_API_KEY}
-    baseUrl: https://openrouter.ai/api/v1
+    # Base URL for OpenRouter (optional, default: https://openrouter.ai/api/v1)
+    # baseUrl: https://openrouter.ai/api/v1
     
   deepseek:
     enabled: true
     # API Key for DeepSeek service. Required if DeepSeek is enabled.
     apiKey: ${DEEPSEEK_API_KEY}
-    baseUrl: https://api.deepseek.com
+    # Base URL for DeepSeek (optional, default: https://api.deepseek.com)
+    # baseUrl: https://api.deepseek.com
 
 # Routing settings
 routing:

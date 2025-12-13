@@ -34,7 +34,7 @@ export class ProvidersModule {
     if (routerConfig.providers['openrouter']?.enabled) {
       const openRouterConfig: BaseProviderConfig = {
         apiKey: routerConfig.providers['openrouter'].apiKey,
-        baseUrl: routerConfig.providers['openrouter'].baseUrl,
+        baseUrl: routerConfig.providers['openrouter'].baseUrl ?? 'https://openrouter.ai/api/v1',
         timeoutSecs: routerConfig.routing.timeoutSecs,
       };
 
@@ -55,7 +55,7 @@ export class ProvidersModule {
     if (routerConfig.providers['deepseek']?.enabled) {
       const deepSeekConfig: BaseProviderConfig = {
         apiKey: routerConfig.providers['deepseek'].apiKey,
-        baseUrl: routerConfig.providers['deepseek'].baseUrl,
+        baseUrl: routerConfig.providers['deepseek'].baseUrl ?? 'https://api.deepseek.com',
         timeoutSecs: routerConfig.routing.timeoutSecs,
       };
 

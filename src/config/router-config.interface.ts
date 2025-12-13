@@ -13,9 +13,9 @@ export interface ProviderConfig {
   apiKey: string;
 
   /**
-   * Provider base URL
+   * Provider base URL (optional, defaults will be used if not provided)
    */
-  baseUrl: string;
+  baseUrl?: string;
 }
 
 /**

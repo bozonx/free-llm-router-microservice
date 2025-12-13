@@ -92,9 +92,22 @@ describe('RouterConfigValidator', () => {
       };
       expect(() => validator.validate(config)).not.toThrow();
     });
+
+    it('should validate config with missing baseUrl', () => {
+      const config = createValidConfig();
+      // @ts-expect-error - testing optional field
+      delete config.providers.openrouter.baseUrl;
+      expect(() => validator.validate(config)).not.toThrow();
+    });
   });
 
   describe('invalid configurations', () => {
+    it('should reject missing apiKey', () => {
+      const config = createValidConfig();
+      // @ts-expect-error - testing required field
+      delete config.providers.openrouter.apiKey;
+      expect(() => validator.validate(config)).toThrow(ConfigValidationError);
+    });
     it('should reject missing modelsFile', () => {
       const config = createValidConfig();
       delete (config as Record<string, unknown>).modelsFile;

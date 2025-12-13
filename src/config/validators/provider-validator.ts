@@ -19,6 +19,8 @@ export class ProviderValidator extends BaseValidator<RouterConfig['providers']> 
 
     this.assertBoolean(config.enabled, `${path}.enabled`);
     this.assertString(config.apiKey, `${path}.apiKey`);
-    this.assertString(config.baseUrl, `${path}.baseUrl`);
+    if (config.baseUrl !== undefined) {
+      this.assertString(config.baseUrl, `${path}.baseUrl`);
+    }
   }
 }
