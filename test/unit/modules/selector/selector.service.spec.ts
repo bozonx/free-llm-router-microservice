@@ -26,6 +26,7 @@ describe('SelectorService', () => {
 
   const mockModelsService = {
     findByName: jest.fn(),
+    findByNameAndProvider: jest.fn(),
     filter: jest.fn(),
   };
 
@@ -61,19 +62,26 @@ describe('SelectorService', () => {
   });
 
   describe('selectModel', () => {
-    it('should return specific model if requested and found', () => {
-      mockModelsService.findByName.mockReturnValue(mockModel);
+    it('should return specific model from priority list if found', () => {
+      mockModelsService.findByNameAndProvider.mockReturnValue([mockModel]);
+      mockCircuitBreakerService.canRequest.mockReturnValue(true);
 
-      const result = service.selectModel({ model: 'test-model' });
+      const result = service.selectModel({
+        models: [{ name: 'test-model' }],
+        allowAutoFallback: false,
+      });
 
-      expect(modelsService.findByName).toHaveBeenCalledWith('test-model');
+      expect(modelsService.findByNameAndProvider).toHaveBeenCalledWith('test-model', undefined);
       expect(result).toEqual(mockModel);
     });
 
-    it('should return null if specific model not found', () => {
-      mockModelsService.findByName.mockReturnValue(undefined);
+    it('should return null if specific model not found in priority list', () => {
+      mockModelsService.findByNameAndProvider.mockReturnValue([]);
 
-      const result = service.selectModel({ model: 'non-existent' });
+      const result = service.selectModel({
+        models: [{ name: 'non-existent' }],
+        allowAutoFallback: false,
+      });
 
       expect(result).toBeNull();
     });

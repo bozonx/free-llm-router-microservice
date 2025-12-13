@@ -18,8 +18,6 @@ providers:
 
 # Routing configuration
 routing:
-
-
   # Maximum retries on free models
   maxRetries: 3
 
@@ -37,3 +35,10 @@ routing:
     enabled: true
     provider: deepseek
     model: deepseek-chat
+
+# Circuit Breaker configuration (for testing)
+circuitBreaker:
+  failureThreshold: 1  # Open after 1 failure for faster tests
+  cooldownPeriodSecs: 60
+  successThreshold: 2
+  statsWindowSizeMins: 5
