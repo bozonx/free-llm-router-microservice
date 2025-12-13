@@ -15,6 +15,7 @@ export class StateService implements OnModuleInit {
   private readonly states: Map<string, ModelState> = new Map();
   private readonly config: CircuitBreakerConfig;
   private cleanupIntervalId?: ReturnType<typeof setInterval>;
+  private _fallbacksUsed = 0;
 
   constructor(
     private readonly modelsService: ModelsService,
@@ -180,6 +181,14 @@ export class StateService implements OnModuleInit {
     const initialState = this.createInitialState(modelName);
     Object.assign(state, initialState);
     this.logger.log(`Model ${modelName} state reset`);
+  }
+
+  public recordFallbackUsage(): void {
+    this._fallbacksUsed++;
+  }
+
+  public getFallbacksUsed(): number {
+    return this._fallbacksUsed;
   }
 
   /**

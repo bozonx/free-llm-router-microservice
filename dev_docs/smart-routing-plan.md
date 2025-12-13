@@ -706,9 +706,9 @@ rateLimiting:
 12. ✅ Заголовки X-RateLimit-* и Retry-After
 13. ✅ Unit тесты для RateLimiterService
 
-### Этап 4: Наблюдаемость (Приоритет: Средний)
-13. **Admin Module** — контроллер и DTO
-14. Эндпоинты /admin/state, /admin/metrics, /admin/rate-limits
+### Этап 4: Наблюдаемость (Приоритет: Средний) ✅ ЗАВЕРШЕНО
+13. ✅ **Admin Module** — контроллер и DTO
+14. ✅ Эндпоинты /admin/state, /admin/metrics, /admin/rate-limits
 
 ### Этап 5: Документация и тесты
 15. ✅ Обновление README.md (Circuit Breaker, Smart Strategy, Rate Limiting)

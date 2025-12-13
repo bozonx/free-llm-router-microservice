@@ -38,7 +38,7 @@ export class RouterService {
     private readonly circuitBreaker: CircuitBreakerService,
     @Inject(PROVIDERS_MAP) private readonly providersMap: ProvidersMap,
     @Inject(ROUTER_CONFIG) private readonly config: RouterConfig,
-  ) {}
+  ) { }
 
   /**
    * Handle chat completion request with retry and fallback logic
@@ -251,6 +251,8 @@ export class RouterService {
     };
 
     const result = await fallbackProvider.chatCompletion(completionParams);
+
+    this.stateService.recordFallbackUsage();
 
     return {
       result,

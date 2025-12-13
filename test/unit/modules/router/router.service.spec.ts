@@ -99,6 +99,7 @@ describe('RouterService', () => {
       decrementActiveRequests: jest.fn(),
       recordSuccess: jest.fn(),
       recordFailure: jest.fn(),
+      recordFallbackUsage: jest.fn(),
       getState: jest.fn().mockReturnValue({
         name: 'test-model',
         circuitState: 'CLOSED',

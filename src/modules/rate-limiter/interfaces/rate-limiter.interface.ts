@@ -118,6 +118,20 @@ export interface TokenBucket {
   refillRate: number;
 }
 
+
+/**
+ * Rate limit status for admin API
+ */
+export interface RateLimitStatus {
+  enabled: boolean;
+  config: RateLimitingConfig;
+  activeBuckets: {
+    global: boolean;
+    clients: number;
+    models: number;
+  };
+}
+
 /**
  * Default rate limiting configuration
  */

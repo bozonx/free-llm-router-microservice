@@ -4,6 +4,7 @@ import type { RouterConfig } from '../../config/router-config.interface.js';
 import type {
   RateLimitingConfig,
   RateLimitInfo,
+  RateLimitStatus,
   TokenBucket,
 } from './interfaces/rate-limiter.interface.js';
 import { DEFAULT_RATE_LIMITING_CONFIG } from './interfaces/rate-limiter.interface.js';
@@ -179,6 +180,21 @@ export class RateLimiterService {
    */
   public getConfig(): RateLimitingConfig {
     return { ...this.config };
+  }
+
+  /**
+   * Get current rate limiting status
+   */
+  public getStatus(): RateLimitStatus {
+    return {
+      enabled: this.config.enabled,
+      config: this.config,
+      activeBuckets: {
+        global: true, // Always initialized
+        clients: this.clientBuckets.size,
+        models: this.modelBuckets.size,
+      },
+    };
   }
 
   /**
