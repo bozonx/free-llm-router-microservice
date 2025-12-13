@@ -1,6 +1,6 @@
 # Smart Routing: План реализации
 
-> Версия: 1.0  
+> Версия: 2.0  
 > Автор: AI Assistant  
 > Дата: 2025-12-13
 
@@ -13,10 +13,10 @@
 ## 🎯 Цели
 
 1. **Отказоустойчивость** — Circuit Breaker для автоматического исключения проблемных моделей
-2. **Оптимальный выбор** — Weighted алгоритм с учётом производительности и надёжности
+2. **Оптимальный выбор** — Умный алгоритм с учётом приоритетов, весов, статистики и фильтров запроса
 3. **Защита от перегрузки** — Rate limiting на уровне клиентов и моделей
 4. **Наблюдаемость** — API для мониторинга состояния системы
-5. **Гибкость** — Конфигурируемые параметры через YAML
+5. **Гибкость** — Конфигурируемые параметры через YAML с разумными дефолтами
 
 ---
 
@@ -42,17 +42,19 @@ src/modules/
 │       └── rate-limiter.interface.ts
 │
 ├── selector/
-│   ├── strategies/
-│   │   ├── round-robin.strategy.ts    # Существующий
-│   │   ├── weighted.strategy.ts       # NEW: Weighted selection
-│   │   └── smart.strategy.ts          # NEW: Combined strategy
-│   └── ...
+│   ├── smart.strategy.ts           # NEW: Единый умный алгоритм выбора
+│   ├── selector.service.ts         # Обновлённый сервис
+│   └── interfaces/
+│       └── selector.interface.ts
 │
 └── admin/                          # NEW: Admin API
     ├── admin.module.ts
     ├── admin.controller.ts         # GET /admin/state, /admin/metrics
     └── dto/
 ```
+
+**Удаляемые компоненты:**
+- `round-robin.strategy.ts` — заменяется на `smart.strategy.ts`
 
 ---
 
@@ -63,7 +65,7 @@ src/modules/
 ```typescript
 // src/modules/state/interfaces/state.interface.ts
 
-export type CircuitState = 'CLOSED' | 'OPEN' | 'HALF_OPEN';
+export type CircuitState = 'CLOSED' | 'OPEN' | 'HALF_OPEN' | 'PERMANENTLY_UNAVAILABLE';
 
 export interface ModelState {
   /** Имя модели */
@@ -107,26 +109,27 @@ export interface ModelStats {
   /** Success rate (0-1) */
   successRate: number;
   
-  /** Временные метки запросов для скользящего окна */
-  requestTimestamps: number[];
+  /** Данные запросов для скользящего окна */
+  requests: RequestRecord[];
 }
 
-export interface CircuitBreakerConfig {
-  /** Порог ошибок для перехода в OPEN */
-  failureThreshold: number;  // default: 3
-  
-  /** Время в OPEN состоянии (ms) */
-  cooldownPeriod: number;    // default: 60000 (1 min)
-  
-  /** Успехов для перехода из HALF_OPEN в CLOSED */
-  successThreshold: number;  // default: 2
-  
-  /** Размер скользящего окна (ms) */
-  statsWindowSize: number;   // default: 300000 (5 min)
+export interface RequestRecord {
+  timestamp: number;
+  latencyMs: number;
+  success: boolean;
 }
 ```
 
-### 1.2 StateService
+### 1.2 Обработка ошибок по типу
+
+| Код ошибки | Действие | Состояние |
+|------------|----------|-----------|
+| **404 (Not Found)** | Модель не существует у провайдера | `PERMANENTLY_UNAVAILABLE` — не пробуем до рестарта |
+| **429 (Rate Limit)** | Временная перегрузка | Retry с задержкой, затем Circuit Breaker |
+| **5xx, Timeout** | Временная проблема | Circuit Breaker (CLOSED → OPEN) |
+| **400, 401, 403** | Клиентская ошибка | Возврат ошибки клиенту, не влияет на Circuit Breaker |
+
+### 1.3 StateService
 
 ```typescript
 // src/modules/state/state.service.ts
@@ -150,13 +153,16 @@ export class StateService implements OnModuleInit {
   /** Записать ошибку */
   recordFailure(modelName: string, errorCode?: number): void;
   
+  /** Пометить модель как permanently unavailable (404) */
+  markPermanentlyUnavailable(modelName: string): void;
+  
   /** Увеличить счётчик активных запросов */
   incrementActiveRequests(modelName: string): void;
   
   /** Уменьшить счётчик активных запросов */
   decrementActiveRequests(modelName: string): void;
   
-  /** Проверить, доступна ли модель (CLOSED или HALF_OPEN) */
+  /** Проверить, доступна ли модель */
   isAvailable(modelName: string): boolean;
   
   /** Сбросить состояние модели (для admin API) */
@@ -167,7 +173,7 @@ export class StateService implements OnModuleInit {
 }
 ```
 
-### 1.3 CircuitBreakerService
+### 1.4 CircuitBreakerService
 
 ```typescript
 // src/modules/state/circuit-breaker.service.ts
@@ -176,7 +182,7 @@ export class StateService implements OnModuleInit {
 export class CircuitBreakerService {
   constructor(
     private readonly stateService: StateService,
-    @Inject(CIRCUIT_BREAKER_CONFIG) private readonly config: CircuitBreakerConfig,
+    @Inject(ROUTER_CONFIG) private readonly config: RouterConfig,
   ) {}
   
   /** Обработать успешный ответ */
@@ -188,17 +194,17 @@ export class CircuitBreakerService {
   
   /** Обработать ошибку */
   onFailure(modelName: string, errorCode?: number): void {
-    // 1. Записать ошибку в StateService
-    // 2. Увеличить consecutiveFailures
+    // 1. Если 404 -> markPermanentlyUnavailable
+    // 2. Иначе: записать ошибку, увеличить consecutiveFailures
     // 3. Если consecutiveFailures >= failureThreshold -> OPEN
-    // 4. Сбросить consecutiveSuccesses
   }
   
   /** Проверить, можно ли делать запрос к модели */
   canRequest(modelName: string): boolean {
-    // 1. CLOSED -> true
-    // 2. OPEN -> проверить cooldown, если истёк -> HALF_OPEN, return true
-    // 3. HALF_OPEN -> true (пробный запрос)
+    // 1. PERMANENTLY_UNAVAILABLE -> false
+    // 2. CLOSED -> true
+    // 3. OPEN -> проверить cooldown, если истёк -> HALF_OPEN, return true
+    // 4. HALF_OPEN -> true (пробный запрос)
   }
   
   /** Получить список доступных моделей */
@@ -210,103 +216,232 @@ export class CircuitBreakerService {
 
 ---
 
-## 📦 Фаза 2: Weighted Selection Strategy
+## 📦 Фаза 2: Умный алгоритм выбора (Smart Strategy)
 
-### 2.1 Конфигурация весов в models.yaml
+### 2.1 Конфигурация моделей
+
+**models.yaml** (базовые настройки модели):
 
 ```yaml
 models:
   - name: llama-3.3-70b
     provider: openrouter
     model: meta-llama/llama-3.3-70b-instruct:free
-    weight: 10              # NEW: Статический вес (1-100)
-    priority: 1             # NEW: Приоритет (меньше = выше)
-    maxConcurrent: 5        # NEW: Макс. параллельных запросов
-    # ... остальные поля
+    type: fast
+    contextSize: 128000
+    tags: [general, code]
+    jsonResponse: true
+    available: true
+    # Новые поля (опциональные, есть дефолты)
+    priority: 1             # Приоритет (меньше = выше), default: 1
+    weight: 10              # Статический вес (1-100), default: 1
+    maxConcurrent: 5        # Макс. параллельных запросов, default: unlimited
     
   - name: deepseek-r1
     provider: openrouter
     model: deepseek/deepseek-r1:free
-    weight: 5
+    type: reasoning
     priority: 2
+    weight: 5
     maxConcurrent: 3
 ```
 
-### 2.2 WeightedStrategy
+**router.yaml** (переопределение приоритетов, опционально):
+
+```yaml
+# Переопределение приоритетов моделей (опционально)
+# Позволяет пользователю менять приоритеты без редактирования models.yaml
+modelOverrides:
+  llama-3.3-70b:
+    priority: 2        # Понизить приоритет
+  deepseek-r1:
+    priority: 1        # Повысить приоритет
+    weight: 15
+```
+
+### 2.2 Расширенные критерии выбора в запросе
 
 ```typescript
-// src/modules/selector/strategies/weighted.strategy.ts
+// src/modules/router/dto/chat-completion.request.dto.ts
 
-@Injectable()
-export class WeightedStrategy implements SelectionStrategy {
-  constructor(
-    private readonly stateService: StateService,
-    private readonly circuitBreaker: CircuitBreakerService,
-  ) {}
+export class ChatCompletionRequestDto {
+  // Существующие поля
+  messages: Message[];
+  model?: string;
+  tags?: string[];
+  type?: 'fast' | 'reasoning';
+  min_context_size?: number;
+  json_response?: boolean;
   
-  select(models: ModelDefinition[], criteria: SelectionCriteria): ModelDefinition | null {
-    // 1. Отфильтровать модели через CircuitBreaker
-    const available = this.circuitBreaker.filterAvailable(models);
-    
-    // 2. Отфильтровать по maxConcurrent
-    const notOverloaded = available.filter(m => {
-      const state = this.stateService.getState(m.name);
-      return state.activeRequests < (m.maxConcurrent ?? Infinity);
-    });
-    
-    // 3. Рассчитать эффективный вес
-    // effectiveWeight = staticWeight * successRate * (1 / avgLatency)
-    const weighted = notOverloaded.map(m => ({
-      model: m,
-      effectiveWeight: this.calculateEffectiveWeight(m),
-    }));
-    
-    // 4. Выбрать модель с учётом весов (weighted random)
-    return this.weightedRandomSelect(weighted);
-  }
+  // ... стандартные OpenAI поля ...
   
-  private calculateEffectiveWeight(model: ModelDefinition): number {
-    const state = this.stateService.getState(model.name);
-    const staticWeight = model.weight ?? 1;
-    const successRate = state.stats.successRate || 0.5; // default 50%
-    const latencyFactor = 1000 / (state.stats.avgLatency || 1000); // normalize
-    
-    return staticWeight * successRate * latencyFactor;
-  }
+  // Новые поля для умного выбора
+  /**
+   * Предпочитать модели с наименьшей latency
+   * Если true, выбирает модель с лучшим avgLatency из доступных
+   */
+  prefer_fast?: boolean;
   
-  private weightedRandomSelect(items: Array<{model: ModelDefinition; effectiveWeight: number}>): ModelDefinition | null {
-    const totalWeight = items.reduce((sum, i) => sum + i.effectiveWeight, 0);
-    if (totalWeight === 0) return null;
-    
-    let random = Math.random() * totalWeight;
-    for (const item of items) {
-      random -= item.effectiveWeight;
-      if (random <= 0) return item.model;
-    }
-    return items[items.length - 1]?.model ?? null;
-  }
+  /**
+   * Минимальный success rate модели (0-1)
+   * Отфильтрует модели с success rate ниже указанного
+   */
+  min_success_rate?: number;
 }
 ```
 
-### 2.3 SmartStrategy (Комбинированный)
+### 2.3 SmartStrategy (Единый алгоритм)
 
 ```typescript
-// src/modules/selector/strategies/smart.strategy.ts
+// src/modules/selector/smart.strategy.ts
 
 /**
- * Комбинирует:
- * - Circuit Breaker (исключение проблемных)
- * - Приоритеты (сначала высокоприоритетные)
- * - Weighted selection (в рамках одного приоритета)
- * - Защита от перегрузки (maxConcurrent)
+ * Умный алгоритм выбора модели.
+ * Заменяет round-robin и учитывает:
+ * - Circuit Breaker состояние
+ * - Приоритеты (из models.yaml + переопределения из router.yaml)
+ * - Веса моделей
+ * - Статистику (latency, success rate)
+ * - Фильтры из запроса (tags, type, min_context_size, prefer_fast, min_success_rate)
+ * - Защиту от перегрузки (maxConcurrent)
  */
 @Injectable()
 export class SmartStrategy implements SelectionStrategy {
+  constructor(
+    private readonly stateService: StateService,
+    private readonly circuitBreaker: CircuitBreakerService,
+    @Inject(ROUTER_CONFIG) private readonly config: RouterConfig,
+  ) {}
+  
   select(models: ModelDefinition[], criteria: SelectionCriteria): ModelDefinition | null {
-    // 1. Filter by Circuit Breaker
-    // 2. Filter by maxConcurrent
-    // 3. Group by priority
-    // 4. For highest priority group with available models: weighted random
+    // 1. Базовая фильтрация (tags, type, min_context_size, json_response)
+    let candidates = this.filterByCriteria(models, criteria);
+    
+    // 2. Фильтрация по Circuit Breaker (исключить OPEN и PERMANENTLY_UNAVAILABLE)
+    candidates = this.circuitBreaker.filterAvailable(candidates);
+    
+    // 3. Фильтрация по maxConcurrent
+    candidates = this.filterByCapacity(candidates);
+    
+    // 4. Фильтрация по min_success_rate (если указан в запросе)
+    if (criteria.minSuccessRate) {
+      candidates = this.filterBySuccessRate(candidates, criteria.minSuccessRate);
+    }
+    
+    // 5. Если ничего не осталось — вернуть null (будет fallback)
+    if (candidates.length === 0) {
+      return null;
+    }
+    
+    // 6. Если prefer_fast — выбрать модель с наименьшей latency
+    if (criteria.preferFast) {
+      return this.selectFastest(candidates);
+    }
+    
+    // 7. Применить приоритеты (из models.yaml + переопределения router.yaml)
+    const withPriorities = this.applyPriorityOverrides(candidates);
+    
+    // 8. Сгруппировать по приоритету
+    const priorityGroups = this.groupByPriority(withPriorities);
+    
+    // 9. Взять группу с наивысшим приоритетом (минимальное значение priority)
+    const topPriorityGroup = priorityGroups[0];
+    
+    // 10. Внутри группы — weighted random selection
+    return this.weightedRandomSelect(topPriorityGroup);
+  }
+  
+  private filterByCapacity(models: ModelDefinition[]): ModelDefinition[] {
+    return models.filter(m => {
+      const state = this.stateService.getState(m.name);
+      const maxConcurrent = m.maxConcurrent ?? Infinity;
+      return state.activeRequests < maxConcurrent;
+    });
+  }
+  
+  private filterBySuccessRate(models: ModelDefinition[], minRate: number): ModelDefinition[] {
+    return models.filter(m => {
+      const state = this.stateService.getState(m.name);
+      // Если нет статистики — считаем success rate = 1.0 (даём шанс)
+      const successRate = state.stats.totalRequests > 0 ? state.stats.successRate : 1.0;
+      return successRate >= minRate;
+    });
+  }
+  
+  private selectFastest(models: ModelDefinition[]): ModelDefinition {
+    return models.reduce((fastest, current) => {
+      const fastestLatency = this.stateService.getState(fastest.name).stats.avgLatency || Infinity;
+      const currentLatency = this.stateService.getState(current.name).stats.avgLatency || Infinity;
+      return currentLatency < fastestLatency ? current : fastest;
+    });
+  }
+  
+  private applyPriorityOverrides(models: ModelDefinition[]): ModelWithEffectivePriority[] {
+    return models.map(m => {
+      const override = this.config.modelOverrides?.[m.name];
+      return {
+        ...m,
+        effectivePriority: override?.priority ?? m.priority ?? 1,
+        effectiveWeight: override?.weight ?? m.weight ?? 1,
+      };
+    });
+  }
+  
+  private groupByPriority(models: ModelWithEffectivePriority[]): ModelWithEffectivePriority[][] {
+    // Сортировка по приоритету (меньше = выше)
+    const sorted = [...models].sort((a, b) => a.effectivePriority - b.effectivePriority);
+    
+    // Группировка
+    const groups: ModelWithEffectivePriority[][] = [];
+    let currentPriority = -1;
+    
+    for (const model of sorted) {
+      if (model.effectivePriority !== currentPriority) {
+        groups.push([]);
+        currentPriority = model.effectivePriority;
+      }
+      groups[groups.length - 1].push(model);
+    }
+    
+    return groups;
+  }
+  
+  private weightedRandomSelect(models: ModelWithEffectivePriority[]): ModelDefinition | null {
+    if (models.length === 0) return null;
+    if (models.length === 1) return models[0];
+    
+    // Рассчитать эффективный вес с учётом статистики
+    const weighted = models.map(m => ({
+      model: m,
+      weight: this.calculateEffectiveWeight(m),
+    }));
+    
+    const totalWeight = weighted.reduce((sum, i) => sum + i.weight, 0);
+    if (totalWeight === 0) return models[0]; // fallback to first
+    
+    let random = Math.random() * totalWeight;
+    for (const item of weighted) {
+      random -= item.weight;
+      if (random <= 0) return item.model;
+    }
+    
+    return models[models.length - 1];
+  }
+  
+  private calculateEffectiveWeight(model: ModelWithEffectivePriority): number {
+    const state = this.stateService.getState(model.name);
+    const staticWeight = model.effectiveWeight;
+    
+    // Если нет статистики — используем только статический вес
+    if (state.stats.totalRequests === 0) {
+      return staticWeight;
+    }
+    
+    const successRate = state.stats.successRate;
+    // Нормализация latency: чем меньше latency, тем выше множитель
+    const latencyFactor = 1000 / Math.max(state.stats.avgLatency, 100);
+    
+    return staticWeight * successRate * latencyFactor;
   }
 }
 ```
@@ -319,22 +454,22 @@ export class SmartStrategy implements SelectionStrategy {
 
 ```yaml
 rateLimiting:
-  enabled: true
+  enabled: false  # По умолчанию выключен
   
   # Глобальный лимит (все клиенты суммарно)
   global:
     requestsPerMinute: 100
     
-  # Лимит на клиента (по X-Client-ID)
+  # Лимит на клиента (по X-Client-ID header)
   perClient:
     enabled: true
     requestsPerMinute: 20
     burstSize: 5              # Разрешённый "всплеск" запросов
     
-  # Лимит на модель
+  # Лимит на модель (защита от перекоса)
   perModel:
     enabled: true
-    requestsPerMinute: 30     # Защита от перекоса
+    requestsPerMinute: 30
 ```
 
 ### 3.2 RateLimiterService
@@ -344,7 +479,7 @@ rateLimiting:
 
 @Injectable()
 export class RateLimiterService {
-  // Token Bucket или Sliding Window алгоритм
+  // Token Bucket алгоритм
   
   /** Проверить глобальный лимит */
   checkGlobal(): boolean;
@@ -355,47 +490,37 @@ export class RateLimiterService {
   /** Проверить лимит модели */
   checkModel(modelName: string): boolean;
   
-  /** Получить оставшиеся токены */
-  getRemainingTokens(clientId?: string): RateLimitInfo;
-}
-
-export interface RateLimitInfo {
-  remaining: number;
-  limit: number;
-  resetAt: number;  // Unix timestamp
+  /** Получить информацию о лимитах */
+  getRateLimitInfo(clientId?: string): RateLimitInfo;
 }
 ```
 
-### 3.3 RateLimiterGuard
+### 3.3 Заголовки ответа
 
-```typescript
-// src/modules/rate-limiter/rate-limiter.guard.ts
+Добавляются в **каждый ответ** API (успешный или 429):
 
-@Injectable()
-export class RateLimiterGuard implements CanActivate {
-  canActivate(context: ExecutionContext): boolean {
-    const request = context.switchToHttp().getRequest();
-    const clientId = request.headers['x-client-id'] ?? request.ip;
-    
-    if (!this.rateLimiter.checkGlobal()) {
-      throw new TooManyRequestsException('Global rate limit exceeded');
-    }
-    
-    if (!this.rateLimiter.checkClient(clientId)) {
-      throw new TooManyRequestsException('Client rate limit exceeded');
-    }
-    
-    return true;
+```http
+HTTP/1.1 200 OK
+X-RateLimit-Limit: 20
+X-RateLimit-Remaining: 17
+X-RateLimit-Reset: 1702469100
+```
+
+При превышении лимита:
+
+```http
+HTTP/1.1 429 Too Many Requests
+Retry-After: 45
+X-RateLimit-Limit: 20
+X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 1702469100
+
+{
+  "error": {
+    "message": "Rate limit exceeded",
+    "type": "rate_limit_error"
   }
 }
-```
-
-### 3.4 Заголовки ответа
-
-```
-X-RateLimit-Limit: 20
-X-RateLimit-Remaining: 15
-X-RateLimit-Reset: 1702468800
 ```
 
 ---
@@ -422,6 +547,8 @@ GET  /admin/rate-limits        # Статус rate limiting
       "name": "llama-3.3-70b",
       "provider": "openrouter",
       "circuitState": "CLOSED",
+      "effectivePriority": 1,
+      "effectiveWeight": 10,
       "activeRequests": 2,
       "stats": {
         "totalRequests": 150,
@@ -433,12 +560,10 @@ GET  /admin/rate-limits        # Статус rate limiting
       }
     },
     {
-      "name": "deepseek-r1",
+      "name": "old-model",
       "provider": "openrouter",
-      "circuitState": "OPEN",
-      "openedAt": 1702468500000,
-      "cooldownRemainingMs": 45000,
-      "stats": { ... }
+      "circuitState": "PERMANENTLY_UNAVAILABLE",
+      "reason": "404 Not Found"
     }
   ],
   "timestamp": "2025-12-13T12:30:00Z"
@@ -454,7 +579,9 @@ GET  /admin/rate-limits        # Статус rate limiting
   "failedRequests": 150,
   "fallbacksUsed": 45,
   "avgLatency": 2100,
+  "modelsAvailable": 5,
   "modelsInOpenState": 1,
+  "modelsPermanentlyUnavailable": 1,
   "activeConnections": 5
 }
 ```
@@ -463,46 +590,32 @@ GET  /admin/rate-limits        # Статус rate limiting
 
 ## 📦 Фаза 5: Graceful Degradation
 
-### 5.1 Что делать, если ВСЕ модели в OPEN?
+### 5.1 Поведение при отсутствии доступных моделей
+
+Если все модели в состоянии OPEN или PERMANENTLY_UNAVAILABLE:
 
 ```typescript
 // В RouterService
 
 if (availableModels.length === 0) {
-  // Вариант 1: Force HALF_OPEN на модель с наибольшим cooldown
-  const leastBadModel = this.findLeastBadModel();
-  if (leastBadModel) {
-    this.circuitBreaker.forceHalfOpen(leastBadModel.name);
-    return this.tryModel(leastBadModel, request);
-  }
-  
-  // Вариант 2: Сразу использовать fallback
+  // Сразу переключаемся на fallback (платную модель)
   if (this.config.routing.fallback.enabled) {
+    this.logger.warn('All free models unavailable, using paid fallback');
     return this.executeFallback(request, errors);
   }
   
-  // Вариант 3: Вернуть 503 Service Unavailable
+  // Если fallback отключен — возвращаем 503
   throw new ServiceUnavailableException('All models are currently unavailable');
 }
 ```
 
-### 5.2 Конфигурация
-
-```yaml
-routing:
-  gracefulDegradation:
-    # Стратегия при отсутствии доступных моделей
-    strategy: force_half_open  # или: immediate_fallback, fail_fast
-    
-    # Не ждать cooldown, если прошло больше этого времени
-    maxWaitTime: 30000
-```
+**Никаких `force_half_open`** — упрощаем логику. Если всё сломано, пусть платная модель спасает.
 
 ---
 
-## 📦 Фаза 6: Обновление конфигурации
+## 📦 Фаза 6: Конфигурация
 
-### 6.1 Расширенный router.yaml
+### 6.1 Полный router.yaml
 
 ```yaml
 modelsFile: ./models.yaml
@@ -518,9 +631,6 @@ providers:
     baseUrl: https://api.deepseek.com
 
 routing:
-  # Алгоритм выбора: round-robin | weighted | smart
-  algorithm: smart
-  
   maxRetries: 3
   rateLimitRetries: 2
   retryDelay: 1000
@@ -530,20 +640,23 @@ routing:
     enabled: true
     provider: deepseek
     model: deepseek-chat
-    
-  gracefulDegradation:
-    strategy: force_half_open
-    maxWaitTime: 30000
 
+# Переопределение приоритетов моделей (опционально)
+modelOverrides:
+  # llama-3.3-70b:
+  #   priority: 2
+  #   weight: 5
+
+# Настройки Circuit Breaker (опционально, есть дефолты)
 circuitBreaker:
-  enabled: true
-  failureThreshold: 3
-  cooldownPeriod: 60000
-  successThreshold: 2
-  statsWindowSize: 300000
+  failureThreshold: 3       # Ошибок для перехода в OPEN (default: 3)
+  cooldownPeriod: 60000     # Время в OPEN, мс (default: 60000)
+  successThreshold: 2       # Успехов для выхода из HALF_OPEN (default: 2)
+  statsWindowSize: 300000   # Окно статистики, мс (default: 300000 = 5 мин)
 
+# Rate Limiting (опционально, по умолчанию выключен)
 rateLimiting:
-  enabled: true
+  enabled: false
   global:
     requestsPerMinute: 100
   perClient:
@@ -555,35 +668,46 @@ rateLimiting:
     requestsPerMinute: 30
 ```
 
+### 6.2 Дефолтные значения (в коде)
+
+| Параметр | Дефолт | Описание |
+|----------|--------|----------|
+| `model.priority` | 1 | Приоритет модели (меньше = выше) |
+| `model.weight` | 1 | Статический вес |
+| `model.maxConcurrent` | Infinity | Без ограничений |
+| `circuitBreaker.failureThreshold` | 3 | Ошибок до OPEN |
+| `circuitBreaker.cooldownPeriod` | 60000 | 1 минута в OPEN |
+| `circuitBreaker.successThreshold` | 2 | Успехов для выхода из HALF_OPEN |
+| `circuitBreaker.statsWindowSize` | 300000 | 5 минут статистики |
+| `rateLimiting.enabled` | false | Rate limiting выключен |
+
 ---
 
 ## 📋 Порядок реализации
 
 ### Этап 1: Основа (Приоритет: Высокий)
-1. **State Module** — базовый in-memory state
-2. **Circuit Breaker** — базовая логика CLOSED/OPEN/HALF_OPEN
-3. Интеграция с RouterService
+1. **State Module** — интерфейсы, StateService
+2. **Circuit Breaker** — логика CLOSED/OPEN/HALF_OPEN/PERMANENTLY_UNAVAILABLE
+3. **Обработка 404** — переход в PERMANENTLY_UNAVAILABLE
+4. Интеграция с RouterService
 
-### Этап 2: Улучшение выбора (Приоритет: Средний)
-4. **Metrics tracking** — latency, success rate
-5. **WeightedStrategy** — выбор с учётом весов
-6. **SmartStrategy** — комбинированный алгоритм
-7. Обновление models.yaml (weight, priority, maxConcurrent)
+### Этап 2: Умный выбор (Приоритет: Высокий)
+5. **SmartStrategy** — единый алгоритм выбора
+6. Удаление round-robin.strategy.ts
+7. Обновление models.yaml (priority, weight, maxConcurrent)
+8. Поддержка modelOverrides в router.yaml
+9. Новые фильтры в запросе (prefer_fast, min_success_rate)
 
 ### Этап 3: Защита (Приоритет: Средний)
-8. **Rate Limiter Module** — Token Bucket
-9. **RateLimiterGuard** — интеграция с NestJS
-10. Заголовки X-RateLimit-*
+10. **Rate Limiter Module** — Token Bucket
+11. **RateLimiterGuard** — интеграция с NestJS
+12. Заголовки X-RateLimit-* и Retry-After
 
 ### Этап 4: Наблюдаемость (Приоритет: Средний)
-11. **Admin Module** — контроллер и DTO
-12. Эндпоинты /admin/state, /admin/metrics
+13. **Admin Module** — контроллер и DTO
+14. Эндпоинты /admin/state, /admin/metrics, /admin/rate-limits
 
-### Этап 5: Устойчивость (Приоритет: Низкий)
-13. **Graceful Degradation** — стратегии при недоступности
-14. Расширенная конфигурация
-
-### Этап 6: Документация и тесты
+### Этап 5: Документация и тесты
 15. Обновление README.md
 16. Unit тесты для новых модулей
 17. E2E тесты для сценариев отказа
@@ -595,11 +719,17 @@ rateLimiting:
 1. **In-Memory State** — состояние сбрасывается при рестарте сервиса.  
    *Обоснование:* Для простоты. Redis-backed state можно добавить позже.
 
-2. **Нет отдельного Health Check провайдеров** — используем пассивный мониторинг через ошибки.  
+2. **PERMANENTLY_UNAVAILABLE сбрасывается при рестарте** — если модель вернула 404, она не будет использоваться до перезапуска сервиса.  
+   *Обоснование:* 404 означает "модель не существует" — это обычно факт, а не временная проблема.
+
+3. **Нет отдельного Health Check провайдеров** — используем пассивный мониторинг через ошибки.  
    *Обоснование:* Экономия запросов, Circuit Breaker справляется.
 
-3. **Нет персистентной статистики** — метрики живут только в памяти.  
+4. **Нет персистентной статистики** — метрики живут только в памяти.  
    *Обоснование:* Для длительного хранения использовать OpenTelemetry/Prometheus.
+
+5. **Один алгоритм выбора (SmartStrategy)** — round-robin удаляется.  
+   *Обоснование:* Smart покрывает все сценарии и учитывает глобальный стейт.
 
 ---
 
@@ -607,15 +737,12 @@ rateLimiting:
 
 | Этап | Компонент | Сложность | Часы |
 |------|-----------|-----------|------|
-| 1 | State Module | Средняя | 4-6 |
-| 1 | Circuit Breaker | Средняя | 4-6 |
-| 2 | Metrics Service | Низкая | 2-3 |
-| 2 | Weighted/Smart Strategy | Средняя | 4-6 |
+| 1 | State Module + Circuit Breaker | Средняя | 6-8 |
+| 2 | SmartStrategy + Фильтры | Средняя | 6-8 |
 | 3 | Rate Limiter | Средняя | 4-6 |
 | 4 | Admin API | Низкая | 3-4 |
-| 5 | Graceful Degradation | Низкая | 2-3 |
-| 6 | Тесты + Документация | Средняя | 6-8 |
-| **Итого** | | | **29-42** |
+| 5 | Тесты + Документация | Средняя | 6-8 |
+| **Итого** | | | **25-34** |
 
 ---
 
