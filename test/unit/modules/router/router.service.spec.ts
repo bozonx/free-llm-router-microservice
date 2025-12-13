@@ -34,7 +34,7 @@ describe('RouterService', () => {
       },
     },
     routing: {
-      algorithm: 'round-robin' as const,
+
       maxRetries: 3,
       rateLimitRetries: 2,
       retryDelay: 100,

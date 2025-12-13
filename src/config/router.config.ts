@@ -100,9 +100,7 @@ function validateRouterConfig(config: unknown): asserts config is RouterConfig {
 
   const routing = cfg['routing'] as Record<string, unknown>;
 
-  if (routing['algorithm'] && routing['algorithm'] !== 'smart') {
-    throw new Error('Router config: routing.algorithm must be "smart"');
-  }
+
   if (typeof routing['maxRetries'] !== 'number' || routing['maxRetries'] < 0) {
     throw new Error('Router config: routing.maxRetries must be a non-negative number');
   }

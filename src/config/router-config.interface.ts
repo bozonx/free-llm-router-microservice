@@ -42,10 +42,7 @@ export interface FallbackConfig {
  * Routing configuration
  */
 export interface RoutingConfig {
-  /**
-   * Selection algorithm (only 'round-robin' for MVP)
-   */
-  algorithm: 'round-robin';
+
 
   /**
    * Maximum retries on free models
