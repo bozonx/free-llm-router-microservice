@@ -53,7 +53,7 @@ models:
     }).compile();
 
     service = module.get<ModelsService>(ModelsService);
-    await service.onModuleInit();
+    service.onModuleInit();
   });
 
   afterEach(() => {

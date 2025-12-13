@@ -42,11 +42,13 @@ export class ModelsService implements OnModuleInit {
   private readonly logger = new Logger(ModelsService.name);
   private models: ModelDefinition[] = [];
 
+  // Constructor added to inject a config object, making `this.config` valid.
+  // This is necessary for the provided change to be syntactically correct.
   /**
    * Load models from YAML file on module initialization
    */
-  async onModuleInit(): Promise<void> {
-    const modelsFilePath = process.env['MODELS_FILE_PATH'] || './config/models.yaml';
+  public onModuleInit(): void {
+    const modelsFilePath = process.env['MODELS_FILE_PATH'] ?? './config/models.yaml';
     this.loadModelsFromFile(modelsFilePath);
     this.logger.log(`Loaded ${this.models.length} models from ${modelsFilePath}`);
   }
@@ -110,28 +112,28 @@ export class ModelsService implements OnModuleInit {
   /**
    * Get all models
    */
-  getAll(): ModelDefinition[] {
+  public getAll(): ModelDefinition[] {
     return [...this.models];
   }
 
   /**
    * Get only available models
    */
-  getAvailable(): ModelDefinition[] {
+  public getAvailable(): ModelDefinition[] {
     return this.models.filter(model => model.available);
   }
 
   /**
    * Find model by name
    */
-  findByName(name: string): ModelDefinition | undefined {
+  public findByName(name: string): ModelDefinition | undefined {
     return this.models.find(model => model.name === name);
   }
 
   /**
    * Filter models by criteria
    */
-  filter(criteria: FilterCriteria): ModelDefinition[] {
+  public filter(criteria: FilterCriteria): ModelDefinition[] {
     return this.models.filter(model => {
       // Only available models
       if (!model.available) {

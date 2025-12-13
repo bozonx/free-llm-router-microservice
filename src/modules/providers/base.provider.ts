@@ -60,26 +60,26 @@ export abstract class BaseProvider implements LlmProvider {
     this.logger = new Logger(this.constructor.name);
   }
 
-  abstract get name(): string;
+  public abstract get name(): string;
 
-  abstract chatCompletion(params: ChatCompletionParams): Promise<ChatCompletionResult>;
+  public abstract chatCompletion(params: ChatCompletionParams): Promise<ChatCompletionResult>;
 
   /**
    * Handle HTTP errors and convert to standard error response
    */
   protected handleHttpError(error: unknown): HttpErrorResponse {
     if (error instanceof AxiosError) {
-      const statusCode = error.response?.status || 500;
+      const statusCode = error.response?.status ?? 500;
       const message =
-        error.response?.data?.error?.message ||
-        error.response?.data?.message ||
-        error.message ||
+        error.response?.data?.error?.message ??
+        error.response?.data?.message ??
+        error.message ??
         'Unknown error';
-      const code = error.response?.data?.error?.code || error.code;
+      const code = error.response?.data?.error?.code ?? error.code;
 
       this.logger.error(
         `HTTP error: ${statusCode} - ${message}`,
-        error.response?.data || error.message,
+        error.response?.data ?? error.message,
       );
 
       return {

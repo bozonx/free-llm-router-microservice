@@ -10,7 +10,7 @@ import type {
 /**
  * Controller for router endpoints
  */
-@Controller('v1')
+@Controller()
 export class RouterController {
   private readonly logger = new Logger(RouterController.name);
 
