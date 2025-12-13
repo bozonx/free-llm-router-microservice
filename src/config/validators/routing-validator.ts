@@ -2,10 +2,10 @@ import { BaseValidator } from './config-validator.js';
 import type { RouterConfig } from '../router-config.interface.js';
 
 export class RoutingValidator extends BaseValidator<RouterConfig['routing']> {
-  validate(value: unknown, path: string): asserts value is RouterConfig['routing'] {
+  public validate(value: unknown, path: string): asserts value is RouterConfig['routing'] {
     this.assertType(value, 'object', path);
 
-    const routing = value as Record<string, unknown>;
+    const routing = value;
 
     this.assertNumber(routing.maxRetries, `${path}.maxRetries`, 0);
     this.assertNumber(routing.rateLimitRetries, `${path}.rateLimitRetries`, 0);
@@ -18,7 +18,7 @@ export class RoutingValidator extends BaseValidator<RouterConfig['routing']> {
   private validateFallback(value: unknown, path: string): void {
     this.assertType(value, 'object', path);
 
-    const fallback = value as Record<string, unknown>;
+    const fallback = value;
 
     this.assertBoolean(fallback.enabled, `${path}.enabled`);
     this.assertString(fallback.provider, `${path}.provider`);

@@ -11,7 +11,7 @@ export interface ModelIdentifier {
 }
 
 export class ErrorExtractor {
-  static extractErrorInfo(error: unknown, model: ModelIdentifier): ErrorInfo {
+  public static extractErrorInfo(error: unknown, model: ModelIdentifier): ErrorInfo {
     const errorMessage = this.extractErrorMessage(error);
     const errorCode = this.extractErrorCode(error);
 
@@ -23,7 +23,7 @@ export class ErrorExtractor {
     };
   }
 
-  static extractErrorMessage(error: unknown): string {
+  public static extractErrorMessage(error: unknown): string {
     if (error instanceof Error) {
       return error.message;
     }
@@ -33,7 +33,7 @@ export class ErrorExtractor {
     return 'Unknown error';
   }
 
-  static extractErrorCode(error: unknown): number | undefined {
+  public static extractErrorCode(error: unknown): number | undefined {
     if (!error || typeof error !== 'object') {
       return undefined;
     }
@@ -66,7 +66,7 @@ export class ErrorExtractor {
     return undefined;
   }
 
-  static isAbortError(error: unknown): boolean {
+  public static isAbortError(error: unknown): boolean {
     if (!(error instanceof Error)) {
       return false;
     }
@@ -88,11 +88,11 @@ export class ErrorExtractor {
    * 400-499 errors usually indicate invalid requests and should not be retried.
    * 429 is excluded because it is a rate limit error which MAY be retried.
    */
-  static isClientError(code?: number): boolean {
+  public static isClientError(code?: number): boolean {
     return code !== undefined && code >= 400 && code < 500 && code !== 429;
   }
 
-  static isRateLimitError(code?: number): boolean {
+  public static isRateLimitError(code?: number): boolean {
     return code === 429;
   }
 }

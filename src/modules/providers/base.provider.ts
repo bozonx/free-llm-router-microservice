@@ -1,6 +1,6 @@
 import { Logger } from '@nestjs/common';
 import type { HttpService } from '@nestjs/axios';
-import { AxiosError, isAxiosError } from 'axios';
+import { isAxiosError } from 'axios';
 import type {
   LlmProvider,
   ChatCompletionParams,

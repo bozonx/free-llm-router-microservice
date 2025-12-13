@@ -2,14 +2,14 @@ import { BaseValidator } from './config-validator.js';
 import type { RouterConfig } from '../router-config.interface.js';
 
 export class CircuitBreakerValidator extends BaseValidator<RouterConfig['circuitBreaker']> {
-  validate(value: unknown, path: string): asserts value is RouterConfig['circuitBreaker'] {
+  public validate(value: unknown, path: string): asserts value is RouterConfig['circuitBreaker'] {
     if (value === undefined) {
       return;
     }
 
     this.assertType(value, 'object', path);
 
-    const cb = value as Record<string, unknown>;
+    const cb = value;
 
     if (cb.failureThreshold !== undefined) {
       this.assertNumber(cb.failureThreshold, `${path}.failureThreshold`, 1);

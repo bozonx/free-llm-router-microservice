@@ -17,7 +17,6 @@ import { RequestBuilderService } from './services/request-builder.service.js';
 import { ErrorExtractor, type ErrorInfo } from '../../common/utils/error-extractor.util.js';
 import {
   AllModelsFailedError,
-  NoSuitableModelError,
   ProviderNotFoundError,
   RequestCancelledError,
 } from '../../common/errors/router.errors.js';
@@ -38,7 +37,7 @@ export class RouterService {
     private readonly requestBuilder: RequestBuilderService,
     @Inject(PROVIDERS_MAP) private readonly providersMap: ProvidersMap,
     @Inject(ROUTER_CONFIG) private readonly config: RouterConfig,
-  ) { }
+  ) {}
 
   /**
    * Handle chat completion request with retry and fallback logic
@@ -152,8 +151,7 @@ export class RouterService {
           const errorInfo = ErrorExtractor.extractErrorInfo(error, model);
           return ErrorExtractor.isRateLimitError(errorInfo.code);
         },
-        onRetry: (attempt, error) => {
-          const errorInfo = ErrorExtractor.extractErrorInfo(error, model);
+        onRetry: attempt => {
           this.logger.debug(
             `Rate limit hit for ${model.name}, retrying (attempt ${attempt}/${this.config.routing.rateLimitRetries})`,
           );

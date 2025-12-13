@@ -2,14 +2,14 @@ import { BaseValidator } from './config-validator.js';
 import type { RouterConfig } from '../router-config.interface.js';
 
 export class RateLimitingValidator extends BaseValidator<RouterConfig['rateLimiting']> {
-  validate(value: unknown, path: string): asserts value is RouterConfig['rateLimiting'] {
+  public validate(value: unknown, path: string): asserts value is RouterConfig['rateLimiting'] {
     if (value === undefined) {
       return;
     }
 
     this.assertType(value, 'object', path);
 
-    const rl = value as Record<string, unknown>;
+    const rl = value;
 
     if (rl.enabled !== undefined) {
       this.assertBoolean(rl.enabled, `${path}.enabled`);
@@ -30,13 +30,13 @@ export class RateLimitingValidator extends BaseValidator<RouterConfig['rateLimit
 
   private validateGlobal(value: unknown, path: string): void {
     this.assertType(value, 'object', path);
-    const global = value as Record<string, unknown>;
+    const global = value;
     this.assertNumber(global.requestsPerMinute, `${path}.requestsPerMinute`, 0);
   }
 
   private validatePerClient(value: unknown, path: string): void {
     this.assertType(value, 'object', path);
-    const perClient = value as Record<string, unknown>;
+    const perClient = value;
 
     if (perClient.enabled !== undefined) {
       this.assertBoolean(perClient.enabled, `${path}.enabled`);
@@ -51,7 +51,7 @@ export class RateLimitingValidator extends BaseValidator<RouterConfig['rateLimit
 
   private validatePerModel(value: unknown, path: string): void {
     this.assertType(value, 'object', path);
-    const perModel = value as Record<string, unknown>;
+    const perModel = value;
 
     if (perModel.enabled !== undefined) {
       this.assertBoolean(perModel.enabled, `${path}.enabled`);

@@ -2,10 +2,10 @@ import { BaseValidator } from './config-validator.js';
 import type { RouterConfig } from '../router-config.interface.js';
 
 export class ProviderValidator extends BaseValidator<RouterConfig['providers']> {
-  validate(value: unknown, path: string): asserts value is RouterConfig['providers'] {
+  public validate(value: unknown, path: string): asserts value is RouterConfig['providers'] {
     this.assertType(value, 'object', path);
 
-    const providers = value as Record<string, unknown>;
+    const providers = value;
 
     for (const [providerName, providerConfig] of Object.entries(providers)) {
       this.validateProvider(providerConfig, `${path}.${providerName}`);
@@ -15,7 +15,7 @@ export class ProviderValidator extends BaseValidator<RouterConfig['providers']> 
   private validateProvider(value: unknown, path: string): void {
     this.assertType(value, 'object', path);
 
-    const config = value as Record<string, unknown>;
+    const config = value;
 
     this.assertBoolean(config.enabled, `${path}.enabled`);
     this.assertString(config.apiKey, `${path}.apiKey`);

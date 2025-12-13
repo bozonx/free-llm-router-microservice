@@ -11,7 +11,7 @@ export interface ValidationResult {
 }
 
 export abstract class BaseValidator<T> {
-  abstract validate(value: unknown, path: string): asserts value is T;
+  public abstract validate(value: unknown, path: string): asserts value is T;
 
   protected assertType(
     value: unknown,

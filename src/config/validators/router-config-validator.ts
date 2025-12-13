@@ -11,10 +11,10 @@ export class RouterConfigValidator extends BaseValidator<RouterConfig> {
   private readonly circuitBreakerValidator: CircuitBreakerValidator = new CircuitBreakerValidator();
   private readonly rateLimitingValidator: RateLimitingValidator = new RateLimitingValidator();
 
-  validate(value: unknown, path = 'RouterConfig'): asserts value is RouterConfig {
+  public validate(value: unknown, path = 'RouterConfig'): asserts value is RouterConfig {
     this.assertType(value, 'object', path);
 
-    const config = value as Record<string, unknown>;
+    const config = value;
 
     this.assertString(config.modelsFile, `${path}.modelsFile`);
     this.providerValidator.validate(config.providers, `${path}.providers`);
@@ -30,7 +30,7 @@ export class RouterConfigValidator extends BaseValidator<RouterConfig> {
   private validateModelOverrides(value: unknown, path: string): void {
     this.assertArray(value, path);
 
-    const overrides = value as unknown[];
+    const overrides = value;
 
     for (const [index, override] of overrides.entries()) {
       this.validateModelOverride(override, `${path}[${index}]`);
@@ -40,7 +40,7 @@ export class RouterConfigValidator extends BaseValidator<RouterConfig> {
   private validateModelOverride(value: unknown, path: string): void {
     this.assertType(value, 'object', path);
 
-    const override = value as Record<string, unknown>;
+    const override = value;
 
     this.assertString(override.name, `${path}.name`);
 

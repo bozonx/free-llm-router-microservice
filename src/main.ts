@@ -25,7 +25,12 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
   const logger = app.get(Logger);
 
-  const appConfig = configService.get<AppConfig>('app')!;
+  const appConfig = configService.get<AppConfig>('app');
+
+  // Ensure app config is available
+  if (!appConfig) {
+    throw new Error('Application configuration is missing');
+  }
 
   app.useGlobalPipes(
     new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),

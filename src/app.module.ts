@@ -2,16 +2,16 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER } from '@nestjs/core';
 import { LoggerModule } from 'nestjs-pino';
-import { RouterConfigModule } from './config/router-config.module.js';
-import { ShutdownModule } from './modules/shutdown/shutdown.module.js';
-import { HealthModule } from './modules/health/health.module.js';
-import { RouterModule } from './modules/router/router.module.js';
-import { RateLimiterModule } from './modules/rate-limiter/rate-limiter.module.js';
-import { AdminModule } from './modules/admin/admin.module.js';
+import pkg from '../package.json' with { type: 'json' };
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter.js';
 import appConfig from './config/app.config.js';
 import type { AppConfig } from './config/app.config.js';
-import pkg from '../package.json' with { type: 'json' };
+import { RouterConfigModule } from './config/router-config.module.js';
+import { AdminModule } from './modules/admin/admin.module.js';
+import { HealthModule } from './modules/health/health.module.js';
+import { RateLimiterModule } from './modules/rate-limiter/rate-limiter.module.js';
+import { RouterModule } from './modules/router/router.module.js';
+import { ShutdownModule } from './modules/shutdown/shutdown.module.js';
 
 @Module({
   imports: [
@@ -25,7 +25,10 @@ import pkg from '../package.json' with { type: 'json' };
     LoggerModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
-        const appConfig = configService.get<AppConfig>('app')!;
+        const appConfig = configService.get<AppConfig>('app');
+        if (!appConfig) {
+          throw new Error('Application configuration is missing');
+        }
         const isDev = appConfig.nodeEnv === 'development';
 
         return {
@@ -33,7 +36,7 @@ import pkg from '../package.json' with { type: 'json' };
             level: appConfig.logLevel,
             timestamp: () => `,"@timestamp":"${new Date().toISOString()}"`,
             base: {
-              service: (pkg as any).name ?? 'app',
+              service: typeof pkg === 'object' && pkg && 'name' in pkg ? pkg.name : 'app',
               environment: appConfig.nodeEnv,
             },
             transport: isDev

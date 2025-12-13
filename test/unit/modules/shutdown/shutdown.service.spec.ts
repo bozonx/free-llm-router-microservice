@@ -37,7 +37,7 @@ describe('ShutdownService', () => {
       expect(() => service.registerRequest()).not.toThrow();
     });
 
-    it('should throw ServiceUnavailableException when shutting down', async () => {
+    it('should throw ServiceUnavailableException when shutting down', () => {
       // Trigger shutdown
       void service.onApplicationShutdown('SIGTERM');
 
@@ -91,7 +91,7 @@ describe('ShutdownService', () => {
         service.unregisterRequest();
       }, 50);
 
-      await shutdownPromise;
+      await expect(shutdownPromise).resolves.toBeUndefined();
     });
 
     it('should create abort controller when shutdown starts with active requests', async () => {
@@ -106,7 +106,7 @@ describe('ShutdownService', () => {
 
       // Cleanup
       service.unregisterRequest();
-      await shutdownPromise;
+      await expect(shutdownPromise).resolves.toBeUndefined();
     });
   });
 

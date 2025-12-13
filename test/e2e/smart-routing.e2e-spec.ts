@@ -1,4 +1,3 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import type { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { createTestApp } from './test-app.factory.js';
 import nock from 'nock';
@@ -38,7 +37,7 @@ describe('Smart Routing (e2e)', () => {
     it('should open circuit after failures and skip model', async () => {
       // Setup:
       // 1. Mock OpenRouter to always fail (500)
-      const openRouterScope = nock('https://openrouter.ai')
+      nock('https://openrouter.ai')
         .post('/api/v1/chat/completions', () => true)
         .times(100)
         .reply(500, {
@@ -47,7 +46,7 @@ describe('Smart Routing (e2e)', () => {
         });
 
       // 2. Mock DeepSeek (fallback) to succeed
-      const deepSeekScope = nock('https://api.deepseek.com')
+      nock('https://api.deepseek.com')
         .post('/chat/completions', () => true)
         .times(100)
         .reply(200, {

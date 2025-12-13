@@ -11,7 +11,7 @@ export class AdminController {
   constructor(
     private readonly stateService: StateService,
     private readonly rateLimiterService: RateLimiterService,
-  ) { }
+  ) {}
 
   /**
    * Get current state of all models.

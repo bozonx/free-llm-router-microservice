@@ -76,6 +76,7 @@ export class ModelsService implements OnModuleInit {
 
   private async fetchModelsFile(url: string): Promise<Response> {
     try {
+      // eslint-disable-next-line no-undef
       const response = await fetch(url);
       if (!response.ok) {
         throw new Error(`HTTP ${response.status} ${response.statusText}`);

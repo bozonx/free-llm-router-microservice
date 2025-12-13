@@ -10,18 +10,18 @@ export interface RetryConfig {
 export class RetryHandlerService {
   private readonly logger = new Logger(RetryHandlerService.name);
 
-  calculateRetryDelay(baseDelay: number): number {
+  public calculateRetryDelay(baseDelay: number): number {
     const jitter = (Math.random() - 0.5) * 2 * ((baseDelay * RETRY_JITTER_PERCENT) / 100);
     return Math.max(0, Math.round(baseDelay + jitter));
   }
 
-  async sleep(ms: number): Promise<void> {
+  public async sleep(ms: number): Promise<void> {
     return new Promise<void>(resolve => {
       setTimeout(resolve, ms);
     });
   }
 
-  async executeWithRetry<T>(params: {
+  public async executeWithRetry<T>(params: {
     operation: () => Promise<T>;
     maxRetries: number;
     retryDelay: number;

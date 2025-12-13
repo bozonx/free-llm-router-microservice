@@ -4,7 +4,7 @@ import type { ChatCompletionParams } from '../../providers/interfaces/provider.i
 
 @Injectable()
 export class RequestBuilderService {
-  buildChatCompletionParams(
+  public buildChatCompletionParams(
     request: ChatCompletionRequestDto,
     modelId: string,
     abortSignal?: AbortSignal,

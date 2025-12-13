@@ -35,12 +35,12 @@ describe('Router (e2e)', () => {
       expect(firstModel).toHaveProperty('name');
       expect(firstModel).toHaveProperty('provider');
       expect(firstModel).toHaveProperty('type');
-      expect(firstModel).toHaveProperty('context_size');
+      expect(firstModel).toHaveProperty('contextSize');
       expect(firstModel).toHaveProperty('tags');
       expect(firstModel).toHaveProperty('available');
 
       expect(['fast', 'reasoning']).toContain(firstModel.type);
-      expect(typeof firstModel.context_size).toBe('number');
+      expect(typeof firstModel.contextSize).toBe('number');
       expect(Array.isArray(firstModel.tags)).toBe(true);
     });
   });

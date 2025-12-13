@@ -1,5 +1,3 @@
-import type { ModelDefinition } from '../interfaces/model.interface.js';
-
 export class ModelValidationError extends Error {
   constructor(message: string) {
     super(message);
@@ -11,7 +9,7 @@ export class ModelValidator {
   private static readonly VALID_TYPES = ['fast', 'reasoning'] as const;
   private static readonly VALID_SPEED_TIERS = ['fast', 'medium', 'slow'] as const;
 
-  static validateRequired(model: Record<string, unknown>): void {
+  public static validateRequired(model: Record<string, unknown>): void {
     this.assertString(model.name, 'name');
     this.assertString(model.provider, 'provider');
     this.assertString(model.model, 'model');
@@ -24,7 +22,7 @@ export class ModelValidator {
     this.assertBoolean(model.available, 'available');
   }
 
-  static validateOptional(model: Record<string, unknown>): void {
+  public static validateOptional(model: Record<string, unknown>): void {
     if (model.priority !== undefined) {
       this.assertNonNegativeNumber(model.priority, 'priority');
     }
