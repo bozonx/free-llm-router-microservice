@@ -34,7 +34,7 @@ export class RouterService {
     private readonly selectorService: SelectorService,
     @Inject(PROVIDERS_MAP) private readonly providersMap: ProvidersMap,
     @Inject(ROUTER_CONFIG) private readonly config: RouterConfig,
-  ) {}
+  ) { }
 
   /**
    * Handle chat completion request with retry and fallback logic
@@ -96,12 +96,13 @@ export class RouterService {
           `Model ${model.name} failed: ${errorInfo.error} (code: ${errorInfo.code ?? 'N/A'})`,
         );
 
-        // Don't retry on client errors (4xx except 429)
+        // Don't retry on client errors (4xx except 429 and 404)
         if (
           errorInfo.code &&
           errorInfo.code >= 400 &&
           errorInfo.code < 500 &&
-          errorInfo.code !== 429
+          errorInfo.code !== 429 &&
+          errorInfo.code !== 404
         ) {
           this.logger.error('Client error detected, not retrying');
           throw error;
