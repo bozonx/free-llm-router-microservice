@@ -44,7 +44,7 @@ export interface ModelsResponseDto {
     name: string;
     provider: string;
     type: 'fast' | 'reasoning';
-    context_size: number;
+    contextSize: number;
     tags: string[];
     available: boolean;
   }>;

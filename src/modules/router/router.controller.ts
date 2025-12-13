@@ -85,7 +85,7 @@ export class RouterController {
         name: model.name,
         provider: model.provider,
         type: model.type,
-        context_size: model.contextSize,
+        contextSize: model.contextSize,
         tags: model.tags,
         available: model.available,
       })),
