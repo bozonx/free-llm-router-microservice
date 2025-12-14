@@ -52,16 +52,28 @@ routing:
 #   successThreshold: 2       # Successes to close from HALF_OPEN (default: 2)
 #   statsWindowSizeMins: 10   # Statistics window in minutes (default: 10 mins)
 
-# Model weight overrides (optional)
-# Allows adjusting weights without editing models.yaml
+# Model parameter overrides (optional)
+# Allows overriding any model parameters from models.yaml without editing the file
+# Available override parameters:
+#   - weight: Selection weight (1-100), higher = more likely to be selected
+#   - tags: Tags for filtering
+#   - contextSize: Context window size in tokens
+#   - maxOutputTokens: Maximum output tokens
+#   - speedTier: Speed category ('fast' | 'medium' | 'slow')
+#   - available: Enable/disable model (true/false)
+#   - maxConcurrent: Maximum concurrent requests to this model
 # modelOverrides:
 #   - name: llama-3.3-70b
-#     weight: 5               # Lower weight = less likely to be selected
-#     maxConcurrent: 10       # Limit concurrency
+#     weight: 5               # Adjust selection probability
+#     maxConcurrent: 10       # Limit concurrent requests
 #   - name: deepseek-r1
-#     provider: deepseek      # Optional validation
-#     weight: 15              # Higher weight = more likely to be selected
-#     available: false        # Temporarily disable
+#     provider: deepseek      # Optional: validate provider match
+#     weight: 15              # Increase selection probability
+#     available: false        # Temporarily disable model
+#     speedTier: slow         # Override speed tier
+#   - name: qwen-2.5-72b
+#     tags: [code, reasoning] # Override tags for filtering
+#     contextSize: 32000      # Override context size
 
 # Rate limiting settings (optional, disabled by default)
 # rateLimiting:
