@@ -32,7 +32,7 @@ describe('Smart Routing (e2e)', () => {
   });
 
   describe('Circuit Breaker', () => {
-    const targetModel = 'llama-3.1-8b'; // Priority 1
+    const targetModel = 'mistral-7b-instruct'; // Priority 1
 
     it('should open circuit after failures and skip model', async () => {
       // Setup:
@@ -110,7 +110,7 @@ describe('Smart Routing (e2e)', () => {
     });
 
     it('should mark model as PERMANENTLY_UNAVAILABLE on 404', async () => {
-      const model404 = 'qwen-2.5-7b';
+      const model404 = 'qwen3-4b';
 
       nock('https://openrouter.ai')
         .post('/api/v1/chat/completions', () => true)
@@ -149,9 +149,9 @@ describe('Smart Routing (e2e)', () => {
 
   describe('Smart Selection Strategy', () => {
     it('should select models based on weighted random (higher weight = more likely)', async () => {
-      // llama-3.3-70b has weight 10
-      // deepseek-r1 has weight 5
-      // With weighted random, llama-3.3-70b should be selected more often
+      // llama-3.3-70b-instruct has weight 10
+      // deepseek-r1t2-chimera has weight 5
+      // With weighted random, llama-3.3-70b-instruct should be selected more often
 
       nock('https://openrouter.ai')
         .post('/api/v1/chat/completions', () => true)
@@ -194,7 +194,7 @@ describe('Smart Routing (e2e)', () => {
         method: 'POST',
         url: '/api/v1/chat/completions',
         payload: {
-          model: 'llama-3.3-70b',
+          model: 'llama-3.3-70b-instruct',
           messages: [{ role: 'user', content: 'train' }],
         },
       });
@@ -212,7 +212,7 @@ describe('Smart Routing (e2e)', () => {
         method: 'POST',
         url: '/api/v1/chat/completions',
         payload: {
-          model: 'deepseek-r1',
+          model: 'deepseek-r1t2-chimera',
           messages: [{ role: 'user', content: 'train' }],
         },
       });
@@ -239,7 +239,7 @@ describe('Smart Routing (e2e)', () => {
       });
 
       const body = JSON.parse(response.body);
-      expect(body._router.model_name).not.toBe('llama-3.3-70b');
+      expect(body._router.model_name).not.toBe('llama-3.3-70b-instruct');
     });
   });
 
