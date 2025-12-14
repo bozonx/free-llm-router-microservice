@@ -61,8 +61,8 @@ describe('SmartStrategy', () => {
       openrouter: { enabled: true, apiKey: 'test', baseUrl: 'https://test.com' },
     },
     routing: {
-      maxRetries: 3,
-      rateLimitRetries: 2,
+      maxModelSwitches: 3,
+      maxSameModelRetries: 2,
       retryDelay: 1000,
       timeoutSecs: 30,
       fallback: { enabled: true, provider: 'deepseek', model: 'deepseek-chat' },

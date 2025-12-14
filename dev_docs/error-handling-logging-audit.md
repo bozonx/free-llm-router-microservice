@@ -98,8 +98,8 @@
 
 **Пример:**
 ```typescript
-// Было: "routing.maxRetries must be a number"
-// Стало: "routing.maxRetries must be a number, got string (value: abc)"
+// Было: "routing.maxModelSwitches must be a number"
+// Стало: "routing.maxModelSwitches must be a number, got string (value: abc)"
 ```
 
 #### 1.8 ModelsService

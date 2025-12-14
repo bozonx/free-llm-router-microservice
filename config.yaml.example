@@ -24,18 +24,20 @@ providers:
 
 # Routing settings
 routing:
-  # Maximum retries on free models
-  maxRetries: 3
+  # Maximum number of model switches (trying different models)
+  # When a model fails (5xx, timeout, network error), the router switches to the next model
+  maxModelSwitches: 3
   
-  # Maximum retries on 429 rate limit for one model
-  rateLimitRetries: 2
+  # Maximum retries on the same model for temporary errors
+  # Applies to: 429 (Rate Limit) and retryable network errors (ENETUNREACH, ECONNRESET)
+  maxSameModelRetries: 2
   
-  # Delay between retries (ms) - only for rate limit (429) retries on the same model
+  # Delay between retries (ms) - only for retries on the same model
   retryDelay: 1000
   # Note: Jitter ±20% is hardcoded in RETRY_JITTER_PERCENT constant
   
-  # Provider request timeout (ms)
-  timeoutSecs: 30 # in seconds
+  # Provider request timeout in seconds
+  timeoutSecs: 30
   
   # Fallback to paid model
   fallback:

@@ -15,8 +15,8 @@ describe('RateLimiterService', () => {
       openrouter: { enabled: true, apiKey: 'test', baseUrl: 'https://test.com' },
     },
     routing: {
-      maxRetries: 3,
-      rateLimitRetries: 2,
+      maxModelSwitches: 3,
+      maxSameModelRetries: 2,
       retryDelay: 100,
       timeoutSecs: 30,
       fallback: { enabled: false, provider: 'deepseek', model: 'deepseek-chat' },

@@ -7,8 +7,8 @@ export class RoutingValidator extends BaseValidator<RouterConfig['routing']> {
 
     const routing = value;
 
-    this.assertNumber(routing.maxRetries, `${path}.maxRetries`, 0);
-    this.assertNumber(routing.rateLimitRetries, `${path}.rateLimitRetries`, 0);
+    this.assertNumber(routing.maxModelSwitches, `${path}.maxModelSwitches`, 0);
+    this.assertNumber(routing.maxSameModelRetries, `${path}.maxSameModelRetries`, 0);
     this.assertNumber(routing.retryDelay, `${path}.retryDelay`, 0);
     this.assertNumber(routing.timeoutSecs, `${path}.timeoutSecs`, 0);
 

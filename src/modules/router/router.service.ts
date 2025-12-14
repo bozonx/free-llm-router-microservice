@@ -76,7 +76,7 @@ export class RouterService {
 
     const parsedModel = parseModelInput(request.model);
 
-    for (let i = 0; i < this.config.routing.maxRetries; i++) {
+    for (let i = 0; i < this.config.routing.maxModelSwitches; i++) {
       attemptCount++;
 
       const model = this.selectModel(request, parsedModel, excludedModels);
@@ -149,7 +149,7 @@ export class RouterService {
     try {
       return await this.retryHandler.executeWithRetry({
         operation: async () => this.executeSingleRequest(model, request, abortSignal),
-        maxRetries: this.config.routing.rateLimitRetries,
+        maxRetries: this.config.routing.maxSameModelRetries,
         retryDelay: this.config.routing.retryDelay,
         shouldRetry: error => {
           const errorInfo = ErrorExtractor.extractErrorInfo(error, model);
@@ -163,7 +163,7 @@ export class RouterService {
           const isNetworkError = ErrorExtractor.isRetryableNetworkError(error);
           const errorType = isNetworkError ? 'Network error' : 'Rate limit';
           this.logger.debug(
-            `${errorType} for ${model.name}, retrying (attempt ${attempt}/${this.config.routing.rateLimitRetries})`,
+            `${errorType} for ${model.name}, retrying (attempt ${attempt}/${this.config.routing.maxSameModelRetries})`,
           );
         },
       });

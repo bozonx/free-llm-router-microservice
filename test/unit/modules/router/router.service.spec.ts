@@ -38,8 +38,8 @@ describe('RouterService', () => {
       },
     },
     routing: {
-      maxRetries: 3,
-      rateLimitRetries: 2,
+      maxModelSwitches: 3,
+      maxSameModelRetries: 2,
       retryDelay: 100,
       timeoutSecs: 30,
       fallback: {

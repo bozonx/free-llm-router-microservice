@@ -76,8 +76,8 @@ export interface FallbackConfig {
 
 export interface RoutingConfig {
   algorithm: 'round-robin';
-  maxRetries: number;
-  rateLimitRetries: number;
+  maxModelSwitches: number;
+  maxSameModelRetries: number;
   retryDelay: number;
   timeout: number;
   fallback: FallbackConfig;
@@ -422,7 +422,7 @@ export interface SelectionStrategy {
 1. Выбрать модель через SelectorService
 2. Получить провайдер через ProvidersModule
 3. Выполнить запрос
-4. При ошибке 429 — повторить `rateLimitRetries` раз с задержкой `retryDelay` (с jitter ±20%)
+4. При ошибке 429 — повторить `maxSameModelRetries` раз с задержкой `retryDelay` (с jitter ±20%)
 5. При других ошибках — retry с другой моделью
 6. При исчерпании попыток — fallback на платную модель
 7. Собрать информацию о попытках в `_router`

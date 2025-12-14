@@ -43,14 +43,14 @@ export interface FallbackConfig {
  */
 export interface RoutingConfig {
   /**
-   * Maximum retries on free models
+   * Maximum number of model switches (trying different models)
    */
-  maxRetries: number;
+  maxModelSwitches: number;
 
   /**
-   * Maximum retries on 429 rate limit for one model
+   * Maximum retries on the same model for temporary errors (429 rate limit, network issues)
    */
-  rateLimitRetries: number;
+  maxSameModelRetries: number;
 
   /**
    * Retry delay in milliseconds (only for rate limit retries on the same model)

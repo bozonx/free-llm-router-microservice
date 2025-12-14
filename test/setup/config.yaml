@@ -19,10 +19,8 @@ providers:
 # Routing configuration
 routing:
   # Maximum retries on free models
-  maxRetries: 3
-
-  # Rate limit retries per model
-  rateLimitRetries: 2
+  maxModelSwitches: 3
+  maxSameModelRetries: 2
 
   # Retry delay in milliseconds
   retryDelay: 1000

@@ -24,8 +24,8 @@ describe('RouterConfigValidator', () => {
       },
     },
     routing: {
-      maxRetries: 3,
-      rateLimitRetries: 2,
+      maxModelSwitches: 3,
+      maxSameModelRetries: 2,
       retryDelay: 1000,
       timeoutSecs: 30,
       fallback: {
