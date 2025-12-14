@@ -44,7 +44,6 @@
     },
     "devDependencies": {
         "@langchain/core": "^1.1.5",
-        "@langchain/openai": "^1.2.0",
         "@types/node": "^25.0.2",
         "@typescript-eslint/parser": "^8.49.0",
         "eslint": "^9.39.2",
@@ -56,7 +55,6 @@
     },
     "peerDependencies": {
         "@langchain/core": "*",
-        "@langchain/openai": "*",
         "n8n-workflow": "*"
     }
 }

@@ -6,7 +6,7 @@ import {
     type INodeProperties,
     NodeConnectionTypes,
 } from 'n8n-workflow';
-import { ChatOpenAI } from '@langchain/openai';
+import { FreeLlmRouterChatModel } from './FreeLlmRouterChatModel';
 
 /**
  * Free LLM Router node for n8n
@@ -246,27 +246,16 @@ export class FreeLlmRouter implements INodeType {
         const type = this.getNodeParameter('type', itemIndex, '') as string;
         const jsonResponse = this.getNodeParameter('jsonResponse', itemIndex, false) as boolean;
 
-        const configuration: Record<string, unknown> = {
-            temperature,
-            maxTokens,
-            modelName: model,
-            openAIApiKey: 'not-needed',
-        };
-
-        if (options.topP !== undefined) {
-            configuration.topP = options.topP;
-        }
-        if (options.frequencyPenalty !== undefined) {
-            configuration.frequencyPenalty = options.frequencyPenalty;
-        }
-        if (options.presencePenalty !== undefined) {
-            configuration.presencePenalty = options.presencePenalty;
-        }
-        if (options.timeout !== undefined) {
-            configuration.timeout = options.timeout;
+        // Build headers for authentication
+        const headers: Record<string, string> = {};
+        if (credentials.authentication !== 'none') {
+            headers.Authorization =
+                credentials.authentication === 'bearer'
+                    ? `Bearer ${credentials.token}`
+                    : `Basic ${Buffer.from(`${credentials.username}:${credentials.password}`).toString('base64')}`;
         }
 
-        // Add filter options as model kwargs
+        // Build model kwargs (filter options)
         const modelKwargs: Record<string, unknown> = {};
 
         if (tags) {
@@ -288,24 +277,19 @@ export class FreeLlmRouter implements INodeType {
             modelKwargs.min_success_rate = options.filterMinSuccessRate;
         }
 
-        if (Object.keys(modelKwargs).length > 0) {
-            configuration.modelKwargs = modelKwargs;
-        }
-
-        configuration.configuration = {
-            baseURL: credentials.baseUrl as string,
-            defaultHeaders:
-                credentials.authentication !== 'none'
-                    ? {
-                        Authorization:
-                            credentials.authentication === 'bearer'
-                                ? `Bearer ${credentials.token}`
-                                : `Basic ${Buffer.from(`${credentials.username}:${credentials.password}`).toString('base64')}`,
-                    }
-                    : {},
-        };
-
-        const llm = new ChatOpenAI(configuration);
+        // Create model instance
+        const llm = new FreeLlmRouterChatModel({
+            baseUrl: credentials.baseUrl as string,
+            headers,
+            model,
+            temperature,
+            maxTokens,
+            topP: options.topP,
+            frequencyPenalty: options.frequencyPenalty,
+            presencePenalty: options.presencePenalty,
+            timeout: options.timeout,
+            modelKwargs: Object.keys(modelKwargs).length > 0 ? modelKwargs : undefined,
+        });
 
         return {
             response: llm,
