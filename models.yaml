@@ -1,76 +1,392 @@
 models:
-  # Free models from OpenRouter
-  - name: deepseek-r1
+  - name: devstral-2512
     provider: openrouter
-    model: deepseek/deepseek-r1:free
-    type: reasoning
-    contextSize: 64000
-    maxOutputTokens: 8000
-    speedTier: slow
-    tags: [reasoning, code, math]
+    model: mistralai/devstral-2512:free
+    type: fast
+    contextSize: 262144
+    maxOutputTokens: 4096
+    speedTier: fast
+    tags:
+      - general
     jsonResponse: true
     available: true
-    # Smart Strategy fields (optional, have defaults)
-    weight: 5            # Selection weight (1-100, default: 1). Higher = more likely to be selected
-    maxConcurrent: 3     # Max parallel requests (default: unlimited)
-    
-  - name: llama-3.3-70b
+    weight: 1
+  - name: deepseek-v3.1-nex-n1
     provider: openrouter
-    model: meta-llama/llama-3.3-70b-instruct:free
+    model: nex-agi/deepseek-v3.1-nex-n1:free
+    type: fast
+    contextSize: 131072
+    maxOutputTokens: 163840
+    speedTier: fast
+    tags:
+      - general
+    jsonResponse: true
+    available: true
+    weight: 1
+  - name: nova-2-lite-v1
+    provider: openrouter
+    model: amazon/nova-2-lite-v1:free
+    type: fast
+    contextSize: 1000000
+    maxOutputTokens: 65535
+    speedTier: fast
+    tags:
+      - general
+    jsonResponse: true
+    available: true
+    weight: 1
+  - name: trinity-mini
+    provider: openrouter
+    model: arcee-ai/trinity-mini:free
+    type: fast
+    contextSize: 131072
+    maxOutputTokens: 4096
+    speedTier: fast
+    tags:
+      - general
+    jsonResponse: true
+    available: true
+    weight: 1
+  - name: tng-r1t-chimera
+    provider: openrouter
+    model: tngtech/tng-r1t-chimera:free
+    type: fast
+    contextSize: 163840
+    maxOutputTokens: 163840
+    speedTier: fast
+    tags:
+      - general
+    jsonResponse: true
+    available: true
+    weight: 1
+  - name: olmo-3-32b-think
+    provider: openrouter
+    model: allenai/olmo-3-32b-think:free
+    type: fast
+    contextSize: 65536
+    maxOutputTokens: 65536
+    speedTier: fast
+    tags:
+      - general
+    jsonResponse: true
+    available: true
+    weight: 1
+  - name: kat-coder-pro
+    provider: openrouter
+    model: kwaipilot/kat-coder-pro:free
+    type: fast
+    contextSize: 256000
+    maxOutputTokens: 32768
+    speedTier: fast
+    tags:
+      - general
+      - code
+    jsonResponse: true
+    available: true
+    weight: 1
+  - name: nemotron-nano-12b-v2-vl
+    provider: openrouter
+    model: nvidia/nemotron-nano-12b-v2-vl:free
+    type: fast
+    contextSize: 128000
+    maxOutputTokens: 128000
+    speedTier: fast
+    tags:
+      - general
+    jsonResponse: true
+    available: true
+    weight: 1
+  - name: tongyi-deepresearch-30b-a3b
+    provider: openrouter
+    model: alibaba/tongyi-deepresearch-30b-a3b:free
+    type: fast
+    contextSize: 131072
+    maxOutputTokens: 131072
+    speedTier: fast
+    tags:
+      - general
+    jsonResponse: true
+    available: true
+    weight: 1
+  - name: nemotron-nano-9b-v2
+    provider: openrouter
+    model: nvidia/nemotron-nano-9b-v2:free
     type: fast
     contextSize: 128000
     maxOutputTokens: 4096
     speedTier: fast
-    tags: [general, code]
+    tags:
+      - general
     jsonResponse: true
     available: true
-    weight: 10           # Higher weight = more likely to be selected
-
-  - name: llama-3.1-8b
+    weight: 1
+  - name: gpt-oss-120b
     provider: openrouter
-    model: meta-llama/llama-3.1-8b-instruct:free
+    model: openai/gpt-oss-120b:free
     type: fast
-    contextSize: 128000
-    maxOutputTokens: 2048
+    contextSize: 131072
+    maxOutputTokens: 4096
     speedTier: fast
-    tags: [general, code, simple]
+    tags:
+      - general
     jsonResponse: true
     available: true
-
-  - name: gemma-2-9b
+    weight: 1
+  - name: gpt-oss-20b
     provider: openrouter
-    model: google/gemma-2-9b-it:free
+    model: openai/gpt-oss-20b:free
+    type: fast
+    contextSize: 131072
+    maxOutputTokens: 128000
+    speedTier: fast
+    tags:
+      - general
+    jsonResponse: true
+    available: true
+    weight: 1
+  - name: glm-4.5-air
+    provider: openrouter
+    model: z-ai/glm-4.5-air:free
+    type: fast
+    contextSize: 131072
+    maxOutputTokens: 131072
+    speedTier: fast
+    tags:
+      - general
+    jsonResponse: true
+    available: true
+    weight: 1
+  - name: qwen3-coder
+    provider: openrouter
+    model: qwen/qwen3-coder:free
+    type: fast
+    contextSize: 262000
+    maxOutputTokens: 262000
+    speedTier: fast
+    tags:
+      - general
+      - code
+    jsonResponse: true
+    available: true
+    weight: 1
+  - name: kimi-k2
+    provider: openrouter
+    model: moonshotai/kimi-k2:free
+    type: fast
+    contextSize: 32768
+    maxOutputTokens: 4096
+    speedTier: fast
+    tags:
+      - general
+    jsonResponse: true
+    available: true
+    weight: 1
+  - name: dolphin-mistral-24b-venice-edition
+    provider: openrouter
+    model: cognitivecomputations/dolphin-mistral-24b-venice-edition:free
+    type: fast
+    contextSize: 32768
+    maxOutputTokens: 4096
+    speedTier: fast
+    tags:
+      - general
+    jsonResponse: true
+    available: true
+    weight: 1
+  - name: gemma-3n-e2b-it
+    provider: openrouter
+    model: google/gemma-3n-e2b-it:free
     type: fast
     contextSize: 8192
     maxOutputTokens: 2048
     speedTier: fast
-    tags: [general, simple]
+    tags:
+      - general
     jsonResponse: true
     available: true
-
-  - name: qwen-2.5-7b
+    weight: 1
+  - name: deepseek-r1t2-chimera
     provider: openrouter
-    model: qwen/qwen-2.5-7b-instruct:free
+    model: tngtech/deepseek-r1t2-chimera:free
+    type: reasoning
+    contextSize: 163840
+    maxOutputTokens: 4096
+    speedTier: fast
+    tags:
+      - general
+      - reasoning
+    jsonResponse: true
+    available: true
+    weight: 5
+  - name: gemma-3n-e4b-it
+    provider: openrouter
+    model: google/gemma-3n-e4b-it:free
     type: fast
-    contextSize: 32000
+    contextSize: 8192
     maxOutputTokens: 2048
     speedTier: fast
-    tags: [general, code, multilingual]
+    tags:
+      - general
     jsonResponse: true
     available: true
-
-  - name: phi-3-mini
+    weight: 1
+  - name: qwen3-4b
     provider: openrouter
-    model: microsoft/phi-3-mini-128k-instruct:free
+    model: qwen/qwen3-4b:free
+    type: fast
+    contextSize: 40960
+    maxOutputTokens: 4096
+    speedTier: fast
+    tags:
+      - general
+    jsonResponse: true
+    available: true
+    weight: 1
+  - name: llama-guard-4-12b
+    provider: openrouter
+    model: meta-llama/llama-guard-4-12b:free
+    type: fast
+    contextSize: 262144
+    maxOutputTokens: 4096
+    speedTier: fast
+    tags:
+      - general
+    jsonResponse: true
+    available: true
+    weight: 1
+  - name: qwen3-235b-a22b
+    provider: openrouter
+    model: qwen/qwen3-235b-a22b:free
+    type: fast
+    contextSize: 131072
+    maxOutputTokens: 4096
+    speedTier: fast
+    tags:
+      - general
+    jsonResponse: true
+    available: true
+    weight: 1
+  - name: deepseek-r1t-chimera
+    provider: openrouter
+    model: tngtech/deepseek-r1t-chimera:free
+    type: reasoning
+    contextSize: 163840
+    maxOutputTokens: 4096
+    speedTier: fast
+    tags:
+      - general
+      - reasoning
+    jsonResponse: true
+    available: true
+    weight: 5
+  - name: mistral-small-3.1-24b-instruct
+    provider: openrouter
+    model: mistralai/mistral-small-3.1-24b-instruct:free
     type: fast
     contextSize: 128000
-    maxOutputTokens: 2048
+    maxOutputTokens: 4096
     speedTier: fast
-    tags: [general, code]
+    tags:
+      - general
     jsonResponse: true
     available: true
-
-  # Fallback paid model (DeepSeek)
+    weight: 1
+  - name: gemma-3-4b-it
+    provider: openrouter
+    model: google/gemma-3-4b-it:free
+    type: fast
+    contextSize: 32768
+    maxOutputTokens: 8192
+    speedTier: fast
+    tags:
+      - general
+    jsonResponse: true
+    available: true
+    weight: 1
+  - name: gemma-3-12b-it
+    provider: openrouter
+    model: google/gemma-3-12b-it:free
+    type: fast
+    contextSize: 32768
+    maxOutputTokens: 8192
+    speedTier: fast
+    tags:
+      - general
+    jsonResponse: true
+    available: true
+    weight: 1
+  - name: gemma-3-27b-it
+    provider: openrouter
+    model: google/gemma-3-27b-it:free
+    type: fast
+    contextSize: 131072
+    maxOutputTokens: 4096
+    speedTier: fast
+    tags:
+      - general
+    jsonResponse: true
+    available: true
+    weight: 1
+  - name: gemini-2.0-flash-exp
+    provider: openrouter
+    model: google/gemini-2.0-flash-exp:free
+    type: fast
+    contextSize: 1048576
+    maxOutputTokens: 8192
+    speedTier: fast
+    tags:
+      - general
+    jsonResponse: true
+    available: true
+    weight: 3
+  - name: llama-3.3-70b-instruct
+    provider: openrouter
+    model: meta-llama/llama-3.3-70b-instruct:free
+    type: fast
+    contextSize: 131072
+    maxOutputTokens: 4096
+    speedTier: fast
+    tags:
+      - general
+    jsonResponse: true
+    available: true
+    weight: 10
+  - name: llama-3.2-3b-instruct
+    provider: openrouter
+    model: meta-llama/llama-3.2-3b-instruct:free
+    type: fast
+    contextSize: 131072
+    maxOutputTokens: 4096
+    speedTier: fast
+    tags:
+      - general
+    jsonResponse: true
+    available: true
+    weight: 1
+  - name: hermes-3-llama-3.1-405b
+    provider: openrouter
+    model: nousresearch/hermes-3-llama-3.1-405b:free
+    type: fast
+    contextSize: 131072
+    maxOutputTokens: 4096
+    speedTier: fast
+    tags:
+      - general
+    jsonResponse: true
+    available: true
+    weight: 1
+  - name: mistral-7b-instruct
+    provider: openrouter
+    model: mistralai/mistral-7b-instruct:free
+    type: fast
+    contextSize: 32768
+    maxOutputTokens: 16384
+    speedTier: fast
+    tags:
+      - general
+    jsonResponse: true
+    available: true
+    weight: 1
   - name: deepseek-chat
     provider: deepseek
     model: deepseek-chat
@@ -78,6 +394,9 @@ models:
     contextSize: 64000
     maxOutputTokens: 8000
     speedTier: fast
-    tags: [general, code, paid]
+    tags:
+      - general
+      - code
+      - paid
     jsonResponse: true
     available: true
