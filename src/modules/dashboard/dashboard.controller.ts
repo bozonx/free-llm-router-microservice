@@ -20,7 +20,7 @@ export class DashboardController {
 
     // Get API base path from config
     const appConfig = this.configService.get<AppConfig>('app');
-    this.apiBasePath = `/${appConfig?.apiBasePath || 'api'}/v1`;
+    this.apiBasePath = `/${appConfig?.apiBasePath ?? 'api'}/v1`;
   }
 
   /**
@@ -46,7 +46,7 @@ export class DashboardController {
       );
 
       reply.header('Content-Type', 'text/html; charset=utf-8').send(content);
-    } catch (error) {
+    } catch (_error) {
       reply.code(500).send({ error: 'Failed to read file' });
     }
   }
@@ -87,7 +87,7 @@ export class DashboardController {
     try {
       const content = readFileSync(filePath, 'utf-8');
       reply.header('Content-Type', `${contentType}; charset=utf-8`).send(content);
-    } catch (error) {
+    } catch (_error) {
       reply.code(500).send({ error: 'Failed to read file' });
     }
   }

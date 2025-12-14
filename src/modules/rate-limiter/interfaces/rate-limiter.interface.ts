@@ -13,7 +13,7 @@ export interface RateLimitingConfig {
   global?: GlobalRateLimitConfig;
 
   /**
-   * Per-client rate limit (by X-Client-ID header)
+   * Per-client rate limit (by X-Client-ID header or IP address)
    */
   perClient?: PerClientRateLimitConfig;
 
