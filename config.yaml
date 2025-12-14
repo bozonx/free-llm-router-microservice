@@ -39,7 +39,7 @@ routing:
   # Provider request timeout in seconds
   timeoutSecs: 30
   
-  # Fallback to paid model
+  # Fallback to paid model (single attempt, no retries)
   fallback:
     enabled: true
     provider: deepseek        # or openrouter
