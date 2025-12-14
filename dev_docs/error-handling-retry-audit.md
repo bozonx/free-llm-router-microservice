@@ -1,30 +1,29 @@
 # Аудит обработки ошибок провайдера и логики ретраев
 
 **Дата:** 2025-12-14  
-**Версия:** 1.0  
+**Версия:** 2.0 (после обновления документации)  
 **Статус:** Завершен
 
 ## Резюме
 
-Проведен детальный аудит обработки ошибок провайдера, логики ретраев, переключения на другие модели и работы Circuit Breaker. Общая архитектура обработки ошибок **разумна и хорошо продумана**, но выявлены **критические пробелы** в обработке сетевых ошибок и некоторые несоответствия в документации.
+Проведен детальный аудит обработки ошибок провайдера, логики ретраев, переключения на другие модели и работы Circuit Breaker. Документация приведена в соответствие с фактическим поведением кода.
 
 ### Ключевые выводы
 
 ✅ **Сильные стороны:**
 - Четкое разделение ответственности между компонентами
-- Правильная обработка 404 как постоянной ошибки
+- Правильная обработка 404 как постоянной ошибки (`PERMANENTLY_UNAVAILABLE`)
 - Корректная логика Circuit Breaker с переходами состояний
-- Хорошая обработка 429 с jitter и ретраями
+- Хорошая обработка 429 с jitter и ретраями на той же модели
+- Документация теперь точно отражает поведение кода
 
 ❌ **Критические проблемы:**
 - **Отсутствует обработка сетевых ошибок** (ECONNREFUSED, ENOTFOUND, EHOSTUNREACH)
-- Timeout обрабатывается только на уровне Circuit Breaker, но не ретраится
-- Несоответствие документации и кода по обработке 5xx
+- **4xx ошибки учитываются в Circuit Breaker**, хотя это проблемы клиента/конфигурации, а не модели
 
-⚠️ **Рекомендации к улучшению:**
-- Добавить ретраи для сетевых ошибок
-- Уточнить обработку timeout
-- Обновить документацию
+⚠️ **Спорные моменты (требуют обсуждения):**
+- Timeout не ретраится на той же модели (сразу переключается)
+- 5xx ошибки не ретраятся на той же модели (сразу переключаются)
 
 ---
 
@@ -48,8 +47,9 @@ public static isRateLimitError(code?: number): boolean {
 
 **Анализ:**
 - ✅ Правильно исключает 429 из клиентских ошибок
-- ✅ Клиентские ошибки (400, 401, 403, 404) не ретраятся
-- ⚠️ **Нет проверки на серверные ошибки (5xx)** в `ErrorExtractor`
+- ✅ Клиентские ошибки (400, 401, 403, 404) прерывают цикл попыток
+- ⚠️ Нет отдельной проверки на серверные ошибки (5xx) в `ErrorExtractor`
+- ⚠️ Нет проверки на сетевые ошибки
 
 #### Файл: `src/modules/providers/base.provider.ts`
 
@@ -74,7 +74,7 @@ protected isRetryableError(error: HttpErrorResponse): boolean {
 **Анализ:**
 - ✅ Есть проверка на 5xx
 - ✅ Есть проверка на timeout (`ETIMEDOUT`, `ECONNABORTED`)
-- ❌ **Метод `isRetryableError` не используется в коде** - это только вспомогательный метод
+- ❌ **Метод `isRetryableError` не используется в логике роутера**
 - ❌ **Отсутствует обработка сетевых ошибок**: `ECONNREFUSED`, `ENOTFOUND`, `EHOSTUNREACH`, `ENETUNREACH`
 
 ---
@@ -121,88 +121,27 @@ private async executeWithRateLimitRetry(params: {
 - ✅ **Правильно**: Используется jitter для задержки (в `RetryHandlerService.calculateRetryDelay`)
 - ✅ **Правильно**: Ретраи на той же модели
 - ✅ **Правильно**: Счетчик активных запросов корректно управляется
+- ⚠️ **Спорно**: Только 429 ретраится, другие ошибки (5xx, timeout, сетевые) сразу переключаются
 
 #### Переключение на другую модель
 
 **Файл:** `src/modules/router/router.service.ts:67-138`
 
-```typescript
-private async executeWithShutdownHandling(
-  request: ChatCompletionRequestDto,
-  clientSignal?: AbortSignal,
-): Promise<ChatCompletionResponseDto> {
-  const abortSignal = this.createCombinedAbortSignal(clientSignal);
-  const errors: ErrorInfo[] = [];
-  const excludedModels: string[] = [];
-  let attemptCount = 0;
-
-  const parsedModel = parseModelInput(request.model);
-
-  for (let i = 0; i < this.config.routing.maxRetries; i++) {
-    attemptCount++;
-
-    const model = this.selectModel(request, parsedModel, excludedModels);
-    if (!model) {
-      this.logger.warn('No suitable model found');
-      break;
-    }
-
-    this.logger.debug(`Attempt ${attemptCount}: Using model ${model.name} (${model.provider})`);
-
-    try {
-      const result = await this.executeWithRateLimitRetry({
-        model,
-        request,
-        abortSignal,
-      });
-
-      // Success - return immediately
-      return this.buildSuccessResponse({
-        result,
-        model,
-        attemptCount,
-        errors,
-        fallbackUsed: false,
-      });
-    } catch (error) {
-      if (abortSignal.aborted) {
-        throw this.handleAbortError();
-      }
-
-      // Track models that failed to avoid selecting them again in the next retry
-      excludedModels.push(`${model.provider}/${model.name}`);
-      const errorInfo = ErrorExtractor.extractErrorInfo(error, model);
-      errors.push(errorInfo);
-
-      this.logger.warn(
-        `Model ${model.name} (${model.provider}) failed: ${errorInfo.error} (code: ${errorInfo.code ?? 'N/A'})`,
-      );
-
-      if (ErrorExtractor.isClientError(errorInfo.code)) {
-        this.logger.error('Client error detected, not retrying');
-        throw error;
-      }
-    }
-  }
-
-  // If all retries failed, check if fallback is enabled
-  if (this.config.routing.fallback.enabled) {
-    const fallbackResponse = await this.tryFallback(request, abortSignal, errors, attemptCount);
-    if (fallbackResponse) {
-      return fallbackResponse;
-    }
-  }
-
-  throw new AllModelsFailedError(attemptCount, errors);
-}
-```
+**Логика:**
+1. Цикл до `maxRetries` попыток
+2. Выбор модели (исключая уже попробованные)
+3. Попытка выполнения с ретраями для 429
+4. При ошибке:
+   - Если abort → прервать
+   - Если 4xx (кроме 429) → прервать весь цикл
+   - Иначе → добавить модель в `excludedModels` и попробовать следующую
 
 **Анализ:**
 - ✅ **Правильно**: При любой ошибке (кроме 4xx) переключается на следующую модель
 - ✅ **Правильно**: Исключает уже попробованные модели через `excludedModels`
 - ✅ **Правильно**: Клиентские ошибки (4xx кроме 429) прерывают цикл
-- ⚠️ **Проблема**: **Нет явной проверки на 5xx или timeout** - переключение происходит для ВСЕХ ошибок, кроме 4xx
-- ⚠️ **Проблема**: Timeout не ретраится на той же модели, сразу переключается на другую
+- ⚠️ **Спорно**: 5xx и timeout не ретраятся на той же модели
+- ❌ **Проблема**: Сетевые ошибки (ECONNREFUSED и т.д.) не обрабатываются явно
 
 ---
 
@@ -247,47 +186,14 @@ public onFailure(modelName: string, errorCode?: number, latencyMs: number = 0): 
 - ✅ **Правильно**: 404 → `PERMANENTLY_UNAVAILABLE`
 - ✅ **Правильно**: После `failureThreshold` последовательных ошибок → `OPEN`
 - ✅ **Правильно**: В `HALF_OPEN` любая ошибка → обратно в `OPEN`
-- ✅ **Правильно**: Все ошибки (кроме 404) учитываются в статистике
+- ⚠️ **Проблема**: Все ошибки (включая 400, 401, 403) учитываются в статистике
+  - 401/403 - это проблемы с API ключом, не с моделью
+  - 400 - это проблема с запросом клиента, не с моделью
+  - Эти ошибки не должны влиять на Circuit Breaker
 
 #### Переходы состояний
 
 **Файл:** `src/modules/state/circuit-breaker.service.ts:86-118`
-
-```typescript
-public canRequest(modelName: string): boolean {
-  const state = this.stateService.getState(modelName);
-
-  switch (state.circuitState) {
-    case 'CLOSED':
-      return true;
-
-    case 'HALF_OPEN':
-      // Allow test requests in HALF_OPEN state to verify recovery
-      return true;
-
-    case 'OPEN':
-      // Check if cooldown has expired
-      if (state.openedAt) {
-        const elapsed = Date.now() - state.openedAt;
-        if (elapsed >= this.config.cooldownPeriodSecs * 1000) {
-          // Transition to HALF_OPEN to test if the service has recovered
-          this.stateService.setCircuitState(modelName, 'HALF_OPEN');
-          this.logger.log(`Model ${modelName} cooldown expired, transitioning to HALF_OPEN`);
-          return true;
-        }
-      }
-      // Still in cooldown period
-      return false;
-
-    case 'PERMANENTLY_UNAVAILABLE':
-      // Never allow requests to models that are permanently broken (e.g. 404s)
-      return false;
-
-    default:
-      return false;
-  }
-}
-```
 
 **Анализ:**
 - ✅ **Правильно**: `CLOSED` → запросы разрешены
@@ -299,50 +205,43 @@ public canRequest(modelName: string): boolean {
 
 ---
 
-## 2. Сравнение с документацией
+## 2. Соответствие документации и кода
 
-### Таблица из README.md (строки 358-364)
+### Таблица из обновленного README.md
 
-| Код ошибки | Действие | Circuit Breaker |
-|------------|----------|------------------|
-| 404 (Not Found) | Модель не существует | `PERMANENTLY_UNAVAILABLE` — исключение до рестарта |
-| 429 (Rate Limit) | Повторить с задержкой + jitter | Учитывается в статистике |
-| 5xx, Timeout | Retry с другой моделью | `CLOSED → OPEN` после failureThreshold |
-| 400 (Bad Request) | Вернуть ошибку клиенту | Не влияет |
-| 401/403 | Вернуть ошибку клиенту | Не влияет |
+| Код ошибки | Действие | Circuit Breaker | Прерывает цикл? |
+|------------|----------|------------------|-----------------|
+| 404 (Not Found) | Модель не существует, прервать | `PERMANENTLY_UNAVAILABLE` | ✅ Да |
+| 429 (Rate Limit) | Ретрай на той же модели с задержкой + jitter | Учитывается в статистике | ❌ Нет (ретрай) |
+| 5xx (500-599) | Переключиться на следующую модель | Учитывается, `CLOSED → OPEN` после failureThreshold | ❌ Нет (переключение) |
+| Timeout | Переключиться на следующую модель | Учитывается, `CLOSED → OPEN` после failureThreshold | ❌ Нет (переключение) |
+| 400 (Bad Request) | Вернуть ошибку клиенту | Учитывается в статистике | ✅ Да |
+| 401 (Unauthorized) | Вернуть ошибку клиенту | Учитывается в статистике | ✅ Да |
+| 403 (Forbidden) | Вернуть ошибку клиенту | Учитывается в статистике | ✅ Да |
+| Другие 4xx | Вернуть ошибку клиенту | Учитывается в статистике | ✅ Да |
 
-### Фактическое поведение
+### Проверка соответствия
 
-| Код ошибки | Фактическое действие | Circuit Breaker | Соответствие |
-|------------|---------------------|------------------|--------------|
-| 404 | Модель не существует | ✅ `PERMANENTLY_UNAVAILABLE` | ✅ **Соответствует** |
-| 429 | ✅ Ретрай на той же модели с jitter | ✅ Учитывается в статистике | ✅ **Соответствует** |
-| 5xx | ⚠️ Переключение на другую модель (НЕ ретрай) | ✅ `CLOSED → OPEN` после threshold | ⚠️ **Частично** |
-| Timeout | ⚠️ Переключение на другую модель (НЕ ретрай) | ✅ `CLOSED → OPEN` после threshold | ⚠️ **Частично** |
-| 400 | ✅ Прерывание, ошибка клиенту | ❌ **Учитывается в статистике** | ⚠️ **Несоответствие** |
-| 401/403 | ✅ Прерывание, ошибка клиенту | ❌ **Учитывается в статистике** | ⚠️ **Несоответствие** |
+| Код ошибки | Документация | Фактическое поведение | Соответствие |
+|------------|-------------|----------------------|--------------|
+| 404 | ✅ `PERMANENTLY_UNAVAILABLE`, прервать | ✅ `PERMANENTLY_UNAVAILABLE`, прервать | ✅ **Да** |
+| 429 | ✅ Ретрай с jitter, учитывается | ✅ Ретрай с jitter, учитывается | ✅ **Да** |
+| 5xx | ✅ Переключение, учитывается | ✅ Переключение, учитывается | ✅ **Да** |
+| Timeout | ✅ Переключение, учитывается | ✅ Переключение, учитывается | ✅ **Да** |
+| 400/401/403 | ✅ Прервать, учитывается | ✅ Прервать, учитывается | ✅ **Да** |
 
-### Проблемы
-
-1. **5xx и Timeout**: Документация говорит "Retry с другой моделью", код делает именно это, но это **не ретрай, а переключение**. Термин "retry" может вводить в заблуждение.
-
-2. **400/401/403**: Документация говорит "Не влияет" на Circuit Breaker, но код **учитывает их в статистике** через `recordFailure`. Это может быть проблемой, так как:
-   - 401/403 - это проблемы с API ключом, а не с моделью
-   - 400 - это проблема с запросом клиента, а не с моделью
-   - Эти ошибки **не должны** влиять на Circuit Breaker
+**Вывод:** ✅ **Документация полностью соответствует коду**
 
 ---
 
-## 3. Критические пробелы
+## 3. Выявленные проблемы
 
-### 3.1 Сетевые ошибки
+### 3.1 Критические проблемы
 
-**Проблема:** Отсутствует обработка сетевых ошибок:
-- `ECONNREFUSED` - соединение отклонено (сервер недоступен)
-- `ENOTFOUND` - DNS не может разрешить хост
-- `EHOSTUNREACH` - хост недостижим
-- `ENETUNREACH` - сеть недостижима
-- `ECONNRESET` - соединение сброшено
+#### Проблема 1: Отсутствует обработка сетевых ошибок
+
+**Описание:**
+Сетевые ошибки (ECONNREFUSED, ENOTFOUND, EHOSTUNREACH и т.д.) не обрабатываются явно.
 
 **Текущее поведение:**
 - Эти ошибки не имеют HTTP кода
@@ -352,61 +251,102 @@ public canRequest(modelName: string): boolean {
 - Circuit Breaker **учтет ошибку** и может открыть circuit
 
 **Проблема:**
-- Сетевые ошибки **должны ретраиться** на той же модели (как 429), а не переключаться
-- Или хотя бы должны быть явно задокументированы
-
-### 3.2 Timeout
-
-**Проблема:** Timeout обрабатывается только на уровне Circuit Breaker, но не ретраится.
-
-**Текущее поведение:**
-- Axios timeout → `ETIMEDOUT` или `ECONNABORTED`
-- `BaseProvider.isTimeoutError` распознает это
-- Но `isTimeoutError` **не используется** в логике ретраев
-- Timeout → переключение на другую модель
-
-**Вопрос:** Должен ли timeout ретраиться на той же модели или сразу переключаться?
+Сетевые ошибки обрабатываются как серверные (переключение на другую модель), но это может быть неоптимально:
+- `ECONNREFUSED` - сервер недоступен, возможно стоит ретраить
+- `ENOTFOUND` - DNS не может разрешить хост, ретрай бесполезен
+- `ETIMEDOUT` - таймаут, возможно стоит ретраить
 
 **Рекомендация:**
-- Кратковременные timeout (например, 1-2 секунды) → ретрай на той же модели
-- Длительные timeout (30+ секунд) → переключение на другую модель
-- Или сделать это конфигурируемым
+Добавить явную обработку сетевых ошибок с возможностью ретраев для некоторых типов.
+
+#### Проблема 2: 4xx ошибки учитываются в Circuit Breaker
+
+**Описание:**
+Ошибки 400, 401, 403 учитываются в статистике Circuit Breaker, хотя это проблемы клиента/конфигурации, а не модели.
+
+**Почему это проблема:**
+- **401/403** - неверный API ключ или отсутствие доступа. Это проблема конфигурации, а не модели.
+- **400** - неверный запрос клиента. Это проблема клиента, а не модели.
+- Эти ошибки могут привести к открытию Circuit Breaker, хотя модель работает нормально.
+
+**Пример сценария:**
+1. API ключ истек → все запросы возвращают 401
+2. После 3 попыток (failureThreshold) Circuit Breaker открывается
+3. Модель исключается из ротации, хотя проблема в API ключе, а не в модели
+
+**Рекомендация:**
+Исключить 4xx ошибки (кроме 429) из Circuit Breaker статистики.
+
+---
+
+### 3.2 Спорные моменты (требуют обсуждения)
+
+#### Спорный момент 1: Timeout не ретраится
+
+**Текущее поведение:**
+- Timeout → переключение на другую модель
+- Не делается ретрай на той же модели
+
+**Аргументы "за" текущее поведение:**
+- Если модель не отвечает в течение 30 секунд, вряд ли она ответит при повторной попытке
+- Быстрое переключение на другую модель улучшает user experience
+
+**Аргументы "против":**
+- Timeout может быть временным (сетевая задержка, перегрузка)
+- 1-2 ретрая с небольшой задержкой могут помочь
+
+**Рекомендация:**
+Оставить как есть, но можно добавить конфигурируемую опцию `timeoutRetries`.
+
+#### Спорный момент 2: 5xx ошибки не ретраятся
+
+**Текущее поведение:**
+- 5xx → переключение на другую модель
+- Не делается ретрай на той же модели
+
+**Аргументы "за" текущее поведение:**
+- 502/503/504 обычно указывают на проблемы с провайдером
+- Быстрое переключение на другую модель улучшает надежность
+
+**Аргументы "против":**
+- 500 может быть временной ошибкой
+- 502/503 могут быть кратковременными
+- 1-2 ретрая могут помочь
+
+**Рекомендация:**
+Можно добавить конфигурируемую опцию `serverErrorRetries` для 500/502/503.
 
 ---
 
 ## 4. Распределение кодов ошибок
 
-### Постоянные ошибки (не ретраятся, прерывают цикл)
+### Постоянные ошибки (прерывают цикл)
 
-| Код | Причина | Обработка |
-|-----|---------|-----------|
-| 400 | Bad Request - неверный запрос клиента | ✅ Прерывание |
-| 401 | Unauthorized - неверный API ключ | ✅ Прерывание |
-| 403 | Forbidden - доступ запрещен | ✅ Прерывание |
-| 404 | Not Found - модель не существует | ✅ `PERMANENTLY_UNAVAILABLE` |
-| 405-499 | Другие клиентские ошибки | ✅ Прерывание |
+| Код | Причина | Обработка | Правильно? |
+|-----|---------|-----------|------------|
+| 400 | Bad Request - неверный запрос | ✅ Прерывание | ✅ Да |
+| 401 | Unauthorized - неверный API ключ | ✅ Прерывание | ✅ Да |
+| 403 | Forbidden - доступ запрещен | ✅ Прерывание | ✅ Да |
+| 404 | Not Found - модель не существует | ✅ `PERMANENTLY_UNAVAILABLE` | ✅ Да |
+| 405-499 | Другие клиентские ошибки | ✅ Прерывание | ✅ Да |
 
 **Анализ:**
-- ✅ **Правильно**: Все клиентские ошибки (кроме 429) прерывают цикл
-- ⚠️ **Проблема**: 401/403/400 учитываются в Circuit Breaker, хотя не должны
+- ✅ Все клиентские ошибки (кроме 429) правильно прерывают цикл
+- ⚠️ Но они учитываются в Circuit Breaker, что неправильно
 
 ### Временные ошибки (ретраятся или переключаются)
 
 | Код | Причина | Обработка | Правильно? |
 |-----|---------|-----------|------------|
 | 429 | Rate Limit | ✅ Ретрай на той же модели | ✅ Да |
-| 500 | Internal Server Error | ⚠️ Переключение на другую модель | ⚠️ Спорно |
-| 502 | Bad Gateway | ⚠️ Переключение на другую модель | ✅ Да |
-| 503 | Service Unavailable | ⚠️ Переключение на другую модель | ✅ Да |
-| 504 | Gateway Timeout | ⚠️ Переключение на другую модель | ✅ Да |
-| Timeout | Request timeout | ⚠️ Переключение на другую модель | ⚠️ Спорно |
-| ECONNREFUSED | Connection refused | ❌ Переключение (не ретрай) | ❌ **Нет** |
-| ENOTFOUND | DNS error | ❌ Переключение (не ретрай) | ❌ **Нет** |
-
-**Проблемы:**
-1. **500** - может быть временной ошибкой, стоит ретраить 1-2 раза на той же модели
-2. **Timeout** - может быть временным, стоит ретраить 1-2 раза
-3. **Сетевые ошибки** - должны ретраиться, а не сразу переключаться
+| 500 | Internal Server Error | ⚠️ Переключение | ⚠️ Спорно |
+| 502 | Bad Gateway | ✅ Переключение | ✅ Да |
+| 503 | Service Unavailable | ✅ Переключение | ✅ Да |
+| 504 | Gateway Timeout | ✅ Переключение | ✅ Да |
+| Timeout | Request timeout | ⚠️ Переключение | ⚠️ Спорно |
+| ECONNREFUSED | Connection refused | ❌ Переключение (не ретрай) | ❌ Нет |
+| ENOTFOUND | DNS error | ✅ Переключение | ✅ Да |
+| EHOSTUNREACH | Host unreachable | ✅ Переключение | ✅ Да |
 
 ---
 
@@ -414,50 +354,11 @@ public canRequest(modelName: string): boolean {
 
 ### 5.1 Критические (должны быть исправлены)
 
-#### 1. Добавить обработку сетевых ошибок
-
-**Файл:** `src/common/utils/error-extractor.util.ts`
-
-Добавить метод:
-```typescript
-public static isNetworkError(error: unknown): boolean {
-  if (!(error instanceof Error)) {
-    return false;
-  }
-
-  const err = error as Error & { code?: string };
-  const networkCodes = [
-    'ECONNREFUSED',  // Connection refused
-    'ENOTFOUND',     // DNS lookup failed
-    'EHOSTUNREACH',  // Host unreachable
-    'ENETUNREACH',   // Network unreachable
-    'ECONNRESET',    // Connection reset
-    'EPIPE',         // Broken pipe
-  ];
-
-  return err.code !== undefined && networkCodes.includes(err.code);
-}
-```
-
-#### 2. Добавить ретраи для сетевых ошибок
-
-**Файл:** `src/modules/router/router.service.ts`
-
-Изменить `shouldRetry` в `executeWithRateLimitRetry`:
-```typescript
-shouldRetry: error => {
-  const errorInfo = ErrorExtractor.extractErrorInfo(error, model);
-  // Retry on rate limit OR network errors
-  return ErrorExtractor.isRateLimitError(errorInfo.code) || 
-         ErrorExtractor.isNetworkError(error);
-},
-```
-
-#### 3. Исключить 4xx (кроме 429) из Circuit Breaker
+#### Рекомендация 1: Исключить 4xx из Circuit Breaker
 
 **Файл:** `src/modules/router/router.service.ts:295-304`
 
-Изменить:
+**Изменение:**
 ```typescript
 } catch (error) {
   if (ErrorExtractor.isAbortError(error)) {
@@ -476,64 +377,104 @@ shouldRetry: error => {
 }
 ```
 
-### 5.2 Желательные (улучшения)
+**Обоснование:**
+- 4xx ошибки (кроме 429) - это проблемы клиента/конфигурации, а не модели
+- Они не должны влиять на Circuit Breaker
 
-#### 4. Добавить ретраи для 500 и timeout
+#### Рекомендация 2: Добавить обработку сетевых ошибок
 
-Создать отдельную категорию "retryable server errors":
+**Файл:** `src/common/utils/error-extractor.util.ts`
+
+**Добавить метод:**
 ```typescript
-public static isRetryableServerError(code?: number): boolean {
-  // 500 - Internal Server Error (может быть временным)
-  // 502 - Bad Gateway (обычно временная проблема)
-  // 503 - Service Unavailable (временная перегрузка)
-  // 504 - Gateway Timeout (временная проблема)
-  return code === 500 || code === 502 || code === 503 || code === 504;
+/**
+ * Check if error is a network error (connection issues)
+ */
+public static isNetworkError(error: unknown): boolean {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  const err = error as Error & { code?: string };
+  const networkCodes = [
+    'ECONNREFUSED',  // Connection refused
+    'ENOTFOUND',     // DNS lookup failed
+    'EHOSTUNREACH',  // Host unreachable
+    'ENETUNREACH',   // Network unreachable
+    'ECONNRESET',    // Connection reset
+    'EPIPE',         // Broken pipe
+  ];
+
+  return err.code !== undefined && networkCodes.includes(err.code);
+}
+
+/**
+ * Check if network error is retryable (not DNS issues)
+ */
+public static isRetryableNetworkError(error: unknown): boolean {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  const err = error as Error & { code?: string };
+  // ECONNREFUSED and ECONNRESET are retryable
+  // ENOTFOUND (DNS) is not retryable
+  return err.code === 'ECONNREFUSED' || err.code === 'ECONNRESET';
 }
 ```
 
-Добавить конфиг:
-```yaml
-routing:
-  serverErrorRetries: 1  # Ретраи для 5xx на той же модели
+**Файл:** `src/modules/router/router.service.ts`
+
+**Изменить `shouldRetry`:**
+```typescript
+shouldRetry: error => {
+  const errorInfo = ErrorExtractor.extractErrorInfo(error, model);
+  // Retry on rate limit OR retryable network errors
+  return ErrorExtractor.isRateLimitError(errorInfo.code) || 
+         ErrorExtractor.isRetryableNetworkError(error);
+},
 ```
 
-#### 5. Обновить документацию
+---
 
-**Файл:** `README.md:356-364`
+### 5.2 Желательные (улучшения)
 
-Обновить таблицу:
+#### Рекомендация 3: Добавить конфигурируемые ретраи для 5xx
+
+**Файл:** `config.yaml`
+
+```yaml
+routing:
+  maxRetries: 3
+  rateLimitRetries: 2
+  retryDelay: 1000
+  timeoutSecs: 30
+  
+  # Новая опция
+  serverErrorRetries: 1  # Ретраи для 5xx на той же модели (0 = отключено)
+```
+
+**Обоснование:**
+- Некоторые 5xx ошибки могут быть временными
+- 1-2 ретрая могут улучшить надежность
+
+#### Рекомендация 4: Обновить документацию
+
+**Файл:** `README.md`
+
+Добавить в раздел "Обработка ошибок":
+
 ```markdown
-| Код ошибки | Действие | Circuit Breaker |
-|------------|----------|------------------|
-| 404 (Not Found) | Модель не существует | `PERMANENTLY_UNAVAILABLE` — исключение до рестарта |
-| 429 (Rate Limit) | Ретрай на той же модели с задержкой + jitter | Учитывается в статистике |
-| 5xx | Переключение на следующую модель | `CLOSED → OPEN` после failureThreshold |
-| Timeout | Переключение на следующую модель | `CLOSED → OPEN` после failureThreshold |
-| Network errors | Переключение на следующую модель | `CLOSED → OPEN` после failureThreshold |
-| 400 (Bad Request) | Вернуть ошибку клиенту | **Не учитывается** |
-| 401/403 | Вернуть ошибку клиенту | **Не учитывается** |
-```
+### Сетевые ошибки
 
-### 5.3 Опциональные (для обсуждения)
-
-#### 6. Добавить конфигурируемые стратегии ретраев
-
-Позволить настраивать, какие ошибки ретраить:
-```yaml
-routing:
-  retryStrategies:
-    rateLimit:
-      enabled: true
-      maxRetries: 2
-      delay: 1000
-    networkErrors:
-      enabled: true
-      maxRetries: 1
-      delay: 500
-    serverErrors:
-      enabled: false
-      codes: [500, 502, 503]
-      maxRetries: 1
+| Код ошибки | Описание | Действие |
+|------------|----------|----------|
+| ECONNREFUSED | Соединение отклонено | Ретрай на той же модели |
+| ECONNRESET | Соединение сброшено | Ретрай на той же модели |
+| ENOTFOUND | DNS не может разрешить хост | Переключиться на следующую модель |
+| EHOSTUNREACH | Хост недостижим | Переключиться на следующую модель |
+| ENETUNREACH | Сеть недостижима | Переключиться на следующую модель |
+| ETIMEDOUT | Таймаут запроса | Переключиться на следующую модель |
 ```
 
 ---
@@ -547,50 +488,76 @@ routing:
 - ✅ Правильная обработка Circuit Breaker
 - ✅ Хорошая обработка 429
 - ✅ Корректная обработка 404
+- ✅ Документация соответствует коду
 
 **Слабые стороны:**
-- ❌ Отсутствует обработка сетевых ошибок
+- ❌ Отсутствует явная обработка сетевых ошибок
 - ❌ 4xx учитываются в Circuit Breaker
-- ⚠️ Timeout не ретраится
+- ⚠️ Timeout и 5xx не ретраятся (спорно)
 
-### Соответствие документации: ⭐⭐⭐ (3/5)
+### Соответствие документации: ⭐⭐⭐⭐⭐ (5/5)
 
-- ⚠️ Несоответствие по 400/401/403
-- ⚠️ Неточная терминология ("retry" vs "переключение")
-- ⚠️ Отсутствует описание сетевых ошибок
+- ✅ Документация полностью соответствует коду
+- ✅ Четкое описание поведения
+- ✅ Понятная терминология
 
-### Надежность: ⭐⭐⭐ (3/5)
+### Надежность: ⭐⭐⭐⭐ (4/5)
 
 - ✅ Хорошо обрабатывает типичные случаи
 - ❌ Проблемы с сетевыми ошибками
+- ❌ 4xx влияют на Circuit Breaker
 - ⚠️ Может быть улучшена обработка 5xx
 
 ---
 
 ## 7. План действий
 
-### Приоритет 1 (Критично)
-1. ✅ Добавить обработку сетевых ошибок
-2. ✅ Исключить 4xx из Circuit Breaker
-3. ✅ Обновить документацию
+### Приоритет 1 (Критично - должно быть исправлено)
 
-### Приоритет 2 (Желательно)
-4. ⚠️ Добавить ретраи для 5xx (обсудить)
-5. ⚠️ Добавить ретраи для timeout (обсудить)
+1. **Исключить 4xx из Circuit Breaker**
+   - Изменить `router.service.ts:executeSingleRequest`
+   - Не вызывать `circuitBreaker.onFailure` для клиентских ошибок
+   - Обновить тесты
 
-### Приоритет 3 (Опционально)
-6. ⚠️ Конфигурируемые стратегии ретраев
+2. **Добавить обработку сетевых ошибок**
+   - Добавить методы в `ErrorExtractor`
+   - Добавить ретраи для `ECONNREFUSED` и `ECONNRESET`
+   - Обновить документацию
+
+### Приоритет 2 (Желательно - улучшения)
+
+3. **Добавить конфигурируемые ретраи для 5xx**
+   - Добавить опцию `serverErrorRetries` в конфиг
+   - Реализовать логику ретраев
+   - Обновить документацию
+
+4. **Добавить раздел о сетевых ошибках в документацию**
+   - Описать поведение для каждого типа
+   - Добавить примеры
+
+### Приоритет 3 (Опционально - для обсуждения)
+
+5. **Конфигурируемые стратегии ретраев**
+   - Позволить настраивать, какие ошибки ретраить
+   - Добавить гибкие настройки задержек
 
 ---
 
 ## Заключение
 
-Текущая реализация обработки ошибок **в целом разумна и хорошо продумана**, но имеет **критические пробелы** в обработке сетевых ошибок. Рекомендуется:
+После приведения документации в соответствие с кодом, основные проблемы сосредоточены в двух областях:
 
-1. **Обязательно** исправить обработку сетевых ошибок
-2. **Обязательно** исключить 4xx из Circuit Breaker
-3. **Обязательно** обновить документацию
-4. **Желательно** добавить ретраи для 5xx и timeout
-5. **Опционально** сделать стратегии ретраев конфигурируемыми
+1. **Критические проблемы:**
+   - Отсутствие обработки сетевых ошибок
+   - 4xx ошибки влияют на Circuit Breaker
 
-После внесения этих изменений система будет более надежной и предсказуемой.
+2. **Спорные моменты:**
+   - Отсутствие ретраев для 5xx и timeout
+
+Текущая реализация **работоспособна и разумна**, но может быть улучшена путем:
+- Исключения 4xx из Circuit Breaker (критично)
+- Добавления обработки сетевых ошибок (критично)
+- Добавления конфигурируемых ретраев для 5xx (желательно)
+
+После внесения критических изменений система станет более надежной и предсказуемой.
+
