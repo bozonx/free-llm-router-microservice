@@ -2,11 +2,10 @@ import type {
     INodeType,
     INodeTypeDescription,
     SupplyData,
-    IExecuteFunctions,
+    ISupplyDataFunctions,
     INodeProperties,
 } from 'n8n-workflow';
 import { ChatOpenAI } from '@langchain/openai';
-import { logWrapper } from '@langchain/core/utils/function_calling';
 
 /**
  * Free LLM Router node for n8n
@@ -260,7 +259,7 @@ export class FreeLlmRouter implements INodeType {
         ],
     };
 
-    async supplyData(this: IExecuteFunctions, itemIndex: number): Promise<SupplyData> {
+    async supplyData(this: ISupplyDataFunctions, itemIndex: number): Promise<SupplyData> {
         const credentials = await this.getCredentials('freeLlmRouterApi');
         const modelSelection = this.getNodeParameter('modelSelection', itemIndex) as string;
         const temperature = this.getNodeParameter('temperature', itemIndex) as number;
@@ -355,7 +354,7 @@ export class FreeLlmRouter implements INodeType {
         const llm = new ChatOpenAI(configuration);
 
         return {
-            response: logWrapper(llm, this),
+            response: llm,
         };
     }
 }
