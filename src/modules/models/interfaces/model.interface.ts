@@ -63,13 +63,8 @@ export interface ModelDefinition {
   available: boolean;
 
   /**
-   * Priority for model selection (higher = higher priority)
-   * Range: >= 0, Default: 1
-   */
-  priority?: number;
-
-  /**
    * Weight for weighted random selection (1-100)
+   * Higher weight = more likely to be selected
    * Default: 1
    */
   weight?: number;

@@ -7,7 +7,6 @@ import type { ModelDefinition } from '../../models/interfaces/model.interface.js
 import type { SelectionStrategy, SelectionCriteria } from '../interfaces/selector.interface.js';
 import {
   MIN_LATENCY_MS_FOR_CALCULATION,
-  DEFAULT_MODEL_PRIORITY,
   DEFAULT_MODEL_WEIGHT,
   DEFAULT_SUCCESS_RATE,
   LATENCY_NORMALIZATION_FACTOR,
@@ -17,8 +16,7 @@ import {
  * Smart selection strategy.
  * Replaces round-robin and considers:
  * - Circuit Breaker state
- * - Priorities (from models.yaml + overrides from config.yaml)
- * - Model weights
+ * - Model weights (for weighted random selection)
  * - Statistics (latency, success rate)
  * - Request filters (tags, type, min_context_size, prefer_fast, min_success_rate)
  * - Overload protection (maxConcurrent)
@@ -55,8 +53,8 @@ export class SmartStrategy implements SelectionStrategy {
       selected = this.selectFastest(candidates);
       this.logger.debug(`Selected fastest model: ${selected?.name ?? 'none'}`);
     } else {
-      selected = this.selectByPriorityAndWeight(candidates);
-      this.logger.debug(`Selected by priority/weight: ${selected?.name ?? 'none'}`);
+      selected = this.weightedRandomSelect(candidates);
+      this.logger.debug(`Selected by weight: ${selected?.name ?? 'none'}`);
     }
 
     return selected;
@@ -120,41 +118,6 @@ export class SmartStrategy implements SelectionStrategy {
 
   private getModelLatency(model: ModelDefinition): number {
     return this.stateService.getState(model.name).stats.avgLatency || Infinity;
-  }
-
-  private selectByPriorityAndWeight(models: ModelDefinition[]): ModelDefinition | null {
-    const priorityGroups = this.groupByPriority(models);
-    const topPriorityGroup = priorityGroups[0];
-    return this.weightedRandomSelect(topPriorityGroup);
-  }
-
-  private groupByPriority(models: ModelDefinition[]): ModelDefinition[][] {
-    const sorted = this.sortByPriorityDescending(models);
-    return this.groupConsecutiveByPriority(sorted);
-  }
-
-  private sortByPriorityDescending(models: ModelDefinition[]): ModelDefinition[] {
-    return [...models].sort((a, b) => {
-      const priorityA = a.priority ?? DEFAULT_MODEL_PRIORITY;
-      const priorityB = b.priority ?? DEFAULT_MODEL_PRIORITY;
-      return priorityB - priorityA;
-    });
-  }
-
-  private groupConsecutiveByPriority(sortedModels: ModelDefinition[]): ModelDefinition[][] {
-    const groups: ModelDefinition[][] = [];
-    let currentPriority = -1;
-
-    for (const model of sortedModels) {
-      const priority = model.priority ?? DEFAULT_MODEL_PRIORITY;
-      if (priority !== currentPriority) {
-        groups.push([]);
-        currentPriority = priority;
-      }
-      groups[groups.length - 1].push(model);
-    }
-
-    return groups;
   }
 
   private weightedRandomSelect(models: ModelDefinition[]): ModelDefinition | null {

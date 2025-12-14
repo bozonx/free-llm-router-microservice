@@ -84,10 +84,6 @@ export class RouterConfigValidator extends BaseValidator<RouterConfig> {
       this.assertString(override.model, `${path}.model`);
     }
 
-    if (override.priority !== undefined) {
-      this.assertNumber(override.priority, `${path}.priority`);
-    }
-
     if (override.weight !== undefined) {
       this.assertNumber(override.weight, `${path}.weight`);
     }

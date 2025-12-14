@@ -177,7 +177,7 @@ models:
               modelOverrides: [
                 {
                   name: 'test-fast-model',
-                  priority: 10,
+                  weight: 10,
                   available: false,
                 },
               ],
@@ -191,7 +191,7 @@ models:
 
       const model = overrideService.findByName('test-fast-model');
       expect(model).toBeDefined();
-      expect(model?.priority).toBe(10);
+      expect(model?.weight).toBe(10);
       expect(model?.available).toBe(false);
     });
   });

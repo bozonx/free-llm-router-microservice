@@ -113,12 +113,8 @@ export interface ModelOverrideConfig {
   model?: string;
 
   /**
-   * Override priority (higher = higher priority, >= 0, default: 1)
-   */
-  priority?: number;
-
-  /**
-   * Override weight (1-100)
+   * Override weight for selection (1-100)
+   * Higher weight = more likely to be selected
    */
   weight?: number;
 

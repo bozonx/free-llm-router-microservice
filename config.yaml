@@ -48,17 +48,15 @@ routing:
 #   successThreshold: 2       # Successes to close from HALF_OPEN (default: 2)
 #   statsWindowSizeMins: 5    # Statistics window in minutes (default: 5 mins)
 
-# Model priority/weight overrides (optional)
-# Allows adjusting priorities without editing models.yaml
+# Model weight overrides (optional)
+# Allows adjusting weights without editing models.yaml
 # modelOverrides:
 #   - name: llama-3.3-70b
-#     priority: 2             # Lower priority (higher number)
-#     weight: 5               # Lower weight
+#     weight: 5               # Lower weight = less likely to be selected
 #     maxConcurrent: 10       # Limit concurrency
 #   - name: deepseek-r1
 #     provider: deepseek      # Optional validation
-#     priority: 1             # Higher priority
-#     weight: 15              # Higher weight
+#     weight: 15              # Higher weight = more likely to be selected
 #     available: false        # Temporarily disable
 
 # Rate limiting settings (optional, disabled by default)

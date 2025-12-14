@@ -23,10 +23,6 @@ export class ModelValidator {
   }
 
   public static validateOptional(model: Record<string, unknown>): void {
-    if (model.priority !== undefined) {
-      this.assertNonNegativeNumber(model.priority, 'priority');
-    }
-
     if (model.weight !== undefined) {
       this.assertNumberInRange(model.weight, 1, 100, 'weight');
     }

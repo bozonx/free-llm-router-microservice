@@ -14,7 +14,7 @@ describe('SmartStrategy', () => {
 
   const mockModels: ModelDefinition[] = [
     {
-      name: 'model-high-priority',
+      name: 'model-high-weight',
       provider: 'openrouter',
       model: 'test/model-1',
       type: 'fast',
@@ -24,11 +24,10 @@ describe('SmartStrategy', () => {
       tags: ['general'],
       jsonResponse: true,
       available: true,
-      priority: 2, // Higher priority (bigger number)
       weight: 10,
     },
     {
-      name: 'model-low-priority',
+      name: 'model-low-weight',
       provider: 'openrouter',
       model: 'test/model-2',
       type: 'reasoning',
@@ -38,7 +37,6 @@ describe('SmartStrategy', () => {
       tags: ['code'],
       jsonResponse: false,
       available: true,
-      priority: 1, // Lower priority (smaller number)
       weight: 5,
     },
     {
@@ -52,7 +50,6 @@ describe('SmartStrategy', () => {
       tags: ['general'],
       jsonResponse: true,
       available: true,
-      priority: 2, // Same as model-high-priority
       weight: 1,
       maxConcurrent: 2,
     },
@@ -72,8 +69,7 @@ describe('SmartStrategy', () => {
     },
     modelOverrides: [
       {
-        name: 'model-low-priority',
-        priority: 2, // Override to high priority
+        name: 'model-low-weight',
         weight: 20,
       },
     ],
@@ -134,10 +130,10 @@ describe('SmartStrategy', () => {
       circuitBreaker.filterAvailable.mockImplementation(models => models);
 
       const result = strategy.select(mockModels, {
-        excludeModels: ['model-high-priority', 'model-with-max-concurrent'],
+        excludeModels: ['model-high-weight', 'model-with-max-concurrent'],
       });
 
-      expect(result?.name).toBe('model-low-priority');
+      expect(result?.name).toBe('model-low-weight');
     });
 
     it('should use Circuit Breaker filtering', () => {
@@ -146,7 +142,7 @@ describe('SmartStrategy', () => {
       const result = strategy.select(mockModels, {});
 
       expect(circuitBreaker.filterAvailable).toHaveBeenCalled();
-      expect(result?.name).toBe('model-low-priority');
+      expect(result?.name).toBe('model-low-weight');
     });
 
     it('should filter by maxConcurrent capacity', () => {
@@ -165,7 +161,7 @@ describe('SmartStrategy', () => {
 
     it('should filter by minSuccessRate', () => {
       stateService.getState.mockImplementation((name: string) => {
-        if (name === 'model-high-priority') {
+        if (name === 'model-high-weight') {
           return createMockState({
             name,
             stats: { ...createMockState().stats, totalRequests: 10, successRate: 0.5 },
@@ -179,14 +175,14 @@ describe('SmartStrategy', () => {
 
       const result = strategy.select(mockModels, { minSuccessRate: 0.8 });
 
-      expect(result?.name).not.toBe('model-high-priority');
+      expect(result?.name).not.toBe('model-high-weight');
     });
 
     it('should select fastest model when preferFast is true', () => {
       stateService.getState.mockImplementation((name: string) => {
         const latencies: Record<string, number> = {
-          'model-high-priority': 500,
-          'model-low-priority': 100,
+          'model-high-weight': 500,
+          'model-low-weight': 100,
           'model-with-max-concurrent': 300,
         };
         return createMockState({
@@ -201,20 +197,19 @@ describe('SmartStrategy', () => {
 
       const result = strategy.select(mockModels, { preferFast: true });
 
-      expect(result?.name).toBe('model-low-priority');
+      expect(result?.name).toBe('model-low-weight');
     });
 
-    it('should respect model priority and weights', () => {
+    it('should respect model weights for selection', () => {
       // Simulate models with overrides applied (e.g. by ModelsService)
       const models = [
-        { ...mockModels[0] }, // P=2, W=10
-        { ...mockModels[1], priority: 2, weight: 20 }, // Override applied: P=1->2, W=5->20
+        { ...mockModels[0] }, // W=10
+        { ...mockModels[1], weight: 20 }, // Override applied: W=5->20
       ];
 
       stateService.getState.mockImplementation((name: string) => createMockState({ name }));
 
-      // High (P=2, W=10) vs Low (P=2, W=20) -> Both P=2, so weighted selection
-      // W=10 vs W=20 -> Low should be selected ~66% of time
+      // W=10 vs W=20 -> model-low-weight should be selected ~66% of time
 
       // Run multiple times to get weighted distribution
       const selections: Record<string, number> = {};
@@ -225,8 +220,8 @@ describe('SmartStrategy', () => {
         }
       }
 
-      // With weight 10 vs 20, model-low-priority should be selected ~66% of time
-      expect(selections['model-low-priority']).toBeGreaterThan(50);
+      // With weight 10 vs 20, model-low-weight should be selected ~66% of time
+      expect(selections['model-low-weight']).toBeGreaterThan(50);
     });
 
     it('should return null when all models filtered out', () => {
@@ -237,17 +232,26 @@ describe('SmartStrategy', () => {
       expect(result).toBeNull();
     });
 
-    it('should group models by priority and select from top group', () => {
-      // Test grouping logic: higher priority value = higher priority
-      const modelsWithDifferentPriorities: ModelDefinition[] = [
-        { ...mockModels[0], priority: 1 }, // Lower priority (smaller number)
-        { ...mockModels[1], priority: 2 }, // Higher priority (bigger number)
+    it('should select based on weighted random from all available models', () => {
+      // Test that weighted selection works correctly with different weights
+      const modelsWithDifferentWeights: ModelDefinition[] = [
+        { ...mockModels[0], weight: 1 }, // Low weight
+        { ...mockModels[1], weight: 99 }, // Very high weight
       ];
 
-      const result = strategy.select(modelsWithDifferentPriorities, {});
+      stateService.getState.mockImplementation((name: string) => createMockState({ name }));
 
-      // model-low-priority has priority 2 (higher), so should be selected
-      expect(result?.name).toBe('model-low-priority');
+      // Run multiple times to verify weighted selection
+      const selections: Record<string, number> = {};
+      for (let i = 0; i < 100; i++) {
+        const result = strategy.select(modelsWithDifferentWeights, {});
+        if (result) {
+          selections[result.name] = (selections[result.name] ?? 0) + 1;
+        }
+      }
+
+      // model-low-weight with weight 99 should be selected much more often
+      expect(selections['model-low-weight']).toBeGreaterThan(80);
     });
   });
 });

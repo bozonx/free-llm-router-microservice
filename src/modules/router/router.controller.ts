@@ -97,7 +97,6 @@ export class RouterController {
         tags: model.tags,
         jsonResponse: model.jsonResponse,
         available: model.available,
-        priority: model.priority,
         weight: model.weight,
         maxConcurrent: model.maxConcurrent,
       })),

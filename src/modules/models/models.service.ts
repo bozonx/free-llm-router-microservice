@@ -208,7 +208,6 @@ export class ModelsService implements OnModuleInit {
     model: ModelDefinition,
     override: NonNullable<RouterConfig['modelOverrides']>[number],
   ): void {
-    if (override.priority !== undefined) model.priority = override.priority;
     if (override.weight !== undefined) model.weight = override.weight;
     if (override.tags !== undefined) model.tags = override.tags;
     if (override.contextSize !== undefined) model.contextSize = override.contextSize;
@@ -245,9 +244,6 @@ export class ModelsService implements OnModuleInit {
   }
 
   private addOptionalFields(result: ModelDefinition, model: Record<string, unknown>): void {
-    if (model.priority !== undefined) {
-      result.priority = model.priority as number;
-    }
     if (model.weight !== undefined) {
       result.weight = model.weight as number;
     }

@@ -67,7 +67,6 @@ describe('RouterConfigValidator', () => {
         modelOverrides: [
           {
             name: 'llama-3.3-70b',
-            priority: 2,
             weight: 10,
           },
           {
@@ -160,15 +159,7 @@ describe('RouterConfigValidator', () => {
     it('should reject override without name', () => {
       const config = {
         ...createValidConfig(),
-        modelOverrides: [{ priority: 2 }],
-      };
-      expect(() => validator.validate(config)).toThrow(ConfigValidationError);
-    });
-
-    it('should reject override with invalid priority type', () => {
-      const config = {
-        ...createValidConfig(),
-        modelOverrides: [{ name: 'test', priority: 'high' }],
+        modelOverrides: [{ weight: 2 }],
       };
       expect(() => validator.validate(config)).toThrow(ConfigValidationError);
     });

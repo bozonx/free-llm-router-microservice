@@ -134,7 +134,6 @@ export interface ModelInfo {
   tags: string[];
   jsonResponse: boolean;
   available: boolean;
-  priority?: number;
   weight?: number;
   maxConcurrent?: number;
 }
