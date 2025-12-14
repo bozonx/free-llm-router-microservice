@@ -1,9 +1,10 @@
-import type {
-    INodeType,
-    INodeTypeDescription,
-    SupplyData,
-    ISupplyDataFunctions,
-    INodeProperties,
+import {
+    type INodeType,
+    type INodeTypeDescription,
+    type SupplyData,
+    type ISupplyDataFunctions,
+    type INodeProperties,
+    NodeConnectionTypes,
 } from 'n8n-workflow';
 import { ChatOpenAI } from '@langchain/openai';
 
@@ -18,14 +19,14 @@ export class FreeLlmRouter implements INodeType {
         icon: 'file:free-llm-router.svg',
         group: ['transform'],
         version: 1,
-        description: 'Use Free LLM Router Microservice as a chat model for LangChain',
+        description: 'Chat Model using Free LLM Router Microservice',
         defaults: {
             name: 'Free LLM Router',
         },
         codex: {
             categories: ['AI'],
             subcategories: {
-                AI: ['Language Models', 'Agents and Chains'],
+                AI: ['Language Models', 'Chat Models (Recommended)'],
             },
             resources: {
                 primaryDocumentation: [
@@ -41,9 +42,10 @@ export class FreeLlmRouter implements INodeType {
                 required: true,
             },
         ],
-        // This node is only used as input to LangChain nodes
+        // eslint-disable-next-line n8n-nodes-base/node-class-description-inputs-wrong-regular-node
         inputs: [],
-        outputs: ['main'],
+        // eslint-disable-next-line n8n-nodes-base/node-class-description-outputs-wrong
+        outputs: [NodeConnectionTypes.AiLanguageModel],
         outputNames: ['Model'],
         properties: [
             // Model configuration
