@@ -650,9 +650,9 @@ modelOverrides:
 # Настройки Circuit Breaker (опционально, есть дефолты)
 circuitBreaker:
   failureThreshold: 3       # Ошибок для перехода в OPEN (default: 3)
-  cooldownPeriodSecs: 60    # Время в OPEN, сек (default: 60)
+  cooldownPeriodMins: 3     # Время в OPEN, мин (default: 3)
   successThreshold: 2       # Успехов для выхода из HALF_OPEN (default: 2)
-  statsWindowSizeMins: 5    # Окно статистики, мин (default: 5)
+  statsWindowSizeMins: 10   # Окно статистики, мин (default: 10)
 
 # Rate Limiting (опционально, по умолчанию выключен)
 rateLimiting:
@@ -676,9 +676,9 @@ rateLimiting:
 | `model.weight` | 1 | Статический вес |
 | `model.maxConcurrent` | Infinity | Без ограничений |
 | `circuitBreaker.failureThreshold` | 3 | Ошибок до OPEN |
-| `circuitBreaker.cooldownPeriodSecs` | 60 | 1 минута в OPEN |
+| `circuitBreaker.cooldownPeriodMins` | 3 | 3 минуты в OPEN |
 | `circuitBreaker.successThreshold` | 2 | Успехов для выхода из HALF_OPEN |
-| `circuitBreaker.statsWindowSizeMins` | 5 | 5 минут статистики |
+| `circuitBreaker.statsWindowSizeMins` | 10 | 10 минут статистики |
 | `rateLimiting.enabled` | false | Rate limiting выключен |
 
 ---

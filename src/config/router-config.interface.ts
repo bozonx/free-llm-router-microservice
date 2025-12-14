@@ -78,9 +78,9 @@ export interface CircuitBreakerConfig {
   failureThreshold?: number;
 
   /**
-   * Cooldown period in seconds before trying HALF_OPEN (default: 60)
+   * Cooldown period in minutes before trying HALF_OPEN (default: 3)
    */
-  cooldownPeriodSecs?: number;
+  cooldownPeriodMins?: number;
 
   /**
    * Number of consecutive successes to close circuit from HALF_OPEN (default: 2)
@@ -88,7 +88,7 @@ export interface CircuitBreakerConfig {
   successThreshold?: number;
 
   /**
-   * Statistics sliding window size in minutes (default: 5)
+   * Statistics sliding window size in minutes (default: 10)
    */
   statsWindowSizeMins?: number;
 }

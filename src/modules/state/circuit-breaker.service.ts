@@ -98,7 +98,7 @@ export class CircuitBreakerService {
         // Check if cooldown has expired
         if (state.openedAt) {
           const elapsed = Date.now() - state.openedAt;
-          if (elapsed >= this.config.cooldownPeriodSecs * 1000) {
+          if (elapsed >= this.config.cooldownPeriodMins * 60 * 1000) {
             // Transition to HALF_OPEN to test if the service has recovered
             this.stateService.setCircuitState(modelName, 'HALF_OPEN');
             this.logger.log(`Model ${modelName} cooldown expired, transitioning to HALF_OPEN`);
@@ -135,7 +135,7 @@ export class CircuitBreakerService {
     }
 
     const elapsed = Date.now() - state.openedAt;
-    return Math.max(0, this.config.cooldownPeriodSecs * 1000 - elapsed);
+    return Math.max(0, this.config.cooldownPeriodMins * 60 * 1000 - elapsed);
   }
 
   /**

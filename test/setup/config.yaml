@@ -37,6 +37,6 @@ routing:
 # Circuit Breaker configuration (for testing)
 circuitBreaker:
   failureThreshold: 1  # Open after 1 failure for faster tests
-  cooldownPeriodSecs: 60
+  cooldownPeriodMins: 1
   successThreshold: 2
-  statsWindowSizeMins: 5
+  statsWindowSizeMins: 10

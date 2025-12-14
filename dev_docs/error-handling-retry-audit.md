@@ -158,7 +158,7 @@ shouldRetry: error => {
 ## 3. Circuit Breaker состояния
 
 - **CLOSED** — нормальная работа, запросы разрешены
-- **OPEN** — circuit открыт после `failureThreshold` ошибок, запросы блокируются до истечения `cooldownPeriodSecs`
+- **OPEN** — circuit открыт после `failureThreshold` ошибок, запросы блокируются до истечения `cooldownPeriodMins`
 - **HALF_OPEN** — тестовые запросы для проверки восстановления
 - **PERMANENTLY_UNAVAILABLE** — модель вернула 404, исключена до рестарта сервиса
 

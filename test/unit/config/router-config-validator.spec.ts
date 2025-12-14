@@ -53,7 +53,7 @@ describe('RouterConfigValidator', () => {
         ...createValidConfig(),
         circuitBreaker: {
           failureThreshold: 5,
-          cooldownPeriodSecs: 120,
+          cooldownPeriodMins: 2,
           successThreshold: 3,
           statsWindowSizeMins: 10,
         },

@@ -48,9 +48,9 @@ routing:
 # Circuit Breaker settings (optional, has defaults)
 # circuitBreaker:
 #   failureThreshold: 3       # Failures to open circuit (default: 3)
-#   cooldownPeriodSecs: 60    # Cooldown in seconds (default: 60 = 1 min)
+#   cooldownPeriodMins: 3     # Cooldown in minutes (default: 3 mins)
 #   successThreshold: 2       # Successes to close from HALF_OPEN (default: 2)
-#   statsWindowSizeMins: 5    # Statistics window in minutes (default: 5 mins)
+#   statsWindowSizeMins: 10   # Statistics window in minutes (default: 10 mins)
 
 # Model weight overrides (optional)
 # Allows adjusting weights without editing models.yaml

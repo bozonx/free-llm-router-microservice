@@ -28,9 +28,9 @@ describe('CircuitBreakerService', () => {
 
   const mockCircuitBreakerConfig: CircuitBreakerConfig = {
     failureThreshold: 3,
-    cooldownPeriodSecs: 1, // 1 second for test
+    cooldownPeriodMins: 0.0167, // ~1 second for test (1/60 minute)
     successThreshold: 2,
-    statsWindowSizeMins: 5,
+    statsWindowSizeMins: 10,
   };
 
   beforeEach(async () => {
@@ -162,7 +162,8 @@ describe('CircuitBreakerService', () => {
       stateService.setCircuitState('test-model', 'OPEN');
       const remaining = service.getRemainingCooldown('test-model');
       expect(remaining).toBeGreaterThan(0);
-      expect(remaining).toBeLessThanOrEqual(1000);
+      // 0.0167 minutes * 60 * 1000 = ~1002ms (rounding)
+      expect(remaining).toBeLessThanOrEqual(1002);
     });
   });
 });

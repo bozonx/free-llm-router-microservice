@@ -38,9 +38,9 @@ describe('StateService', () => {
 
   const mockCircuitBreakerConfig: CircuitBreakerConfig = {
     failureThreshold: 3,
-    cooldownPeriodSecs: 60,
+    cooldownPeriodMins: 1,
     successThreshold: 2,
-    statsWindowSizeMins: 5,
+    statsWindowSizeMins: 10,
   };
 
   beforeEach(async () => {

@@ -105,9 +105,9 @@ routing:
 # Circuit Breaker (опционально, есть дефолты)
 # circuitBreaker:
 #   failureThreshold: 3       # Ошибок для открытия circuit (default: 3)
-#   cooldownPeriodSecs: 60    # Время в OPEN состоянии, сек (default: 60)
+#   cooldownPeriodMins: 3     # Время в OPEN состоянии, мин (default: 3)
 #   successThreshold: 2       # Успехов для закрытия из HALF_OPEN (default: 2)
-#   statsWindowSizeMins: 5    # Окно статистики, мин (default: 5)
+#   statsWindowSizeMins: 10   # Окно статистики, мин (default: 10)
 
 # Rate Limiting (опционально, выключен по умолчанию)
 # rateLimiting:
@@ -389,7 +389,7 @@ curl http://localhost:8080/api/v1/models
 ### Circuit Breaker состояния
 
 - **CLOSED** — нормальная работа, запросы разрешены
-- **OPEN** — circuit открыт после `failureThreshold` ошибок, запросы блокируются до истечения `cooldownPeriodSecs`
+- **OPEN** — circuit открыт после `failureThreshold` ошибок, запросы блокируются до истечения `cooldownPeriodMins`
 - **HALF_OPEN** — тестовые запросы для проверки восстановления
 - **PERMANENTLY_UNAVAILABLE** — модель вернула 404, исключена до рестарта сервиса
 
