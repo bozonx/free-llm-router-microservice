@@ -100,30 +100,7 @@ export class FreeLlmRouter implements INodeType {
                     },
                 },
             },
-            // Model parameters
-            {
-                displayName: 'Temperature',
-                name: 'temperature',
-                type: 'number',
-                typeOptions: {
-                    numberPrecision: 1,
-                    minValue: 0,
-                    maxValue: 2,
-                    numberStepSize: 0.1,
-                },
-                default: 0.7,
-                description: 'Controls randomness in the output. Higher values make output more random',
-            },
-            {
-                displayName: 'Maximum Tokens',
-                name: 'maxTokens',
-                type: 'number',
-                typeOptions: {
-                    minValue: 1,
-                },
-                default: 1000,
-                description: 'Maximum number of tokens to generate in the response',
-            },
+
             // Advanced options
             {
                 displayName: 'Options',
@@ -132,6 +109,29 @@ export class FreeLlmRouter implements INodeType {
                 placeholder: 'Add Option',
                 default: {},
                 options: [
+                    {
+                        displayName: 'Temperature',
+                        name: 'temperature',
+                        type: 'number',
+                        typeOptions: {
+                            numberPrecision: 1,
+                            minValue: 0,
+                            maxValue: 2,
+                            numberStepSize: 0.1,
+                        },
+                        default: 0.7,
+                        description: 'Controls randomness in the output. Higher values make output more random',
+                    },
+                    {
+                        displayName: 'Maximum Tokens',
+                        name: 'maxTokens',
+                        type: 'number',
+                        typeOptions: {
+                            minValue: 1,
+                        },
+                        default: 1000,
+                        description: 'Maximum number of tokens to generate in the response',
+                    },
                     {
                         displayName: 'Top P',
                         name: 'topP',
@@ -264,14 +264,17 @@ export class FreeLlmRouter implements INodeType {
     async supplyData(this: ISupplyDataFunctions, itemIndex: number): Promise<SupplyData> {
         const credentials = await this.getCredentials('freeLlmRouterApi');
         const modelSelection = this.getNodeParameter('modelSelection', itemIndex) as string;
-        const temperature = this.getNodeParameter('temperature', itemIndex) as number;
-        const maxTokens = this.getNodeParameter('maxTokens', itemIndex) as number;
         const options = this.getNodeParameter('options', itemIndex, {}) as {
             topP?: number;
             frequencyPenalty?: number;
             presencePenalty?: number;
             timeout?: number;
+            temperature?: number;
+            maxTokens?: number;
         };
+
+        const temperature = options.temperature ?? 0.7;
+        const maxTokens = options.maxTokens ?? 1000;
 
         let model: string | string[] = 'auto';
 
