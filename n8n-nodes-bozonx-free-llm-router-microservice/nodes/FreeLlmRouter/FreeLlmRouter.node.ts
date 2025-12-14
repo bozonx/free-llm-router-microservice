@@ -179,34 +179,23 @@ export class FreeLlmRouter implements INodeType {
                         default: 60000,
                         description: 'Maximum time to wait for a response in milliseconds',
                     },
-                ],
-            },
-            // Advanced filtering
-            {
-                displayName: 'Filter Options',
-                name: 'filterOptions',
-                type: 'collection',
-                placeholder: 'Add Filter',
-                default: {},
-                description: 'Advanced options for filtering models in Smart Strategy mode (when model is set to "auto")',
-                options: [
                     {
-                        displayName: 'Minimum Context Size',
-                        name: 'minContextSize',
+                        displayName: 'Filter: Minimum Context Size',
+                        name: 'filterMinContextSize',
                         type: 'number',
                         default: 0,
-                        description: 'Minimum context window size required',
+                        description: 'Minimum context window size required for model filtering',
                     },
                     {
-                        displayName: 'Prefer Fast',
-                        name: 'preferFast',
+                        displayName: 'Filter: Prefer Fast',
+                        name: 'filterPreferFast',
                         type: 'boolean',
                         default: false,
                         description: 'Whether to prefer models with lowest latency',
                     },
                     {
-                        displayName: 'Minimum Success Rate',
-                        name: 'minSuccessRate',
+                        displayName: 'Filter: Minimum Success Rate',
+                        name: 'filterMinSuccessRate',
                         type: 'number',
                         typeOptions: {
                             numberPrecision: 2,
@@ -232,6 +221,9 @@ export class FreeLlmRouter implements INodeType {
             timeout?: number;
             temperature?: number;
             maxTokens?: number;
+            filterMinContextSize?: number;
+            filterPreferFast?: boolean;
+            filterMinSuccessRate?: number;
         };
 
         const temperature = options.temperature ?? 0.7;
@@ -253,15 +245,6 @@ export class FreeLlmRouter implements INodeType {
         const tags = this.getNodeParameter('tags', itemIndex, '') as string;
         const type = this.getNodeParameter('type', itemIndex, '') as string;
         const jsonResponse = this.getNodeParameter('jsonResponse', itemIndex, false) as boolean;
-
-        // Get advanced filter options (only available when using auto mode)
-        const advancedFilterOptions = isAuto
-            ? (this.getNodeParameter('filterOptions', itemIndex, {}) as {
-                minContextSize?: number;
-                preferFast?: boolean;
-                minSuccessRate?: number;
-            })
-            : {};
 
         const configuration: Record<string, unknown> = {
             temperature,
@@ -295,14 +278,14 @@ export class FreeLlmRouter implements INodeType {
         if (jsonResponse) {
             modelKwargs.json_response = jsonResponse;
         }
-        if (advancedFilterOptions.minContextSize !== undefined) {
-            modelKwargs.min_context_size = advancedFilterOptions.minContextSize;
+        if (options.filterMinContextSize !== undefined && options.filterMinContextSize > 0) {
+            modelKwargs.min_context_size = options.filterMinContextSize;
         }
-        if (advancedFilterOptions.preferFast) {
-            modelKwargs.prefer_fast = advancedFilterOptions.preferFast;
+        if (options.filterPreferFast) {
+            modelKwargs.prefer_fast = options.filterPreferFast;
         }
-        if (advancedFilterOptions.minSuccessRate !== undefined) {
-            modelKwargs.min_success_rate = advancedFilterOptions.minSuccessRate;
+        if (options.filterMinSuccessRate !== undefined && options.filterMinSuccessRate > 0) {
+            modelKwargs.min_success_rate = options.filterMinSuccessRate;
         }
 
         if (Object.keys(modelKwargs).length > 0) {
