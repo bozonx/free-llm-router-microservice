@@ -50,55 +50,15 @@ export class FreeLlmRouter implements INodeType {
         properties: [
             // Model configuration
             {
-                displayName: 'Model Selection',
-                name: 'modelSelection',
-                type: 'options',
-                options: [
-                    {
-                        name: 'Auto (Smart Strategy)',
-                        value: 'auto',
-                        description: 'Let the router automatically select the best model',
-                    },
-                    {
-                        name: 'Specific Model',
-                        value: 'specific',
-                        description: 'Choose a specific model',
-                    },
-                    {
-                        name: 'Priority List',
-                        value: 'priority',
-                        description: 'Provide a list of models in priority order',
-                    },
-                ],
+                displayName: 'Model',
+                name: 'model',
+                type: 'string',
                 default: 'auto',
-                description: 'How to select the model for requests',
-            },
-            {
-                displayName: 'Model Name',
-                name: 'modelName',
-                type: 'string',
-                default: '',
-                placeholder: 'llama-3.3-70b',
-                description: 'Name of the model to use (can include provider: openrouter/model-name)',
-                displayOptions: {
-                    show: {
-                        modelSelection: ['specific'],
-                    },
-                },
-            },
-            {
-                displayName: 'Model Priority List',
-                name: 'modelList',
-                type: 'string',
-                default: '',
-                placeholder: 'openrouter/deepseek-r1, llama-3.3-70b, auto',
-                description:
-                    'Comma-separated list of models in priority order. Add "auto" at the end to fallback to Smart Strategy',
-                displayOptions: {
-                    show: {
-                        modelSelection: ['priority'],
-                    },
-                },
+                placeholder: 'auto',
+                description: 'Model selection. Options:<br>' +
+                    '• <b>auto</b> - Smart Strategy automatically selects the best model<br>' +
+                    '• <b>Specific model</b> - Enter model name (e.g., llama-3.3-70b or openrouter/deepseek-r1)<br>' +
+                    '• <b>Priority list</b> - Comma-separated models in priority order (e.g., "openrouter/deepseek-r1, llama-3.3-70b, auto")',
             },
 
             // Advanced options
@@ -190,12 +150,7 @@ export class FreeLlmRouter implements INodeType {
                 type: 'collection',
                 placeholder: 'Add Filter',
                 default: {},
-                description: 'Options for filtering models in Smart Strategy mode',
-                displayOptions: {
-                    show: {
-                        modelSelection: ['auto'],
-                    },
-                },
+                description: 'Options for filtering models in Smart Strategy mode (when model is set to "auto")',
                 options: [
                     {
                         displayName: 'Tags',
@@ -263,7 +218,7 @@ export class FreeLlmRouter implements INodeType {
 
     async supplyData(this: ISupplyDataFunctions, itemIndex: number): Promise<SupplyData> {
         const credentials = await this.getCredentials('freeLlmRouterApi');
-        const modelSelection = this.getNodeParameter('modelSelection', itemIndex) as string;
+        const modelInput = (this.getNodeParameter('model', itemIndex) as string).trim();
         const options = this.getNodeParameter('options', itemIndex, {}) as {
             topP?: number;
             frequencyPenalty?: number;
@@ -276,26 +231,29 @@ export class FreeLlmRouter implements INodeType {
         const temperature = options.temperature ?? 0.7;
         const maxTokens = options.maxTokens ?? 1000;
 
-        let model: string | string[] = 'auto';
+        // Parse model input
+        let model: string | string[];
+        const isAuto = modelInput === 'auto' || modelInput === '';
 
-        if (modelSelection === 'specific') {
-            model = this.getNodeParameter('modelName', itemIndex) as string;
-        } else if (modelSelection === 'priority') {
-            const modelList = this.getNodeParameter('modelList', itemIndex) as string;
-            model = modelList.split(',').map((m) => m.trim());
+        if (modelInput.includes(',')) {
+            // Priority list
+            model = modelInput.split(',').map((m) => m.trim());
+        } else {
+            // Single model or auto
+            model = modelInput || 'auto';
         }
 
-        const filterOptions =
-            modelSelection === 'auto'
-                ? (this.getNodeParameter('filterOptions', itemIndex, {}) as {
-                    tags?: string;
-                    type?: string;
-                    minContextSize?: number;
-                    jsonResponse?: boolean;
-                    preferFast?: boolean;
-                    minSuccessRate?: number;
-                })
-                : {};
+        // Filter options are only available when using auto mode
+        const filterOptions = isAuto
+            ? (this.getNodeParameter('filterOptions', itemIndex, {}) as {
+                tags?: string;
+                type?: string;
+                minContextSize?: number;
+                jsonResponse?: boolean;
+                preferFast?: boolean;
+                minSuccessRate?: number;
+            })
+            : {};
 
         const configuration: Record<string, unknown> = {
             temperature,
