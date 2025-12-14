@@ -174,11 +174,12 @@ OpenAI-совместимый endpoint для chat completions.
   
   // Расширенные поля роутера
   // Поле model поддерживает несколько форматов:
-  "model": "llama-3.3-70b",                              // Конкретная модель (любой провайдер)
+  // Конкретная модель (любой провайдер)
   // "model": "openrouter/deepseek-r1",                  // Модель от конкретного провайдера
   // "model": ["openrouter/deepseek-r1", "llama-3.3-70b"], // Приоритетный список
   // "model": ["deepseek-r1", "llama-3.3-70b", "auto"],  // Список + Smart Strategy fallback
   // "model": "auto",                                    // Smart Strategy (default)
+  "model": "llama-3.3-70b",
   "tags": ["code"],            // Фильтр по тегам
   "type": "fast",              // Фильтр по типу: "fast" | "reasoning"
   "min_context_size": 32000,   // Минимальный размер контекста
