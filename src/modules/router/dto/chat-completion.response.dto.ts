@@ -126,10 +126,17 @@ export interface ChatCompletionResponseDto {
 export interface ModelInfo {
   name: string;
   provider: string;
+  model: string;
   type: 'fast' | 'reasoning';
   contextSize: number;
+  maxOutputTokens: number;
+  speedTier: 'fast' | 'medium' | 'slow';
   tags: string[];
+  jsonResponse: boolean;
   available: boolean;
+  priority?: number;
+  weight?: number;
+  maxConcurrent?: number;
 }
 
 /**
