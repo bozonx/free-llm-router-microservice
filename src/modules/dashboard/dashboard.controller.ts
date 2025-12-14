@@ -1,6 +1,6 @@
 import { Controller, Get, Res } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { FastifyReply } from 'fastify';
+import type { FastifyReply } from 'fastify';
 import { join } from 'path';
 import { existsSync, readFileSync } from 'fs';
 import type { AppConfig } from '../../config/app.config.js';
