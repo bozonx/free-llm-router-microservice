@@ -326,7 +326,7 @@ export class FreeLlmRouter implements INodeType {
         if (filterOptions.type) {
             modelKwargs.type = filterOptions.type;
         }
-        if (filterOptions.minContextSize) {
+        if (filterOptions.minContextSize !== undefined) {
             modelKwargs.min_context_size = filterOptions.minContextSize;
         }
         if (filterOptions.jsonResponse) {
@@ -335,7 +335,7 @@ export class FreeLlmRouter implements INodeType {
         if (filterOptions.preferFast) {
             modelKwargs.prefer_fast = filterOptions.preferFast;
         }
-        if (filterOptions.minSuccessRate) {
+        if (filterOptions.minSuccessRate !== undefined) {
             modelKwargs.min_success_rate = filterOptions.minSuccessRate;
         }
 
