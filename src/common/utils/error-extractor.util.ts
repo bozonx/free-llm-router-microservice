@@ -84,15 +84,75 @@ export class ErrorExtractor {
   }
 
   /**
-   * Check if error is a client error (4xx) but NOT rate limit (429).
+   * Check if error is a client error (4xx) but NOT rate limit (429) or not found (404).
    * 400-499 errors usually indicate invalid requests and should not be retried.
    * 429 is excluded because it is a rate limit error which MAY be retried.
+   * 404 is excluded because it requires special handling (PERMANENTLY_UNAVAILABLE).
    */
   public static isClientError(code?: number): boolean {
-    return code !== undefined && code >= 400 && code < 500 && code !== 429;
+    return code !== undefined && code >= 400 && code < 500 && code !== 429 && code !== 404;
   }
 
   public static isRateLimitError(code?: number): boolean {
     return code === 429;
+  }
+
+  /**
+   * Check if error is a retryable network error (local network issues).
+   * These errors may be temporary and worth retrying on the same model.
+   */
+  public static isRetryableNetworkError(error: unknown): boolean {
+    const code = this.extractNetworkErrorCode(error);
+    if (!code) {
+      return false;
+    }
+
+    // ENETUNREACH - Network unreachable (local network issue)
+    // ECONNRESET - Connection reset (may be temporary)
+    return code === 'ENETUNREACH' || code === 'ECONNRESET';
+  }
+
+  /**
+   * Check if error is a provider network error (provider is unavailable).
+   * These errors indicate the provider is down and we should switch to another model.
+   */
+  public static isProviderNetworkError(error: unknown): boolean {
+    const code = this.extractNetworkErrorCode(error);
+    if (!code) {
+      return false;
+    }
+
+    // ECONNREFUSED - Connection refused (provider is down)
+    // EHOSTUNREACH - Host unreachable (provider is down)
+    // ENOTFOUND - DNS lookup failed (provider doesn't exist)
+    // ETIMEDOUT - Connection timeout (provider is slow/down)
+    return (
+      code === 'ECONNREFUSED' ||
+      code === 'EHOSTUNREACH' ||
+      code === 'ENOTFOUND' ||
+      code === 'ETIMEDOUT'
+    );
+  }
+
+  /**
+   * Extract network error code from error object
+   */
+  private static extractNetworkErrorCode(error: unknown): string | undefined {
+    if (!(error instanceof Error)) {
+      return undefined;
+    }
+
+    const err = error as Error & { code?: string; cause?: { code?: string } };
+
+    if (typeof err.code === 'string') {
+      return err.code;
+    }
+
+    // Check cause for wrapped errors
+    if (err.cause && typeof err.cause.code === 'string') {
+      return err.cause.code;
+    }
+
+    return undefined;
   }
 }

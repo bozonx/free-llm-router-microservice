@@ -153,11 +153,17 @@ export class RouterService {
         retryDelay: this.config.routing.retryDelay,
         shouldRetry: error => {
           const errorInfo = ErrorExtractor.extractErrorInfo(error, model);
-          return ErrorExtractor.isRateLimitError(errorInfo.code);
+          // Retry on rate limit (429) or retryable network errors (ENETUNREACH, ECONNRESET)
+          return (
+            ErrorExtractor.isRateLimitError(errorInfo.code) ||
+            ErrorExtractor.isRetryableNetworkError(error)
+          );
         },
-        onRetry: attempt => {
+        onRetry: (attempt, error) => {
+          const isNetworkError = ErrorExtractor.isRetryableNetworkError(error);
+          const errorType = isNetworkError ? 'Network error' : 'Rate limit';
           this.logger.debug(
-            `Rate limit hit for ${model.name}, retrying (attempt ${attempt}/${this.config.routing.rateLimitRetries})`,
+            `${errorType} for ${model.name}, retrying (attempt ${attempt}/${this.config.routing.rateLimitRetries})`,
           );
         },
       });
@@ -299,7 +305,14 @@ export class RouterService {
 
       const latencyMs = Date.now() - startTime;
       const errorInfo = ErrorExtractor.extractErrorInfo(error, model);
-      this.circuitBreaker.onFailure(model.name, errorInfo.code, latencyMs);
+
+      // Only record in Circuit Breaker if NOT a client error (4xx except 429)
+      // Client errors (400, 401, 403, etc.) are problems with the request/config,
+      // not with the model itself, so they should not affect the circuit breaker
+      if (!ErrorExtractor.isClientError(errorInfo.code)) {
+        this.circuitBreaker.onFailure(model.name, errorInfo.code, latencyMs);
+      }
+
       throw error;
     }
   }

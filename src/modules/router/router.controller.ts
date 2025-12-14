@@ -29,7 +29,7 @@ export class RouterController {
   constructor(
     private readonly routerService: RouterService,
     private readonly modelsService: ModelsService,
-  ) { }
+  ) {}
 
   /**
    * Chat completion endpoint (OpenAI compatible)

@@ -6,6 +6,6 @@ import { DashboardController } from './dashboard.controller.js';
  * Provides static file serving for the vanilla HTML/CSS/JS dashboard
  */
 @Module({
-    controllers: [DashboardController],
+  controllers: [DashboardController],
 })
-export class DashboardModule { }
+export class DashboardModule {}
