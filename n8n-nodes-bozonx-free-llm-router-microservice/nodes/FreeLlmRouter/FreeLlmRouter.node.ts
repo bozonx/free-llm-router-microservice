@@ -61,6 +61,44 @@ export class FreeLlmRouter implements INodeType {
                     '• <b>Priority list</b> - Comma-separated models in priority order (e.g., "openrouter/deepseek-r1, llama-3.3-70b, auto")',
             },
 
+            // Model filtering
+            {
+                displayName: 'Tags',
+                name: 'tags',
+                type: 'string',
+                default: '',
+                placeholder: 'code, reasoning',
+                description: 'Comma-separated list of tags to filter models',
+            },
+            {
+                displayName: 'Type',
+                name: 'type',
+                type: 'options',
+                options: [
+                    {
+                        name: 'Any',
+                        value: '',
+                    },
+                    {
+                        name: 'Fast',
+                        value: 'fast',
+                    },
+                    {
+                        name: 'Reasoning',
+                        value: 'reasoning',
+                    },
+                ],
+                default: '',
+                description: 'Filter models by type',
+            },
+            {
+                displayName: 'JSON Response',
+                name: 'jsonResponse',
+                type: 'boolean',
+                default: false,
+                description: 'Whether to require models that support JSON response mode',
+            },
+
             // Advanced options
             {
                 displayName: 'Options',
@@ -143,53 +181,21 @@ export class FreeLlmRouter implements INodeType {
                     },
                 ],
             },
-            // Router-specific filtering
+            // Advanced filtering
             {
                 displayName: 'Filter Options',
                 name: 'filterOptions',
                 type: 'collection',
                 placeholder: 'Add Filter',
                 default: {},
-                description: 'Options for filtering models in Smart Strategy mode (when model is set to "auto")',
+                description: 'Advanced options for filtering models in Smart Strategy mode (when model is set to "auto")',
                 options: [
-                    {
-                        displayName: 'Tags',
-                        name: 'tags',
-                        type: 'string',
-                        default: '',
-                        placeholder: 'code, reasoning',
-                        description: 'Comma-separated list of tags to filter models',
-                    },
-                    {
-                        displayName: 'Type',
-                        name: 'type',
-                        type: 'options',
-                        options: [
-                            {
-                                name: 'Fast',
-                                value: 'fast',
-                            },
-                            {
-                                name: 'Reasoning',
-                                value: 'reasoning',
-                            },
-                        ],
-                        default: '',
-                        description: 'Filter models by type',
-                    },
                     {
                         displayName: 'Minimum Context Size',
                         name: 'minContextSize',
                         type: 'number',
                         default: 0,
                         description: 'Minimum context window size required',
-                    },
-                    {
-                        displayName: 'JSON Response',
-                        name: 'jsonResponse',
-                        type: 'boolean',
-                        default: false,
-                        description: 'Whether to require models that support JSON response mode',
                     },
                     {
                         displayName: 'Prefer Fast',
@@ -243,13 +249,15 @@ export class FreeLlmRouter implements INodeType {
             model = modelInput || 'auto';
         }
 
-        // Filter options are only available when using auto mode
-        const filterOptions = isAuto
+        // Get main-level filter parameters
+        const tags = this.getNodeParameter('tags', itemIndex, '') as string;
+        const type = this.getNodeParameter('type', itemIndex, '') as string;
+        const jsonResponse = this.getNodeParameter('jsonResponse', itemIndex, false) as boolean;
+
+        // Get advanced filter options (only available when using auto mode)
+        const advancedFilterOptions = isAuto
             ? (this.getNodeParameter('filterOptions', itemIndex, {}) as {
-                tags?: string;
-                type?: string;
                 minContextSize?: number;
-                jsonResponse?: boolean;
                 preferFast?: boolean;
                 minSuccessRate?: number;
             })
@@ -278,23 +286,23 @@ export class FreeLlmRouter implements INodeType {
         // Add filter options as model kwargs
         const modelKwargs: Record<string, unknown> = {};
 
-        if (filterOptions.tags) {
-            modelKwargs.tags = filterOptions.tags.split(',').map((t) => t.trim());
+        if (tags) {
+            modelKwargs.tags = tags.split(',').map((t) => t.trim());
         }
-        if (filterOptions.type) {
-            modelKwargs.type = filterOptions.type;
+        if (type) {
+            modelKwargs.type = type;
         }
-        if (filterOptions.minContextSize !== undefined) {
-            modelKwargs.min_context_size = filterOptions.minContextSize;
+        if (jsonResponse) {
+            modelKwargs.json_response = jsonResponse;
         }
-        if (filterOptions.jsonResponse) {
-            modelKwargs.json_response = filterOptions.jsonResponse;
+        if (advancedFilterOptions.minContextSize !== undefined) {
+            modelKwargs.min_context_size = advancedFilterOptions.minContextSize;
         }
-        if (filterOptions.preferFast) {
-            modelKwargs.prefer_fast = filterOptions.preferFast;
+        if (advancedFilterOptions.preferFast) {
+            modelKwargs.prefer_fast = advancedFilterOptions.preferFast;
         }
-        if (filterOptions.minSuccessRate !== undefined) {
-            modelKwargs.min_success_rate = filterOptions.minSuccessRate;
+        if (advancedFilterOptions.minSuccessRate !== undefined) {
+            modelKwargs.min_success_rate = advancedFilterOptions.minSuccessRate;
         }
 
         if (Object.keys(modelKwargs).length > 0) {
