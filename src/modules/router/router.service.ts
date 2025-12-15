@@ -37,7 +37,7 @@ export class RouterService {
     private readonly requestBuilder: RequestBuilderService,
     @Inject(PROVIDERS_MAP) private readonly providersMap: ProvidersMap,
     @Inject(ROUTER_CONFIG) private readonly config: RouterConfig,
-  ) {}
+  ) { }
 
   /**
    * Handle chat completion request with retry and fallback logic
@@ -228,6 +228,7 @@ export class RouterService {
           message: {
             role: 'assistant',
             content: result.content,
+            tool_calls: result.toolCalls,
           },
           finish_reason: result.finishReason,
         },

@@ -67,7 +67,8 @@ export interface ChatCompletionChoice {
  */
 export interface ChatCompletionMessage {
   role: 'assistant';
-  content: string;
+  content: string | null;
+  tool_calls?: any[];
 }
 
 /**

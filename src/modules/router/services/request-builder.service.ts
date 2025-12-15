@@ -14,7 +14,11 @@ export class RequestBuilderService {
       messages: request.messages.map(msg => ({
         role: msg.role,
         content: msg.content,
+        tool_calls: msg.tool_calls,
+        tool_call_id: msg.tool_call_id,
       })),
+      tools: request.tools,
+      toolChoice: request.tool_choice,
       temperature: request.temperature,
       maxTokens: request.max_tokens,
       topP: request.top_p,

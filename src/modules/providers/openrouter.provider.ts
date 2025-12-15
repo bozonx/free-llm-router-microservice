@@ -14,7 +14,9 @@ interface OpenRouterRequest {
   model: string;
   messages: Array<{
     role: string;
-    content: string;
+    content: string | null;
+    tool_calls?: any[];
+    tool_call_id?: string;
   }>;
   temperature?: number;
   max_tokens?: number;
@@ -23,6 +25,8 @@ interface OpenRouterRequest {
   presence_penalty?: number;
   stop?: string | string[];
   response_format?: { type: 'json_object' };
+  tools?: any[];
+  tool_choice?: string | any;
 }
 
 /**
@@ -34,7 +38,8 @@ interface OpenRouterResponse {
   choices: Array<{
     message: {
       role: string;
-      content: string;
+      content: string | null;
+      tool_calls?: any[];
     };
     finish_reason: string;
   }>;
@@ -71,6 +76,8 @@ export class OpenRouterProvider extends BaseProvider {
       frequency_penalty: params.frequencyPenalty,
       presence_penalty: params.presencePenalty,
       stop: params.stop,
+      tools: params.tools,
+      tool_choice: params.toolChoice,
     };
 
     // Add JSON mode if requested
@@ -113,7 +120,8 @@ export class OpenRouterProvider extends BaseProvider {
     return {
       id: response.id,
       model: response.model,
-      content: choice.message.content,
+      content: choice.message.content || '',
+      toolCalls: choice.message.tool_calls,
       finishReason: this.mapFinishReason(choice.finish_reason),
       usage: {
         promptTokens: response.usage.prompt_tokens,

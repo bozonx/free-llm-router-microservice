@@ -17,11 +17,24 @@ import { Type } from 'class-transformer';
  */
 export class ChatMessageDto {
   @IsString()
-  @IsIn(['system', 'user', 'assistant'])
-  public role!: 'system' | 'user' | 'assistant';
+  @IsIn(['system', 'user', 'assistant', 'tool'])
+  public role!: 'system' | 'user' | 'assistant' | 'tool';
 
   @IsString()
-  public content!: string;
+  @IsOptional()
+  public content!: string | null;
+
+  @IsOptional()
+  @IsString()
+  public name?: string;
+
+  @IsOptional()
+  @IsArray()
+  public tool_calls?: any[];
+
+  @IsOptional()
+  @IsString()
+  public tool_call_id?: string;
 }
 
 /**
@@ -66,6 +79,14 @@ export class ChatCompletionRequestDto {
 
   @IsOptional()
   public stop?: string | string[];
+
+  // Function calling fields
+  @IsOptional()
+  @IsArray()
+  public tools?: any[];
+
+  @IsOptional()
+  public tool_choice?: string | any;
 
   // Router-specific fields
   @IsOptional()
