@@ -207,7 +207,25 @@ OpenAI-совместимый endpoint для chat completions.
   
   // Smart Strategy поля
   "prefer_fast": true,         // Предпочитать модели с наименьшей latency
-  "min_success_rate": 0.8      // Минимальный success rate модели (0-1)
+  "min_success_rate": 0.8,     // Минимальный success rate модели (0-1)
+  
+  // Function Calling (OpenAI-совместимый)
+  "tools": [                   // Список инструментов
+    {
+      "type": "function",
+      "function": {
+        "name": "get_weather",
+        "description": "Get current weather",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "location": { "type": "string" }
+          }
+        }
+      }
+    }
+  ],
+  "tool_choice": "auto"        // "auto", "none" или { "type": "function", "function": { "name": "..." } }
 }
 ```
 
@@ -225,7 +243,17 @@ OpenAI-совместимый endpoint для chat completions.
       "index": 0,
       "message": {
         "role": "assistant",
-        "content": "I'm doing well, thank you for asking!"
+        "content": null,
+        "tool_calls": [
+          {
+            "id": "call_abc123",
+            "type": "function",
+            "function": {
+              "name": "get_weather",
+              "arguments": "{\"location\": \"London\"}"
+            }
+          }
+        ]
       },
       "finish_reason": "stop"
     }
@@ -344,6 +372,35 @@ curl -X POST http://localhost:8080/api/v1/chat/completions \
 
 ```bash
 curl http://localhost:8080/api/v1/models
+```
+
+### Function Calling (Tools)
+
+```bash
+curl -X POST http://localhost:8080/api/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "llama-3.3-70b",
+    "messages": [
+      {"role": "user", "content": "What'\''s the weather in London?"}
+    ],
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "get_weather",
+          "description": "Get current weather",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "location": { "type": "string", "description": "City name" }
+            },
+            "required": ["location"]
+          }
+        }
+      }
+    ]
+  }'
 ```
 
 ## 🔄 Логика работы
@@ -602,7 +659,7 @@ npm install n8n-nodes-bozonx-free-llm-router-microservice
 
 ### v1.2
 
-- [ ] Поддержка function calling / tools
+- [x] Поддержка function calling / tools
 - [ ] OpenTelemetry интеграция
 - [ ] Мониторинг
 
