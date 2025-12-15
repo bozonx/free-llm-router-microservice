@@ -162,64 +162,20 @@ The model will automatically use `bindTools()` to enable function calling with t
 
 ### Vision (Image Analysis)
 
-The node supports sending images along with text for analysis by vision-capable models.
+The node supports vision-capable models (like `gemini-2.0-flash-exp`) for multimodal analysis.
 
-#### Simple Method (Using UI Parameters)
-
-1. Add **Free LLM Router Model** node
-   - Model Selection: `gemini-2.0-flash-exp` or `nemotron-nano-12b-v2-vl`
-   - Temperature: 0.7
-   - Options:
-     - **Image URL**: `https://example.com/image.jpg`
-     - **Image Detail Level**: `high` (or `auto`, `low`)
-
-2. Connect to **Basic LLM Chain** or use directly
-   - The image will be automatically included in the request
-
-#### Advanced Method (Using Code Node)
-
-For multiple images or complex multimodal content:
+**How to use:**
 
 1. Add **Free LLM Router Model** node
-   - Model Selection: `gemini-2.0-flash-exp`
-   - Temperature: 0.7
+2. Configure it to use a vision-capable model (e.g. filter by tag `vision` or select specific model)
+3. Connect it to an **AI Agent** node in n8n
+4. The AI Agent handles the user input (text + images) and passes it to the model
 
-2. Add **Code** node to prepare multimodal message:
-   ```javascript
-   return {
-     json: {
-       messages: [
-         {
-           role: 'user',
-           content: [
-             {
-               type: 'text',
-               text: 'What is in this image?'
-             },
-             {
-               type: 'image_url',
-               image_url: {
-                 url: 'https://example.com/image.jpg',
-                 detail: 'high'  // 'auto', 'high', or 'low'
-               }
-             }
-           ]
-         }
-       ]
-     }
-   };
-   ```
+**Note:** Vision support works through the AI Agent interface in n8n. Ensure you select a model that supports vision (e.g., `gemini-2.0-flash-exp`).
 
-3. Connect to **Basic LLM Chain** or use directly
-
-**Note:** Vision support requires a model with image capabilities. Available vision-capable models:
-- `gemini-2.0-flash-exp` (recommended, 1M tokens context)
-- `nemotron-nano-12b-v2-vl` (128K tokens context)
-
-The `detail` parameter controls analysis precision:
-- `auto` - Let the model decide
-- `high` - Detailed analysis (more tokens)
-- `low` - Quick analysis (fewer tokens)
+**Available vision-capable models:**
+- `gemini-2.0-flash-exp` (recommended, 1M tokens context, supports `vision` tag)
+- `nemotron-nano-12b-v2-vl` (128K tokens context, supports `vision` tag)
 
 
 ## Response Metadata
