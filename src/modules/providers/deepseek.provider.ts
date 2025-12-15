@@ -16,7 +16,7 @@ interface DeepSeekRequest {
   model: string;
   messages: Array<{
     role: string;
-    content: string | null;
+    content: string | Array<{ type: string; text?: string; image_url?: { url: string; detail?: string } }> | null;
     tool_calls?: any[];
     tool_call_id?: string;
   }>;

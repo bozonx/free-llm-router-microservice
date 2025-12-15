@@ -11,7 +11,7 @@ export interface ChatMessage {
   /**
    * Message content
    */
-  content: string | null;
+  content: string | Array<{ type: string; text?: string; image_url?: { url: string; detail?: string } }> | null;
 
   /**
    * Tool calls (for assistant messages)

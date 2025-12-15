@@ -9,8 +9,43 @@ import {
   Min,
   Max,
   ArrayMinSize,
+  ValidateIf,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+
+/**
+ * Chat message DTO
+ */
+/**
+ * Chat image URL detailed DTO
+ */
+export class ChatImageUrlDto {
+  @IsString()
+  public url!: string;
+
+  @IsOptional()
+  @IsString()
+  @IsIn(['auto', 'high', 'low'])
+  public detail?: 'auto' | 'high' | 'low';
+}
+
+/**
+ * Chat content part DTO (text or image)
+ */
+export class ChatContentPartDto {
+  @IsString()
+  @IsIn(['text', 'image_url'])
+  public type!: 'text' | 'image_url';
+
+  @IsOptional()
+  @IsString()
+  public text?: string;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => ChatImageUrlDto)
+  public image_url?: ChatImageUrlDto;
+}
 
 /**
  * Chat message DTO
@@ -20,9 +55,16 @@ export class ChatMessageDto {
   @IsIn(['system', 'user', 'assistant', 'tool'])
   public role!: 'system' | 'user' | 'assistant' | 'tool';
 
-  @IsString()
   @IsOptional()
-  public content!: string | null;
+  @ValidateIf((o) => typeof o.content === 'string')
+  @IsString()
+  @ValidateIf((o) => Array.isArray(o.content))
+  @IsArray()
+  @ValidateIf((o) => Array.isArray(o.content))
+  @ValidateNested({ each: true })
+  @ValidateIf((o) => Array.isArray(o.content))
+  @Type(() => ChatContentPartDto)
+  public content!: string | ChatContentPartDto[] | null;
 
   @IsOptional()
   @IsString()
