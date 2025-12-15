@@ -52,10 +52,11 @@ export class FreeLlmRouterChatModel extends BaseChatModel {
 
     /**
      * Convert LangChain messages to OpenAI format
+     * Supports both text-only and multimodal (text + images) content
      */
     private formatMessages(messages: BaseMessage[]): Array<{
         role: string;
-        content: string | null;
+        content: string | Array<{ type: string; text?: string; image_url?: { url: string; detail?: string } }> | null;
         tool_calls?: any[];
         tool_call_id?: string;
     }> {
@@ -75,12 +76,12 @@ export class FreeLlmRouterChatModel extends BaseChatModel {
 
             const formatted: {
                 role: string;
-                content: string | null;
+                content: string | Array<{ type: string; text?: string; image_url?: { url: string; detail?: string } }> | null;
                 tool_calls?: any[];
                 tool_call_id?: string;
             } = {
                 role,
-                content: msg.content as string,
+                content: this.formatMessageContent(msg.content),
             };
 
             // Handle tool calls in AI messages
@@ -98,6 +99,45 @@ export class FreeLlmRouterChatModel extends BaseChatModel {
 
             return formatted;
         });
+    }
+
+    /**
+     * Format message content to support both text and multimodal (images)
+     */
+    private formatMessageContent(
+        content: string | Array<any> | Record<string, any>
+    ): string | Array<{ type: string; text?: string; image_url?: { url: string; detail?: string } }> {
+        // If content is already an array (multimodal), validate and return
+        if (Array.isArray(content)) {
+            return content.map((part) => {
+                if (typeof part === 'object' && part !== null) {
+                    // Handle text content part
+                    if (part.type === 'text' && typeof part.text === 'string') {
+                        return { type: 'text', text: part.text };
+                    }
+                    // Handle image_url content part
+                    if (part.type === 'image_url' && part.image_url) {
+                        return {
+                            type: 'image_url',
+                            image_url: {
+                                url: part.image_url.url || part.image_url,
+                                detail: part.image_url.detail,
+                            },
+                        };
+                    }
+                }
+                // Fallback: treat as text
+                return { type: 'text', text: String(part) };
+            });
+        }
+
+        // If content is a string, return as-is
+        if (typeof content === 'string') {
+            return content;
+        }
+
+        // Fallback: convert to string
+        return String(content);
     }
 
     /**
