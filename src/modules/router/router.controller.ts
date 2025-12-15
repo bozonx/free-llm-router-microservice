@@ -8,8 +8,9 @@ import {
   Logger,
   UseGuards,
   Req,
+  Res,
 } from '@nestjs/common';
-import type { FastifyRequest } from 'fastify';
+import type { FastifyRequest, FastifyReply } from 'fastify';
 import { RouterService } from './router.service.js';
 import { ModelsService } from '../models/models.service.js';
 import { RateLimiterGuard } from '../rate-limiter/rate-limiter.guard.js';
@@ -29,12 +30,13 @@ export class RouterController {
   constructor(
     private readonly routerService: RouterService,
     private readonly modelsService: ModelsService,
-  ) {}
+  ) { }
 
   /**
    * Chat completion endpoint (OpenAI compatible)
    * POST /api/v1/chat/completions
    * Protected by rate limiter
+   * Supports both streaming (SSE) and non-streaming modes
    */
   @Post('chat/completions')
   @HttpCode(HttpStatus.OK)
@@ -42,7 +44,8 @@ export class RouterController {
   public async chatCompletion(
     @Body() request: ChatCompletionRequestDto,
     @Req() req: FastifyRequest,
-  ): Promise<ChatCompletionResponseDto> {
+    @Res() res: FastifyReply,
+  ): Promise<ChatCompletionResponseDto | void> {
     const abortController = new AbortController();
     const signal = abortController.signal;
 
@@ -61,17 +64,72 @@ export class RouterController {
     req.raw.on('close', closeListener);
 
     try {
-      const response = await this.routerService.chatCompletion(request, signal);
-      return response;
-    } catch (error) {
-      if (signal.aborted) {
-        this.logger.debug('Request cancelled due to client disconnection');
+      // Check if streaming is requested
+      if (request.stream) {
+        // Set SSE headers
+        res.raw.setHeader('Content-Type', 'text/event-stream');
+        res.raw.setHeader('Cache-Control', 'no-cache');
+        res.raw.setHeader('Connection', 'keep-alive');
+
+        // Stream chunks
+        try {
+          for await (const chunk of this.routerService.chatCompletionStream(request, signal)) {
+            // Format as SSE event
+            const sseData = {
+              id: chunk.id,
+              object: 'chat.completion.chunk',
+              created: Math.floor(Date.now() / 1000),
+              model: chunk.model,
+              choices: [
+                {
+                  index: 0,
+                  delta: chunk.delta,
+                  finish_reason: chunk.finishReason ?? null,
+                },
+              ],
+            };
+
+            res.raw.write(`data: ${JSON.stringify(sseData)}\n\n`);
+          }
+
+          // Send [DONE] message
+          res.raw.write('data: [DONE]\n\n');
+          res.raw.end();
+        } catch (error) {
+          if (signal.aborted) {
+            this.logger.debug('Streaming request cancelled due to client disconnection');
+          } else {
+            this.logger.error(
+              `Streaming chat completion failed: ${error instanceof Error ? error.message : String(error)}`,
+            );
+          }
+          // Try to send error as SSE if stream not ended
+          if (!res.raw.writableEnded) {
+            res.raw.write(
+              `data: ${JSON.stringify({ error: { message: error instanceof Error ? error.message : 'Unknown error' } })}\n\n`,
+            );
+            res.raw.end();
+          }
+          throw error;
+        }
       } else {
-        this.logger.error(
-          `Chat completion failed: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        // Non-streaming mode
+        const response = await this.routerService.chatCompletion(request, signal);
+        res.send(response);
+        return response;
       }
-      throw error;
+    } catch (error) {
+      if (!request.stream) {
+        if (signal.aborted) {
+          this.logger.debug('Request cancelled due to client disconnection');
+        } else {
+          this.logger.error(
+            `Chat completion failed: ${error instanceof Error ? error.message : String(error)}`,
+          );
+        }
+        throw error;
+      }
+      // For streaming, error already handled above
     } finally {
       req.raw.off('close', closeListener);
     }

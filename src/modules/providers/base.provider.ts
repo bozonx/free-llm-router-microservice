@@ -5,6 +5,7 @@ import type {
   LlmProvider,
   ChatCompletionParams,
   ChatCompletionResult,
+  ChatCompletionStreamChunk,
 } from './interfaces/provider.interface.js';
 
 /**
@@ -63,6 +64,10 @@ export abstract class BaseProvider implements LlmProvider {
   public abstract get name(): string;
 
   public abstract chatCompletion(params: ChatCompletionParams): Promise<ChatCompletionResult>;
+
+  public abstract chatCompletionStream(
+    params: ChatCompletionParams,
+  ): AsyncGenerator<ChatCompletionStreamChunk, void, unknown>;
 
   /**
    * Handle HTTP errors and convert to standard error response

@@ -87,6 +87,11 @@ export interface ChatCompletionParams {
    * Tool choice constraint
    */
   toolChoice?: string | any;
+
+  /**
+   * Enable streaming mode (Server-Sent Events)
+   */
+  stream?: boolean;
 }
 
 /**
@@ -129,6 +134,47 @@ export interface ChatCompletionResult {
 }
 
 /**
+ * Chat completion stream chunk (SSE format)
+ * Represents a single chunk in the streaming response
+ */
+export interface ChatCompletionStreamChunk {
+  /**
+   * Chunk ID
+   */
+  id: string;
+
+  /**
+   * Model used
+   */
+  model: string;
+
+  /**
+   * Delta content (incremental)
+   */
+  delta: {
+    /**
+     * Role (only in first chunk)
+     */
+    role?: 'assistant';
+
+    /**
+     * Content chunk
+     */
+    content?: string;
+
+    /**
+     * Tool calls delta (for function calling)
+     */
+    tool_calls?: any[];
+  };
+
+  /**
+   * Finish reason (only in last chunk)
+   */
+  finishReason?: 'stop' | 'length' | 'content_filter';
+}
+
+/**
  * LLM provider interface
  */
 export interface LlmProvider {
@@ -141,4 +187,12 @@ export interface LlmProvider {
    * Perform chat completion
    */
   chatCompletion(params: ChatCompletionParams): Promise<ChatCompletionResult>;
+
+  /**
+   * Perform chat completion with streaming (SSE)
+   * Returns an async generator that yields chunks
+   */
+  chatCompletionStream(
+    params: ChatCompletionParams,
+  ): AsyncGenerator<ChatCompletionStreamChunk, void, unknown>;
 }

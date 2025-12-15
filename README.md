@@ -655,11 +655,11 @@ npm install n8n-nodes-bozonx-free-llm-router-microservice
 - [x] Статистика запросов
 - [x] n8n node
 - [x] **Vanilla UI Dashboard** — мониторинг и тестирование сервиса (доступно на `/`)
+- [x] Поддержка function calling / tools
 - [ ] Streaming (SSE) поддержка
 
 ### v1.2
 
-- [x] Поддержка function calling / tools
 - [ ] OpenTelemetry интеграция
 - [ ] Мониторинг
 

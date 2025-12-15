@@ -129,4 +129,12 @@ export class ChatCompletionRequestDto {
   @Min(0)
   @Max(1)
   public min_success_rate?: number;
+
+  /**
+   * Enable streaming mode (Server-Sent Events)
+   * If true, response will be streamed incrementally
+   */
+  @IsOptional()
+  @IsBoolean()
+  public stream?: boolean;
 }

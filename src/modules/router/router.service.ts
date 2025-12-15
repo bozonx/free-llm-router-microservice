@@ -8,7 +8,10 @@ import type { ProvidersMap } from '../providers/providers.module.js';
 import { PROVIDERS_MAP } from '../providers/providers.module.js';
 import type { ChatCompletionRequestDto } from './dto/chat-completion.request.dto.js';
 import type { ChatCompletionResponseDto } from './dto/chat-completion.response.dto.js';
-import type { ChatCompletionResult } from '../providers/interfaces/provider.interface.js';
+import type {
+  ChatCompletionResult,
+  ChatCompletionStreamChunk,
+} from '../providers/interfaces/provider.interface.js';
 import type { RouterConfig } from '../../config/router-config.interface.js';
 import type { ModelDefinition } from '../models/interfaces/model.interface.js';
 import { parseModelInput } from '../selector/utils/model-parser.js';
@@ -51,6 +54,78 @@ export class RouterService {
 
     try {
       return await this.executeWithShutdownHandling(request, clientSignal);
+    } finally {
+      // Always unregister request when done
+      this.shutdownService.unregisterRequest();
+    }
+  }
+
+  /**
+   * Handle chat completion with streaming (Server-Sent Events)
+   * Simplified version: selects first model, no retry/fallback
+   */
+  public async *chatCompletionStream(
+    request: ChatCompletionRequestDto,
+    clientSignal?: AbortSignal,
+  ): AsyncGenerator<ChatCompletionStreamChunk, void, unknown> {
+    // Register request for graceful shutdown tracking
+    this.shutdownService.registerRequest();
+
+    try {
+      // Combine client signal with shutdown signal
+      const abortSignal = this.createCombinedAbortSignal(clientSignal);
+      const parsedModel = parseModelInput(request.model);
+
+      // Select first suitable model (no retries for streaming)
+      const model = this.selectModel(request, parsedModel, []);
+      if (!model) {
+        throw new Error('No suitable model found for streaming');
+      }
+
+      this.logger.debug(`Streaming with model ${model.name} (${model.provider})`);
+
+      // Get provider
+      const provider = this.providersMap.get(model.provider);
+      if (!provider) {
+        throw new ProviderNotFoundError(model.provider);
+      }
+
+      // Build completion params
+      const completionParams = this.requestBuilder.buildChatCompletionParams(
+        request,
+        model.model,
+        abortSignal,
+      );
+
+      // Stream chunks from provider
+      this.stateService.incrementActiveRequests(model.name);
+      const startTime = Date.now();
+
+      try {
+        for await (const chunk of provider.chatCompletionStream(completionParams)) {
+          this.checkAbortSignal(abortSignal);
+          yield chunk;
+        }
+
+        // Record success
+        const latencyMs = Date.now() - startTime;
+        this.circuitBreaker.onSuccess(model.name, latencyMs);
+      } catch (error) {
+        const latencyMs = Date.now() - startTime;
+        const errorInfo = ErrorExtractor.extractErrorInfo(error, model);
+
+        if (!ErrorExtractor.isClientError(errorInfo.code)) {
+          this.circuitBreaker.onFailure(model.name, errorInfo.code, latencyMs);
+        }
+
+        if (ErrorExtractor.isAbortError(error)) {
+          throw this.handleAbortError();
+        }
+
+        throw error;
+      } finally {
+        this.stateService.decrementActiveRequests(model.name);
+      }
     } finally {
       // Always unregister request when done
       this.shutdownService.unregisterRequest();

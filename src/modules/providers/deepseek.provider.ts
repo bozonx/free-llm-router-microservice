@@ -1,10 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
+import { Readable } from 'stream';
 import { BaseProvider, type BaseProviderConfig } from './base.provider.js';
 import type {
   ChatCompletionParams,
   ChatCompletionResult,
+  ChatCompletionStreamChunk,
 } from './interfaces/provider.interface.js';
 
 /**
@@ -27,6 +29,7 @@ interface DeepSeekRequest {
   response_format?: { type: 'json_object' };
   tools?: any[];
   tool_choice?: string | any;
+  stream?: boolean;
 }
 
 /**
@@ -48,6 +51,22 @@ interface DeepSeekResponse {
     completion_tokens: number;
     total_tokens: number;
   };
+}
+
+/**
+ * DeepSeek API streaming response format (SSE chunks)
+ */
+interface DeepSeekStreamChunk {
+  id: string;
+  model: string;
+  choices: Array<{
+    delta: {
+      role?: 'assistant';
+      content?: string;
+      tool_calls?: any[];
+    };
+    finish_reason?: string;
+  }>;
 }
 
 /**
@@ -102,6 +121,100 @@ export class DeepSeekProvider extends BaseProvider {
     } catch (error) {
       const httpError = this.handleHttpError(error);
       throw new Error(`DeepSeek API error: ${httpError.message}`, {
+        cause: httpError,
+      });
+    }
+  }
+
+  /**
+   * Perform chat completion with streaming using DeepSeek API
+   */
+  public async *chatCompletionStream(
+    params: ChatCompletionParams,
+  ): AsyncGenerator<ChatCompletionStreamChunk, void, unknown> {
+    const request: DeepSeekRequest = {
+      model: params.model,
+      messages: params.messages,
+      temperature: params.temperature,
+      max_tokens: params.maxTokens,
+      top_p: params.topP,
+      frequency_penalty: params.frequencyPenalty,
+      presence_penalty: params.presencePenalty,
+      stop: params.stop,
+      tools: params.tools,
+      tool_choice: params.toolChoice,
+      stream: true,
+    };
+
+    // Add JSON mode if requested
+    if (params.jsonMode) {
+      request.response_format = { type: 'json_object' };
+    }
+
+    try {
+      const response = await firstValueFrom(
+        this.httpService.post('/chat/completions', request, {
+          baseURL: this.config.baseUrl,
+          timeout: this.config.timeoutSecs * 1000,
+          headers: {
+            Authorization: `Bearer ${this.config.apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          signal: params.abortSignal,
+          responseType: 'stream',
+        }),
+      );
+
+      const stream = response.data as Readable;
+
+      // Parse SSE stream
+      let buffer = '';
+      for await (const chunk of stream) {
+        buffer += chunk.toString();
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          const trimmedLine = line.trim();
+          if (!trimmedLine || trimmedLine.startsWith(':')) {
+            continue; // Skip empty lines and comments
+          }
+
+          if (trimmedLine === 'data: [DONE]') {
+            return; // Stream completed
+          }
+
+          if (trimmedLine.startsWith('data: ')) {
+            try {
+              const jsonData = trimmedLine.slice(6); // Remove "data: " prefix
+              const sseChunk = JSON.parse(jsonData) as DeepSeekStreamChunk;
+
+              const choice = sseChunk.choices[0];
+              if (!choice) {
+                continue;
+              }
+
+              yield {
+                id: sseChunk.id,
+                model: sseChunk.model,
+                delta: {
+                  role: choice.delta.role,
+                  content: choice.delta.content,
+                  tool_calls: choice.delta.tool_calls,
+                },
+                finishReason: choice.finish_reason
+                  ? this.mapFinishReason(choice.finish_reason)
+                  : undefined,
+              };
+            } catch (parseError) {
+              this.logger.warn(`Failed to parse SSE chunk: ${trimmedLine}`, parseError);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      const httpError = this.handleHttpError(error);
+      throw new Error(`DeepSeek streaming API error: ${httpError.message}`, {
         cause: httpError,
       });
     }
