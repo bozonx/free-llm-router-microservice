@@ -1,6 +1,6 @@
 import { BaseChatModel } from '@langchain/core/language_models/chat_models';
-import { BaseMessage, AIMessage, ToolMessage } from '@langchain/core/messages';
-import { ChatResult, ChatGeneration } from '@langchain/core/outputs';
+import { BaseMessage, AIMessage, AIMessageChunk, ToolMessage } from '@langchain/core/messages';
+import { ChatResult, ChatGeneration, ChatGenerationChunk } from '@langchain/core/outputs';
 import { CallbackManagerForLLMRun } from '@langchain/core/callbacks/manager';
 
 /**
@@ -220,6 +220,172 @@ export class FreeLlmRouterChatModel extends BaseChatModel {
             clearTimeout(timeoutId);
             if (error instanceof Error) {
                 throw new Error(`Free LLM Router request failed: ${error.message}`);
+            }
+            throw error;
+        }
+    }
+
+    /**
+     * Stream chat completions (Server-Sent Events)
+     */
+    async *_streamResponseChunks(
+        messages: BaseMessage[],
+        options?: this['ParsedCallOptions'],
+        runManager?: CallbackManagerForLLMRun,
+    ): AsyncGenerator<ChatGenerationChunk> {
+        const formattedMessages = this.formatMessages(messages);
+
+        // Build request body with stream=true
+        const requestBody: Record<string, unknown> = {
+            messages: formattedMessages,
+            stream: true,
+        };
+
+        if (this.config.model) {
+            requestBody.model = this.config.model;
+        }
+
+        if (this.config.temperature !== undefined) {
+            requestBody.temperature = this.config.temperature;
+        }
+
+        if (this.config.maxTokens !== undefined) {
+            requestBody.max_tokens = this.config.maxTokens;
+        }
+
+        if (this.config.topP !== undefined) {
+            requestBody.top_p = this.config.topP;
+        }
+
+        if (this.config.frequencyPenalty !== undefined) {
+            requestBody.frequency_penalty = this.config.frequencyPenalty;
+        }
+
+        if (this.config.presencePenalty !== undefined) {
+            requestBody.presence_penalty = this.config.presencePenalty;
+        }
+
+        // Add model kwargs (filter options and tools)
+        if (this.config.modelKwargs && Object.keys(this.config.modelKwargs).length > 0) {
+            Object.assign(requestBody, this.config.modelKwargs);
+        }
+
+        // Make streaming API request
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => {
+            controller.abort();
+        }, this.config.timeout || 60000);
+
+        try {
+            const response = await fetch(`${this.config.baseUrl}/chat/completions`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...this.config.headers,
+                },
+                body: JSON.stringify(requestBody),
+                signal: controller.signal,
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(
+                    `Free LLM Router streaming API error: ${response.status} ${response.statusText} - ${errorText}`,
+                );
+            }
+
+            if (!response.body) {
+                throw new Error('Response body is null');
+            }
+
+            // Parse SSE stream
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+
+            try {
+                while (true) {
+                    const { done, value } = await reader.read();
+
+                    if (done) {
+                        break;
+                    }
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop() || '';
+
+                    for (const line of lines) {
+                        const trimmedLine = line.trim();
+
+                        if (!trimmedLine || trimmedLine.startsWith(':')) {
+                            continue; // Skip empty lines and comments
+                        }
+
+                        if (trimmedLine === 'data: [DONE]') {
+                            return; // Stream completed
+                        }
+
+                        if (trimmedLine.startsWith('data: ')) {
+                            try {
+                                const jsonData = trimmedLine.slice(6); // Remove "data: " prefix
+                                const chunk = JSON.parse(jsonData) as {
+                                    id?: string;
+                                    object?: string;
+                                    model?: string;
+                                    choices?: Array<{
+                                        index?: number;
+                                        delta?: {
+                                            role?: string;
+                                            content?: string;
+                                            tool_calls?: any[];
+                                        };
+                                        finish_reason?: string | null;
+                                    }>;
+                                };
+
+                                const delta = chunk.choices?.[0]?.delta;
+                                const finishReason = chunk.choices?.[0]?.finish_reason;
+
+                                if (delta) {
+                                    const content = delta.content || '';
+
+                                    // Create AI message chunk
+                                    const aiMessageChunk = new AIMessageChunk({
+                                        content,
+                                        additional_kwargs: delta.tool_calls ? { tool_calls: delta.tool_calls } : {},
+                                    });
+
+                                    const generation = new ChatGenerationChunk({
+                                        text: content,
+                                        message: aiMessageChunk,
+                                        generationInfo: {
+                                            finishReason: finishReason || undefined,
+                                        },
+                                    });
+
+                                    yield generation;
+
+                                    // Call streaming callback if available
+                                    if (content) {
+                                        await runManager?.handleLLMNewToken(content);
+                                    }
+                                }
+                            } catch (parseError) {
+                                console.error('Failed to parse SSE chunk:', trimmedLine, parseError);
+                            }
+                        }
+                    }
+                }
+            } finally {
+                reader.releaseLock();
+            }
+        } catch (error) {
+            clearTimeout(timeoutId);
+            if (error instanceof Error) {
+                throw new Error(`Free LLM Router streaming request failed: ${error.message}`);
             }
             throw error;
         }

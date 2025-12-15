@@ -13,8 +13,7 @@ This node provides a LangChain-compatible model interface that can be connected 
 - 🛠️ **Function Calling** - Full support for OpenAI-compatible tools/function calling
 - 🛡️ **Authentication** - Supports None, Basic Auth, and Bearer Token authentication
 - ⚙️ **Full Control** - Access to all OpenAI-compatible parameters
-
-**Note:** Streaming (SSE) is currently supported at the microservice level but not yet implemented in the n8n node. Use the microservice API directly for streaming needs.
+- 📡 **Streaming Support** - Real-time response streaming with LangChain callbacks
 
 ## Installation
 
