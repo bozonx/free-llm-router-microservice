@@ -232,4 +232,12 @@ export class ChatCompletionRequestDto {
   @IsOptional()
   @IsBoolean()
   public stream?: boolean;
+
+  /**
+   * Vision support required (multimodal - text + images)
+   * If true, only select models that support image_url content
+   */
+  @IsOptional()
+  @IsBoolean()
+  public supports_vision?: boolean;
 }

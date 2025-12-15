@@ -74,6 +74,13 @@ export interface ModelDefinition {
    * Default: unlimited (Infinity)
    */
   maxConcurrent?: number;
+
+  /**
+   * Vision support (multimodal - text + images)
+   * If true, model can process image_url content parts
+   * Default: false
+   */
+  supportsVision?: boolean;
 }
 
 /**

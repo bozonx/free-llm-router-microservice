@@ -162,10 +162,26 @@ The model will automatically use `bindTools()` to enable function calling with t
 
 ### Vision (Image Analysis)
 
-The node supports sending images along with text for analysis by vision-capable models:
+The node supports sending images along with text for analysis by vision-capable models.
+
+#### Simple Method (Using UI Parameters)
 
 1. Add **Free LLM Router Model** node
-   - Model Selection: Specific model (e.g., `gpt-4o` or `claude-3.5-sonnet`)
+   - Model Selection: `gemini-2.0-flash-exp` or `nemotron-nano-12b-v2-vl`
+   - Temperature: 0.7
+   - Options:
+     - **Image URL**: `https://example.com/image.jpg`
+     - **Image Detail Level**: `high` (or `auto`, `low`)
+
+2. Connect to **Basic LLM Chain** or use directly
+   - The image will be automatically included in the request
+
+#### Advanced Method (Using Code Node)
+
+For multiple images or complex multimodal content:
+
+1. Add **Free LLM Router Model** node
+   - Model Selection: `gemini-2.0-flash-exp`
    - Temperature: 0.7
 
 2. Add **Code** node to prepare multimodal message:
@@ -196,7 +212,11 @@ The node supports sending images along with text for analysis by vision-capable 
 
 3. Connect to **Basic LLM Chain** or use directly
 
-**Note:** Vision support requires a model with image capabilities (GPT-4o, Claude 3.5 Sonnet, etc.). The `detail` parameter controls analysis precision:
+**Note:** Vision support requires a model with image capabilities. Available vision-capable models:
+- `gemini-2.0-flash-exp` (recommended, 1M tokens context)
+- `nemotron-nano-12b-v2-vl` (128K tokens context)
+
+The `detail` parameter controls analysis precision:
 - `auto` - Let the model decide
 - `high` - Detailed analysis (more tokens)
 - `low` - Quick analysis (fewer tokens)

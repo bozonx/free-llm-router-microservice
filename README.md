@@ -245,7 +245,7 @@ OpenAI-совместимый endpoint для chat completions.
 curl -X POST http://localhost:8080/api/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "gpt-4o",
+    "model": "gemini-2.0-flash-exp",
     "messages": [
       {
         "role": "user",
@@ -271,7 +271,39 @@ curl -X POST http://localhost:8080/api/v1/chat/completions \
 - `detail`: `"auto"` (default), `"high"`, `"low"` — уровень детализации анализа изображения
 - `url`: HTTP/HTTPS URL изображения или data URI (base64)
 
-**Примечание:** Поддержка Vision зависит от выбранной модели. Убедитесь, что используете модель с поддержкой изображений (например, GPT-4o, Claude 3.5 Sonnet через OpenRouter).
+**Примечание:** Поддержка Vision зависит от выбранной модели. Используйте модели с поддержкой изображений:
+- `gemini-2.0-flash-exp` (рекомендуется, 1M tokens context)
+- `nemotron-nano-12b-v2-vl` (128K tokens context)
+
+Вы можете фильтровать vision-capable модели по тегу `vision` или использовать параметр `supports_vision: true`.
+
+**Vision-Capable модели:**
+
+| Модель | Провайдер | Context Size | Особенности |
+|--------|-----------|--------------|-------------|
+| gemini-2.0-flash-exp | openrouter | 1M tokens | Рекомендуется, большой контекст |
+| nemotron-nano-12b-v2-vl | openrouter | 128K tokens | Vision-language модель от NVIDIA |
+
+**Примеры фильтрации:**
+
+```bash
+# Автоматический выбор vision-capable модели
+curl -X POST http://localhost:8080/api/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tags": ["vision"],
+    "messages": [...]
+  }'
+
+# Явное требование vision поддержки
+curl -X POST http://localhost:8080/api/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "supports_vision": true,
+    "messages": [...]
+  }'
+```
+
 
 #### Response Body
 
@@ -485,7 +517,7 @@ data: [DONE]
 curl -X POST http://localhost:8080/api/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "gpt-4o",
+    "model": "gemini-2.0-flash-exp",
     "messages": [
       {
         "role": "user",
@@ -509,9 +541,12 @@ curl -X POST http://localhost:8080/api/v1/chat/completions \
 ```
 
 **Примечание:** Vision поддержка:
-- Требует модель с поддержкой изображений (GPT-4o, Claude 3.5 Sonnet и др.)
+- Требует модель с поддержкой изображений:
+  - `gemini-2.0-flash-exp` (рекомендуется, 1M tokens context)
+  - `nemotron-nano-12b-v2-vl` (128K tokens context)
 - Поддерживает HTTP/HTTPS URLs и data URIs (base64)
 - Параметр `detail`: `"auto"`, `"high"`, `"low"` — контролирует детализацию анализа
+- Фильтрация: используйте тег `vision` или параметр `supports_vision: true`
 
 
 

@@ -4,6 +4,17 @@ import type { ChatCompletionParams } from '../../providers/interfaces/provider.i
 
 @Injectable()
 export class RequestBuilderService {
+  /**
+   * Check if request contains image content (multimodal)
+   */
+  public hasImageContent(messages: ChatCompletionRequestDto['messages']): boolean {
+    return messages.some(
+      (msg) =>
+        Array.isArray(msg.content) &&
+        msg.content.some((part) => part.type === 'image_url'),
+    );
+  }
+
   public buildChatCompletionParams(
     request: ChatCompletionRequestDto,
     modelId: string,

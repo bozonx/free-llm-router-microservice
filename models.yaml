@@ -93,9 +93,11 @@ models:
     speedTier: fast
     tags:
       - general
+      - vision
     jsonResponse: true
     available: true
     weight: 1
+    supportsVision: true
   - name: tongyi-deepresearch-30b-a3b
     provider: openrouter
     model: alibaba/tongyi-deepresearch-30b-a3b:free
@@ -336,9 +338,11 @@ models:
     speedTier: fast
     tags:
       - general
+      - vision
     jsonResponse: true
     available: true
     weight: 3
+    supportsVision: true
   - name: llama-3.3-70b-instruct
     provider: openrouter
     model: meta-llama/llama-3.3-70b-instruct:free

@@ -33,6 +33,11 @@ export interface FilterCriteria {
   jsonResponse?: boolean;
 
   /**
+   * Vision support required (multimodal - text + images)
+   */
+  supportsVision?: boolean;
+
+  /**
    * Provider filter
    */
   provider?: string;
@@ -46,7 +51,7 @@ export class ModelsService implements OnModuleInit {
   private readonly logger = new Logger(ModelsService.name);
   private models: ModelDefinition[] = [];
 
-  constructor(@Inject(ROUTER_CONFIG) private readonly config: RouterConfig) {}
+  constructor(@Inject(ROUTER_CONFIG) private readonly config: RouterConfig) { }
 
   public async onModuleInit(): Promise<void> {
     const modelsSource = this.config.modelsFile;
@@ -250,6 +255,9 @@ export class ModelsService implements OnModuleInit {
     if (model.maxConcurrent !== undefined) {
       result.maxConcurrent = model.maxConcurrent as number;
     }
+    if (model.supportsVision !== undefined) {
+      result.supportsVision = model.supportsVision as boolean;
+    }
   }
 
   /**
@@ -328,6 +336,10 @@ export class ModelsService implements OnModuleInit {
     }
 
     if (criteria.jsonResponse && !model.jsonResponse) {
+      return false;
+    }
+
+    if (criteria.supportsVision && !model.supportsVision) {
       return false;
     }
 

@@ -52,6 +52,12 @@ export interface SelectionCriteria {
    * Minimum success rate for model selection (0-1)
    */
   minSuccessRate?: number;
+
+  /**
+   * Vision support required (multimodal - text + images)
+   * If true, only select models that support image_url content
+   */
+  supportsVision?: boolean;
 }
 
 /**
