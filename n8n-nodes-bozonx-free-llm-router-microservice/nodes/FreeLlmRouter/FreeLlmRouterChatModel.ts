@@ -1,5 +1,5 @@
 import { BaseChatModel } from '@langchain/core/language_models/chat_models';
-import { BaseMessage, AIMessage } from '@langchain/core/messages';
+import { BaseMessage, AIMessage, ToolMessage } from '@langchain/core/messages';
 import { ChatResult, ChatGeneration } from '@langchain/core/outputs';
 import { CallbackManagerForLLMRun } from '@langchain/core/callbacks/manager';
 
@@ -25,6 +25,7 @@ export interface FreeLlmRouterChatModelConfig {
  */
 export class FreeLlmRouterChatModel extends BaseChatModel {
     private config: FreeLlmRouterChatModelConfig;
+    lc_namespace = ['langchain', 'chat_models', 'free_llm_router'];
 
     constructor(config: FreeLlmRouterChatModelConfig) {
         super({});
@@ -36,23 +37,66 @@ export class FreeLlmRouterChatModel extends BaseChatModel {
     }
 
     /**
+     * Bind tools to the model for function calling
+     */
+    bindTools(tools: any[], kwargs?: any): FreeLlmRouterChatModel {
+        return new FreeLlmRouterChatModel({
+            ...this.config,
+            modelKwargs: {
+                ...this.config.modelKwargs,
+                tools,
+                tool_choice: kwargs?.tool_choice,
+            },
+        });
+    }
+
+    /**
      * Convert LangChain messages to OpenAI format
      */
-    private formatMessages(messages: BaseMessage[]): Array<{ role: string; content: string }> {
+    private formatMessages(messages: BaseMessage[]): Array<{
+        role: string;
+        content: string | null;
+        tool_calls?: any[];
+        tool_call_id?: string;
+    }> {
         return messages.map((msg) => {
             let role = 'user';
-            if (msg._getType() === 'ai') {
+            const msgType = msg._getType();
+
+            if (msgType === 'ai') {
                 role = 'assistant';
-            } else if (msg._getType() === 'system') {
+            } else if (msgType === 'system') {
                 role = 'system';
-            } else if (msg._getType() === 'function') {
+            } else if (msgType === 'tool') {
+                role = 'tool';
+            } else if (msgType === 'function') {
                 role = 'function';
             }
 
-            return {
+            const formatted: {
+                role: string;
+                content: string | null;
+                tool_calls?: any[];
+                tool_call_id?: string;
+            } = {
                 role,
                 content: msg.content as string,
             };
+
+            // Handle tool calls in AI messages
+            if (msgType === 'ai' && 'tool_calls' in msg.additional_kwargs && msg.additional_kwargs.tool_calls) {
+                formatted.tool_calls = msg.additional_kwargs.tool_calls as any[];
+                if (formatted.tool_calls && formatted.tool_calls.length > 0) {
+                    formatted.content = null;
+                }
+            }
+
+            // Handle tool message with tool_call_id
+            if (msg instanceof ToolMessage) {
+                formatted.tool_call_id = msg.tool_call_id;
+            }
+
+            return formatted;
         });
     }
 
@@ -95,7 +139,7 @@ export class FreeLlmRouterChatModel extends BaseChatModel {
             requestBody.presence_penalty = this.config.presencePenalty;
         }
 
-        // Add model kwargs (filter options)
+        // Add model kwargs (filter options and tools)
         if (this.config.modelKwargs && Object.keys(this.config.modelKwargs).length > 0) {
             Object.assign(requestBody, this.config.modelKwargs);
         }
@@ -128,7 +172,10 @@ export class FreeLlmRouterChatModel extends BaseChatModel {
 
             const data = (await response.json()) as {
                 choices?: Array<{
-                    message?: { content?: string };
+                    message?: {
+                        content?: string | null;
+                        tool_calls?: any[];
+                    };
                     finish_reason?: string;
                 }>;
                 usage?: {
@@ -141,9 +188,17 @@ export class FreeLlmRouterChatModel extends BaseChatModel {
 
             // Extract response
             const messageContent = data.choices?.[0]?.message?.content || '';
+            const toolCalls = data.choices?.[0]?.message?.tool_calls;
+
+            // Create AI message with tool calls if present
+            const aiMessage = new AIMessage({
+                content: messageContent,
+                additional_kwargs: toolCalls ? { tool_calls: toolCalls } : {},
+            });
+
             const generation: ChatGeneration = {
                 text: messageContent,
-                message: new AIMessage(messageContent),
+                message: aiMessage,
                 generationInfo: {
                     finishReason: data.choices?.[0]?.finish_reason,
                     _router: data._router,

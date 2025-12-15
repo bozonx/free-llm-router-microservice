@@ -10,6 +10,7 @@ This node provides a LangChain-compatible model interface that can be connected 
 - 🔄 **Smart Model Selection** - Automatic model selection with Smart Strategy
 - 🎯 **Priority Lists** - Define model priority lists for fallback
 - 🏷️ **Advanced Filtering** - Filter models by tags, type, context size, and success rate
+- 🛠️ **Function Calling** - Full support for OpenAI-compatible tools/function calling
 - 🛡️ **Authentication** - Supports None, Basic Auth, and Bearer Token authentication
 - ⚙️ **Full Control** - Access to all OpenAI-compatible parameters
 
@@ -141,6 +142,21 @@ All standard OpenAI parameters are supported:
 2. Connect to **Basic LLM Chain**
 
 This will try DeepSeek R1 first, then Llama 3.3, then fall back to Smart Strategy.
+
+### Function Calling with Tools
+
+1. Add **Free LLM Router Model** node
+   - Model Selection: Auto or specific model
+   - Temperature: 0.7
+
+2. Add **Tool** nodes (e.g., Calculator, Web Search)
+
+3. Add **Agent** node
+   - Connect Free LLM Router to "model" input
+   - Connect Tools to "tools" input
+   - Set your prompt
+
+The model will automatically use `bindTools()` to enable function calling with the connected tools.
 
 ## Response Metadata
 
