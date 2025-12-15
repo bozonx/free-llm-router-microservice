@@ -11,6 +11,7 @@ This node provides a LangChain-compatible model interface that can be connected 
 - 🎯 **Priority Lists** - Define model priority lists for fallback
 - 🏷️ **Advanced Filtering** - Filter models by tags, type, context size, and success rate
 - 🛠️ **Function Calling** - Full support for OpenAI-compatible tools/function calling
+- 🖼️ **Vision Support** - Send images along with text for multimodal analysis
 - 🛡️ **Authentication** - Supports None, Basic Auth, and Bearer Token authentication
 - ⚙️ **Full Control** - Access to all OpenAI-compatible parameters
 - 📡 **Streaming Support** - Real-time response streaming with LangChain callbacks
@@ -158,6 +159,48 @@ This will try DeepSeek R1 first, then Llama 3.3, then fall back to Smart Strateg
    - Set your prompt
 
 The model will automatically use `bindTools()` to enable function calling with the connected tools.
+
+### Vision (Image Analysis)
+
+The node supports sending images along with text for analysis by vision-capable models:
+
+1. Add **Free LLM Router Model** node
+   - Model Selection: Specific model (e.g., `gpt-4o` or `claude-3.5-sonnet`)
+   - Temperature: 0.7
+
+2. Add **Code** node to prepare multimodal message:
+   ```javascript
+   return {
+     json: {
+       messages: [
+         {
+           role: 'user',
+           content: [
+             {
+               type: 'text',
+               text: 'What is in this image?'
+             },
+             {
+               type: 'image_url',
+               image_url: {
+                 url: 'https://example.com/image.jpg',
+                 detail: 'high'  // 'auto', 'high', or 'low'
+               }
+             }
+           ]
+         }
+       ]
+     }
+   };
+   ```
+
+3. Connect to **Basic LLM Chain** or use directly
+
+**Note:** Vision support requires a model with image capabilities (GPT-4o, Claude 3.5 Sonnet, etc.). The `detail` parameter controls analysis precision:
+- `auto` - Let the model decide
+- `high` - Detailed analysis (more tokens)
+- `low` - Quick analysis (fewer tokens)
+
 
 ## Response Metadata
 
