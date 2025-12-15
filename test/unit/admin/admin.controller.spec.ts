@@ -4,6 +4,7 @@ import { NotFoundException } from '@nestjs/common';
 import { AdminController } from '../../../src/modules/admin/admin.controller.js';
 import { StateService } from '../../../src/modules/state/state.service.js';
 import { RateLimiterService } from '../../../src/modules/rate-limiter/rate-limiter.service.js';
+import { ModelsService } from '../../../src/modules/models/models.service.js';
 
 describe('AdminController', () => {
   let controller: AdminController;
@@ -30,6 +31,12 @@ describe('AdminController', () => {
             getStatus: jest.fn(),
           },
         },
+        {
+          provide: ModelsService,
+          useValue: {
+            findByName: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
@@ -48,7 +55,13 @@ describe('AdminController', () => {
       (stateService.getAllStates as jest.Mock).mockReturnValue(mockStates);
 
       const result = controller.getStates();
-      expect(result.models).toEqual(mockStates);
+      expect(result.models).toEqual([
+        {
+          name: 'model1',
+          modelName: 'model1',
+          providerName: 'Unknown',
+        },
+      ]);
       expect(result.timestamp).toBeDefined();
     });
   });
