@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Param, NotFoundException, Logger } from '@nestjs/common';
 import { StateService } from '../state/state.service.js';
 import { RateLimiterService } from '../rate-limiter/rate-limiter.service.js';
+import { ModelsService } from '../models/models.service.js';
 import type { ModelState } from '../state/interfaces/state.interface.js';
 import type { RateLimitStatus } from '../rate-limiter/interfaces/rate-limiter.interface.js';
 
@@ -11,16 +12,32 @@ export class AdminController {
   constructor(
     private readonly stateService: StateService,
     private readonly rateLimiterService: RateLimiterService,
-  ) {}
+    private readonly modelsService: ModelsService,
+  ) { }
 
   /**
    * Get current state of all models.
    * Returns a list of models with their current stats, circuit breaker status, etc.
    */
   @Get('state')
-  public getStates(): { models: ModelState[]; timestamp: string } {
+  public getStates() {
+    const states = this.stateService.getAllStates();
+    const models = states.map((state) => {
+      const modelDef = this.modelsService.findByName(state.name);
+      // Capitalize provider name for better display
+      const provider = modelDef?.provider
+        ? modelDef.provider.charAt(0).toUpperCase() + modelDef.provider.slice(1)
+        : 'Unknown';
+
+      return {
+        ...state,
+        modelName: state.name,
+        providerName: provider,
+      };
+    });
+
     return {
-      models: this.stateService.getAllStates(),
+      models,
       timestamp: new Date().toISOString(),
     };
   }
