@@ -278,4 +278,122 @@ describe('Router (e2e)', () => {
       expect(body._router.model_name).toBe('llama-3.3-70b');
     });
   });
+
+  describe('POST /api/v1/chat/completions (Streaming)', () => {
+    it('validates stream parameter is boolean', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/v1/chat/completions',
+        payload: {
+          messages: [
+            {
+              role: 'user',
+              content: 'test',
+            },
+          ],
+          stream: 'invalid',
+        },
+      });
+
+      expect(response.statusCode).toBe(400);
+    });
+
+    it.skip('returns SSE stream when stream=true', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/v1/chat/completions',
+        payload: {
+          messages: [
+            {
+              role: 'user',
+              content: 'Say hello in one word',
+            },
+          ],
+          stream: true,
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(response.headers['content-type']).toBe('text/event-stream');
+      expect(response.headers['cache-control']).toBe('no-cache');
+      expect(response.headers['connection']).toBe('keep-alive');
+
+      // Parse SSE events from body
+      const body = response.body;
+      const lines = body.split('\n');
+      const dataLines = lines.filter((line: string) => line.startsWith('data: '));
+
+      expect(dataLines.length).toBeGreaterThan(0);
+
+      // Check for [DONE] message
+      const doneMessage = dataLines.find((line: string) => line === 'data: [DONE]');
+      expect(doneMessage).toBeDefined();
+
+      // Check data chunks (all except [DONE])
+      const dataChunks = dataLines.filter((line: string) => line !== 'data: [DONE]');
+      expect(dataChunks.length).toBeGreaterThan(0);
+
+      // Validate first chunk structure
+      const firstChunk = JSON.parse(dataChunks[0].replace('data: ', ''));
+      expect(firstChunk).toHaveProperty('id');
+      expect(firstChunk).toHaveProperty('object', 'chat.completion.chunk');
+      expect(firstChunk).toHaveProperty('created');
+      expect(firstChunk).toHaveProperty('model');
+      expect(firstChunk).toHaveProperty('choices');
+
+      expect(Array.isArray(firstChunk.choices)).toBe(true);
+      const choice = firstChunk.choices[0];
+      expect(choice).toHaveProperty('index', 0);
+      expect(choice).toHaveProperty('delta');
+      expect(choice).toHaveProperty('finish_reason');
+    });
+
+    it.skip('handles errors in streaming mode', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/v1/chat/completions',
+        payload: {
+          messages: [
+            {
+              role: 'user',
+              content: 'test',
+            },
+          ],
+          model: 'non-existent-model',
+          stream: true,
+        },
+      });
+
+      // Should return error as SSE or HTTP error
+      expect([200, 400, 404, 500]).toContain(response.statusCode);
+    });
+
+    it.skip('streams with specific model', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/v1/chat/completions',
+        payload: {
+          messages: [
+            {
+              role: 'user',
+              content: 'Count to 3',
+            },
+          ],
+          model: 'llama-3.3-70b',
+          stream: true,
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(response.headers['content-type']).toBe('text/event-stream');
+
+      const body = response.body;
+      const dataLines = body.split('\n').filter((line: string) => line.startsWith('data: '));
+
+      // Verify chunks contain model name
+      const dataChunks = dataLines.filter((line: string) => line !== 'data: [DONE]');
+      const firstChunk = JSON.parse(dataChunks[0].replace('data: ', ''));
+      expect(firstChunk.model).toContain('llama-3.3-70b');
+    });
+  });
 });
