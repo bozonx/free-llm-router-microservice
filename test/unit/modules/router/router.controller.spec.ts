@@ -131,11 +131,17 @@ describe('RouterController', () => {
         },
       } as any;
 
+      const mockRes = {
+        send: jest.fn(),
+        raw: {},
+      } as any;
+
       // Act
-      const result = await controller.chatCompletion(mockRequest, mockReq);
+      const result = await controller.chatCompletion(mockRequest, mockReq, mockRes);
 
       // Assert
       expect(result).toEqual(mockResponse);
+      expect(mockRes.send).toHaveBeenCalledWith(mockResponse);
       expect(routerService.chatCompletion).toHaveBeenCalledWith(
         mockRequest,
         expect.any(AbortSignal),
@@ -155,8 +161,13 @@ describe('RouterController', () => {
         },
       } as any;
 
+      const mockRes = {
+        send: jest.fn(),
+        raw: {},
+      } as any;
+
       // Act & Assert
-      await expect(controller.chatCompletion(mockRequest, mockReq)).rejects.toThrow(
+      await expect(controller.chatCompletion(mockRequest, mockReq, mockRes)).rejects.toThrow(
         'Service unavailable',
       );
       expect(routerService.chatCompletion).toHaveBeenCalledWith(
@@ -194,11 +205,17 @@ describe('RouterController', () => {
         },
       } as any;
 
+      const mockRes = {
+        send: jest.fn(),
+        raw: {},
+      } as any;
+
       // Act
-      const result = await controller.chatCompletion(fullRequest, mockReq);
+      const result = await controller.chatCompletion(fullRequest, mockReq, mockRes);
 
       // Assert
       expect(result).toEqual(mockResponse);
+      expect(mockRes.send).toHaveBeenCalledWith(mockResponse);
       expect(routerService.chatCompletion).toHaveBeenCalledWith(
         fullRequest,
         expect.any(AbortSignal),
