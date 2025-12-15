@@ -15,6 +15,7 @@ import {
 import { Type } from 'class-transformer';
 import type { Tool, ToolChoice } from '../../providers/interfaces/tools.interface.js';
 import { IsValidToolChoice } from '../validators/tool-choice.validator.js';
+import { IsValidContent } from '../validators/content.validator.js';
 
 /**
  * Function parameters DTO (JSON Schema)
@@ -105,15 +106,7 @@ export class ChatMessageDto {
   @IsIn(['system', 'user', 'assistant', 'tool'])
   public role!: 'system' | 'user' | 'assistant' | 'tool';
 
-  @IsOptional()
-  @ValidateIf((o) => typeof o.content === 'string')
-  @IsString()
-  @ValidateIf((o) => Array.isArray(o.content))
-  @IsArray()
-  @ValidateIf((o) => Array.isArray(o.content))
-  @ValidateNested({ each: true })
-  @ValidateIf((o) => Array.isArray(o.content))
-  @Type(() => ChatContentPartDto)
+  @IsValidContent()
   public content!: string | ChatContentPartDto[] | null;
 
   @IsOptional()
