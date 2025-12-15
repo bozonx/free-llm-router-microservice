@@ -75,7 +75,7 @@ export class RouterController {
         try {
           for await (const chunk of this.routerService.chatCompletionStream(request, signal)) {
             // Format as SSE event
-            const sseData = {
+            const sseData: Record<string, unknown> = {
               id: chunk.id,
               object: 'chat.completion.chunk',
               created: Math.floor(Date.now() / 1000),
@@ -88,6 +88,11 @@ export class RouterController {
                 },
               ],
             };
+
+            // Include router metadata if present (usually in first chunk)
+            if (chunk._router) {
+              sseData._router = chunk._router;
+            }
 
             res.raw.write(`data: ${JSON.stringify(sseData)}\n\n`);
           }
@@ -157,6 +162,7 @@ export class RouterController {
         available: model.available,
         weight: model.weight,
         maxConcurrent: model.maxConcurrent,
+        supportsVision: model.supportsVision,
       })),
     };
   }

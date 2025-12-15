@@ -62,7 +62,7 @@ export class RouterService {
 
   /**
    * Handle chat completion with streaming (Server-Sent Events)
-   * Simplified version: selects first model, no retry/fallback
+   * Implements retry/fallback logic similar to non-streaming mode
    */
   public async *chatCompletionStream(
     request: ChatCompletionRequestDto,
@@ -75,57 +75,146 @@ export class RouterService {
       // Combine client signal with shutdown signal
       const abortSignal = this.createCombinedAbortSignal(clientSignal);
       const parsedModel = parseModelInput(request.model);
+      const excludedModels: string[] = [];
+      let attemptCount = 0;
+      let isFirstChunk = true;
 
-      // Select first suitable model (no retries for streaming)
-      const model = this.selectModel(request, parsedModel, []);
-      if (!model) {
-        throw new Error('No suitable model found for streaming');
-      }
+      // Try up to maxModelSwitches models
+      for (let i = 0; i < this.config.routing.maxModelSwitches; i++) {
+        attemptCount++;
 
-      this.logger.debug(`Streaming with model ${model.name} (${model.provider})`);
-
-      // Get provider
-      const provider = this.providersMap.get(model.provider);
-      if (!provider) {
-        throw new ProviderNotFoundError(model.provider);
-      }
-
-      // Build completion params
-      const completionParams = this.requestBuilder.buildChatCompletionParams(
-        request,
-        model.model,
-        abortSignal,
-      );
-
-      // Stream chunks from provider
-      this.stateService.incrementActiveRequests(model.name);
-      const startTime = Date.now();
-
-      try {
-        for await (const chunk of provider.chatCompletionStream(completionParams)) {
-          this.checkAbortSignal(abortSignal);
-          yield chunk;
+        const model = this.selectModel(request, parsedModel, excludedModels);
+        if (!model) {
+          this.logger.warn('No suitable model found for streaming');
+          break;
         }
 
-        // Record success
-        const latencyMs = Date.now() - startTime;
-        this.circuitBreaker.onSuccess(model.name, latencyMs);
-      } catch (error) {
-        const latencyMs = Date.now() - startTime;
-        const errorInfo = ErrorExtractor.extractErrorInfo(error, model);
+        this.logger.debug(
+          `Streaming attempt ${attemptCount}: Using model ${model.name} (${model.provider})`,
+        );
 
-        if (!ErrorExtractor.isClientError(errorInfo.code)) {
-          this.circuitBreaker.onFailure(model.name, errorInfo.code, latencyMs);
+        // Get provider
+        const provider = this.providersMap.get(model.provider);
+        if (!provider) {
+          throw new ProviderNotFoundError(model.provider);
         }
 
-        if (ErrorExtractor.isAbortError(error)) {
-          throw this.handleAbortError();
-        }
+        // Build completion params
+        const completionParams = this.requestBuilder.buildChatCompletionParams(
+          request,
+          model.model,
+          abortSignal,
+        );
 
-        throw error;
-      } finally {
-        this.stateService.decrementActiveRequests(model.name);
+        // Stream chunks from provider
+        this.stateService.incrementActiveRequests(model.name);
+        const startTime = Date.now();
+
+        try {
+          for await (const chunk of provider.chatCompletionStream(completionParams)) {
+            this.checkAbortSignal(abortSignal);
+
+            // Add router metadata to first chunk
+            if (isFirstChunk) {
+              chunk._router = {
+                provider: model.provider,
+                model_name: model.name,
+                attempts: attemptCount,
+                fallback_used: false,
+              };
+              isFirstChunk = false;
+            }
+
+            yield chunk;
+          }
+
+          // Record success
+          const latencyMs = Date.now() - startTime;
+          this.circuitBreaker.onSuccess(model.name, latencyMs);
+
+          this.logger.debug(
+            `Streaming successful: ${model.name} (${model.provider}) in ${attemptCount} attempt(s)`,
+          );
+
+          return; // Success - exit generator
+        } catch (error) {
+          const latencyMs = Date.now() - startTime;
+          const errorInfo = ErrorExtractor.extractErrorInfo(error, model);
+
+          if (!ErrorExtractor.isClientError(errorInfo.code)) {
+            this.circuitBreaker.onFailure(model.name, errorInfo.code, latencyMs);
+          }
+
+          if (ErrorExtractor.isAbortError(error)) {
+            throw this.handleAbortError();
+          }
+
+          // Track failed model and try next one
+          excludedModels.push(`${model.provider}/${model.name}`);
+
+          this.logger.warn(
+            `Streaming model ${model.name} (${model.provider}) failed: ${errorInfo.error} (code: ${errorInfo.code ?? 'N/A'})`,
+          );
+
+          // If client error (4xx except 429), don't retry
+          if (ErrorExtractor.isClientError(errorInfo.code)) {
+            this.logger.error('Client error detected in streaming, not retrying');
+            throw error;
+          }
+
+          // Continue to next model
+        } finally {
+          this.stateService.decrementActiveRequests(model.name);
+        }
       }
+
+      // If all free models failed, try fallback to paid model
+      if (this.config.routing.fallback.enabled) {
+        this.logger.warn('All free models failed in streaming, attempting fallback to paid model');
+
+        try {
+          const fallbackProvider = this.providersMap.get(this.config.routing.fallback.provider);
+          if (!fallbackProvider) {
+            throw new ProviderNotFoundError(this.config.routing.fallback.provider);
+          }
+
+          const completionParams = this.requestBuilder.buildChatCompletionParams(
+            request,
+            this.config.routing.fallback.model,
+            abortSignal,
+          );
+
+          this.stateService.recordFallbackUsage();
+
+          for await (const chunk of fallbackProvider.chatCompletionStream(completionParams)) {
+            this.checkAbortSignal(abortSignal);
+
+            // Add router metadata to first chunk
+            if (isFirstChunk) {
+              chunk._router = {
+                provider: this.config.routing.fallback.provider,
+                model_name: this.config.routing.fallback.model,
+                attempts: attemptCount + 1,
+                fallback_used: true,
+              };
+              isFirstChunk = false;
+            }
+
+            yield chunk;
+          }
+
+          this.logger.debug('Fallback streaming successful');
+          return; // Success
+        } catch (error) {
+          this.logger.error(
+            `Fallback streaming failed: ${error instanceof Error ? error.message : String(error)}`,
+          );
+          throw error;
+        }
+      }
+
+      // All models failed
+      throw new AllModelsFailedError(attemptCount, []);
     } finally {
       // Always unregister request when done
       this.shutdownService.unregisterRequest();

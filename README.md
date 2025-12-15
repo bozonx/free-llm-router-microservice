@@ -495,7 +495,7 @@ curl -N -X POST http://localhost:8080/api/v1/chat/completions \
 
 **Ответ (SSE формат):**
 ```
-data: {"id":"chatcmpl-123","object":"chat.completion.chunk","created":1677858242,"model":"meta-llama/llama-3.3-70b-instruct:free","choices":[{"index":0,"delta":{"role":"assistant"},"finish_reason":null}]}
+data: {"id":"chatcmpl-123","object":"chat.completion.chunk","created":1677858242,"model":"meta-llama/llama-3.3-70b-instruct:free","choices":[{"index":0,"delta":{"role":"assistant"},"finish_reason":null}],"_router":{"provider":"openrouter","model_name":"llama-3.3-70b","attempts":1,"fallback_used":false}}
 
 data: {"id":"chatcmpl-123","object":"chat.completion.chunk","created":1677858242,"model":"meta-llama/llama-3.3-70b-instruct:free","choices":[{"index":0,"delta":{"content":"1"},"finish_reason":null}]}
 
@@ -506,9 +506,10 @@ data: [DONE]
 
 **Примечание:** Streaming режим:
 - Использует Server-Sent Events (SSE)
-- Не поддерживает retry/fallback (выбирается первая подходящая модель)
+- **Поддерживает retry/fallback** - автоматическое переключение между моделями при ошибках
+- **Метаданные роутера** - первый chunk содержит поле `_router` с информацией о провайдере, модели, попытках и использовании fallback
 - Завершается сообщением `data: [DONE]`
-- При ошибке stream прерывается с сообщением об ошибке
+- При ошибке всех моделей stream прерывается с сообщением об ошибке
 
 ### Vision (Анализ изображений)
 

@@ -179,6 +179,16 @@ export interface ChatCompletionStreamChunk {
    * Finish reason (only in last chunk)
    */
   finishReason?: 'stop' | 'length' | 'content_filter' | 'tool_calls';
+
+  /**
+   * Router metadata (optional, included in first or last chunk)
+   */
+  _router?: {
+    provider: string;
+    model_name: string;
+    attempts?: number;
+    fallback_used?: boolean;
+  };
 }
 
 /**

@@ -346,6 +346,13 @@ describe('Router (e2e)', () => {
       expect(choice).toHaveProperty('index', 0);
       expect(choice).toHaveProperty('delta');
       expect(choice).toHaveProperty('finish_reason');
+
+      // Check router metadata in first chunk
+      expect(firstChunk).toHaveProperty('_router');
+      expect(firstChunk._router).toHaveProperty('provider');
+      expect(firstChunk._router).toHaveProperty('model_name');
+      expect(firstChunk._router).toHaveProperty('attempts');
+      expect(firstChunk._router).toHaveProperty('fallback_used');
     });
 
     it.skip('handles errors in streaming mode', async () => {
