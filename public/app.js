@@ -371,6 +371,10 @@ async function sendTestRequest() {
     const message = document.getElementById('test-message')?.value || 'Hello!';
     const temperature = parseFloat(document.getElementById('test-temperature')?.value || '0.7');
     const maxTokens = parseInt(document.getElementById('test-max-tokens')?.value || '150', 10);
+    const imageUrl = document.getElementById('test-image-url')?.value?.trim();
+    const imageDetail = document.getElementById('test-image-detail')?.value || 'auto';
+    const streaming = document.getElementById('test-streaming')?.checked || false;
+    const toolsInput = document.getElementById('test-tools')?.value?.trim();
 
     // Disable button
     button.disabled = true;
@@ -379,33 +383,51 @@ async function sendTestRequest() {
     // Show loading state
     responseContainer.innerHTML = '<div class="loading-state">Sending request...</div>';
 
+    // Build message content (support multimodal for vision)
+    let messageContent;
+    if (imageUrl) {
+        messageContent = [
+            { type: 'text', text: message },
+            { type: 'image_url', image_url: { url: imageUrl, detail: imageDetail } }
+        ];
+    } else {
+        messageContent = message;
+    }
+
     const requestBody = {
         model,
         messages: [{
             role: 'user',
-            content: message
+            content: messageContent
         }],
         temperature,
-        max_tokens: maxTokens
+        max_tokens: maxTokens,
+        stream: streaming
     };
+
+    // Add tools if provided
+    if (toolsInput) {
+        try {
+            const tools = JSON.parse(toolsInput);
+            if (Array.isArray(tools) && tools.length > 0) {
+                requestBody.tools = tools;
+                requestBody.tool_choice = 'auto';
+            }
+        } catch (error) {
+            displayTestResponse({ error: `Invalid tools JSON: ${error.message}` }, 0, false);
+            button.disabled = false;
+            button.innerHTML = '<span class="button-icon">🚀</span> Send Request';
+            return;
+        }
+    }
 
     try {
         const startTime = Date.now();
-        const response = await fetch(`${API_BASE_PATH}/chat/completions`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(requestBody)
-        });
 
-        const elapsed = Date.now() - startTime;
-        const data = await response.json();
-
-        if (response.ok) {
-            displayTestResponse(data, elapsed, true);
+        if (streaming) {
+            await handleStreamingRequest(requestBody, responseContainer, startTime);
         } else {
-            displayTestResponse(data, elapsed, false);
+            await handleNormalRequest(requestBody, responseContainer, startTime);
         }
     } catch (error) {
         displayTestResponse({ error: error.message }, 0, false);
@@ -413,6 +435,151 @@ async function sendTestRequest() {
         // Re-enable button
         button.disabled = false;
         button.innerHTML = '<span class="button-icon">🚀</span> Send Request';
+    }
+}
+
+async function handleNormalRequest(requestBody, responseContainer, startTime) {
+    const response = await fetch(`${API_BASE_PATH}/chat/completions`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody)
+    });
+
+    const elapsed = Date.now() - startTime;
+    const data = await response.json();
+
+    if (response.ok) {
+        displayTestResponse(data, elapsed, true);
+    } else {
+        displayTestResponse(data, elapsed, false);
+    }
+}
+
+async function handleStreamingRequest(requestBody, responseContainer, startTime) {
+    const response = await fetch(`${API_BASE_PATH}/chat/completions`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody)
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        displayTestResponse(error, Date.now() - startTime, false);
+        return;
+    }
+
+    // Handle SSE streaming
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let fullContent = '';
+    let routerInfo = null;
+    let toolCalls = [];
+    let finishReason = null;
+
+    responseContainer.innerHTML = `<pre class="response-content response-success streaming-response">⚡ Streaming Response:\n\n</pre>`;
+    const contentElement = responseContainer.querySelector('.streaming-response');
+
+    try {
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || '';
+
+            for (const line of lines) {
+                if (!line.trim() || line.trim() === 'data: [DONE]') continue;
+
+                if (line.startsWith('data: ')) {
+                    try {
+                        const jsonData = JSON.parse(line.slice(6));
+
+                        // Extract router info from first chunk
+                        if (jsonData._router && !routerInfo) {
+                            routerInfo = jsonData._router;
+                        }
+
+                        // Process choices
+                        if (jsonData.choices && jsonData.choices[0]) {
+                            const delta = jsonData.choices[0].delta;
+
+                            // Accumulate content
+                            if (delta.content) {
+                                fullContent += delta.content;
+                                contentElement.textContent = `⚡ Streaming Response:\n\n${fullContent}`;
+                            }
+
+                            // Handle tool calls
+                            if (delta.tool_calls) {
+                                delta.tool_calls.forEach(tc => {
+                                    if (!toolCalls[tc.index]) {
+                                        toolCalls[tc.index] = {
+                                            id: tc.id || '',
+                                            type: tc.type || 'function',
+                                            function: { name: '', arguments: '' }
+                                        };
+                                    }
+                                    if (tc.function?.name) {
+                                        toolCalls[tc.index].function.name += tc.function.name;
+                                    }
+                                    if (tc.function?.arguments) {
+                                        toolCalls[tc.index].function.arguments += tc.function.arguments;
+                                    }
+                                });
+                            }
+
+                            // Get finish reason
+                            if (jsonData.choices[0].finish_reason) {
+                                finishReason = jsonData.choices[0].finish_reason;
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Failed to parse SSE chunk:', e);
+                    }
+                }
+            }
+        }
+
+        const elapsed = Date.now() - startTime;
+
+        // Build final display
+        let finalContent = `✓ Streaming Complete (${elapsed}ms)\n\n`;
+        finalContent += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+        finalContent += `Response:\n`;
+        finalContent += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+        finalContent += fullContent || 'No content';
+
+        if (toolCalls.length > 0) {
+            finalContent += `\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+            finalContent += `Tool Calls:\n`;
+            finalContent += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+            finalContent += JSON.stringify(toolCalls, null, 2);
+        }
+
+        if (finishReason) {
+            finalContent += `\n\nFinish Reason: ${finishReason}`;
+        }
+
+        if (routerInfo) {
+            finalContent += `\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+            finalContent += `Router Metadata:\n`;
+            finalContent += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+            finalContent += `Provider: ${routerInfo.provider || 'N/A'}\n`;
+            finalContent += `Model: ${routerInfo.model || 'N/A'}\n`;
+            finalContent += `Latency: ${routerInfo.latency || 0}ms\n`;
+            finalContent += `Attempts: ${routerInfo.attempts || 0}`;
+        }
+
+        contentElement.textContent = finalContent;
+
+    } catch (error) {
+        displayTestResponse({ error: `Streaming error: ${error.message}` }, Date.now() - startTime, false);
     }
 }
 

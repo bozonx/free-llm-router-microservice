@@ -178,6 +178,39 @@
                                 placeholder="Enter your test message">Hello! How are you?</textarea>
                         </div>
 
+                        <!-- Vision Support -->
+                        <div class="form-group">
+                            <label for="test-image-url">Image URL (Vision)</label>
+                            <input type="text" id="test-image-url" placeholder="https://example.com/image.jpg">
+                            <span class="form-hint">Optional: Add an image URL for vision-capable models</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="test-image-detail">Image Detail</label>
+                            <select id="test-image-detail">
+                                <option value="auto">Auto</option>
+                                <option value="low">Low</option>
+                                <option value="high">High</option>
+                            </select>
+                            <span class="form-hint">Detail level for image processing</span>
+                        </div>
+
+                        <!-- Streaming Support -->
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="test-streaming">
+                                <span>Enable Streaming</span>
+                            </label>
+                            <span class="form-hint">Stream tokens as they are generated</span>
+                        </div>
+
+                        <!-- Tools Support -->
+                        <div class="form-group">
+                            <label for="test-tools">Tools (Function Calling)</label>
+                            <textarea id="test-tools" rows="6" placeholder='[{"type":"function","function":{"name":"get_weather","description":"Get weather","parameters":{"type":"object","properties":{"location":{"type":"string"}}}}}]'></textarea>
+                            <span class="form-hint">Optional: JSON array of tools for function calling</span>
+                        </div>
+
                         <div class="form-group">
                             <label for="test-temperature">Temperature</label>
                             <input type="range" id="test-temperature" min="0" max="2" step="0.1" value="0.7">

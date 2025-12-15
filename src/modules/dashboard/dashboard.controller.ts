@@ -1,8 +1,9 @@
-import { Controller, Get, Res } from '@nestjs/common';
+import { Controller, Get, Param, Res } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { FastifyReply } from 'fastify';
-import { join } from 'path';
-import { existsSync, readFileSync } from 'fs';
+import { join, extname, normalize } from 'path';
+import { readFile, access } from 'fs/promises';
+import { constants } from 'fs';
 import type { AppConfig } from '../../config/app.config.js';
 
 /**
@@ -13,6 +14,25 @@ import type { AppConfig } from '../../config/app.config.js';
 export class DashboardController {
   private readonly publicPath: string;
   private readonly apiBasePath: string;
+
+  // MIME type mapping for common file extensions
+  private readonly mimeTypes: Record<string, string> = {
+    '.html': 'text/html',
+    '.css': 'text/css',
+    '.js': 'application/javascript',
+    '.json': 'application/json',
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.gif': 'image/gif',
+    '.svg': 'image/svg+xml',
+    '.ico': 'image/x-icon',
+    '.webp': 'image/webp',
+    '.woff': 'font/woff',
+    '.woff2': 'font/woff2',
+    '.ttf': 'font/ttf',
+    '.eot': 'application/vnd.ms-fontobject',
+  };
 
   constructor(private readonly configService: ConfigService) {
     // Public directory is at the root of the project
@@ -28,16 +48,12 @@ export class DashboardController {
    * GET /
    */
   @Get()
-  public serveDashboard(@Res() reply: FastifyReply): void {
+  public async serveDashboard(@Res() reply: FastifyReply): Promise<void> {
     const filePath = join(this.publicPath, 'index.html');
 
-    if (!existsSync(filePath)) {
-      reply.code(404).send({ error: 'File not found' });
-      return;
-    }
-
     try {
-      let content = readFileSync(filePath, 'utf-8');
+      await access(filePath, constants.R_OK);
+      let content = await readFile(filePath, 'utf-8');
 
       // Inject API base path into the meta tag
       content = content.replace(
@@ -47,7 +63,7 @@ export class DashboardController {
 
       reply.header('Content-Type', 'text/html; charset=utf-8').send(content);
     } catch (_error) {
-      reply.code(500).send({ error: 'Failed to read file' });
+      reply.code(404).send({ error: 'File not found' });
     }
   }
 
@@ -56,8 +72,8 @@ export class DashboardController {
    * GET /styles.css
    */
   @Get('styles.css')
-  public serveStyles(@Res() reply: FastifyReply): void {
-    this.serveFile('styles.css', reply, 'text/css');
+  public async serveStyles(@Res() reply: FastifyReply): Promise<void> {
+    await this.serveFile('styles.css', reply, 'text/css');
   }
 
   /**
@@ -65,30 +81,51 @@ export class DashboardController {
    * GET /app.js
    */
   @Get('app.js')
-  public serveScript(@Res() reply: FastifyReply): void {
-    this.serveFile('app.js', reply, 'application/javascript');
+  public async serveScript(@Res() reply: FastifyReply): Promise<void> {
+    await this.serveFile('app.js', reply, 'application/javascript');
+  }
+
+  /**
+   * Serve any static file from the public directory
+   * GET /:filename
+   * This allows serving additional assets like images, fonts, etc.
+   */
+  @Get(':filename')
+  public async serveStaticFile(
+    @Param('filename') filename: string,
+    @Res() reply: FastifyReply,
+  ): Promise<void> {
+    // Prevent directory traversal attacks
+    const normalizedFilename = normalize(filename).replace(/^(\.\.(\/|\\|$))+/, '');
+
+    // Don't serve index.html, styles.css, or app.js through this route
+    if (['index.html', 'styles.css', 'app.js'].includes(normalizedFilename)) {
+      reply.code(404).send({ error: 'File not found' });
+      return;
+    }
+
+    const ext = extname(normalizedFilename).toLowerCase();
+    const contentType = this.mimeTypes[ext] || 'application/octet-stream';
+
+    await this.serveFile(normalizedFilename, reply, contentType);
   }
 
   /**
    * Helper method to serve files from the public directory
    */
-  private serveFile(
+  private async serveFile(
     filename: string,
     reply: FastifyReply,
     contentType: string = 'text/html',
-  ): void {
+  ): Promise<void> {
     const filePath = join(this.publicPath, filename);
 
-    if (!existsSync(filePath)) {
-      reply.code(404).send({ error: 'File not found' });
-      return;
-    }
-
     try {
-      const content = readFileSync(filePath, 'utf-8');
+      await access(filePath, constants.R_OK);
+      const content = await readFile(filePath, 'utf-8');
       reply.header('Content-Type', `${contentType}; charset=utf-8`).send(content);
     } catch (_error) {
-      reply.code(500).send({ error: 'Failed to read file' });
+      reply.code(404).send({ error: 'File not found' });
     }
   }
 }
