@@ -132,4 +132,35 @@ export abstract class BaseProvider implements LlmProvider {
   protected isRetryableError(error: HttpErrorResponse): boolean {
     return this.isRateLimitError(error) || this.isServerError(error) || this.isTimeoutError(error);
   }
+
+  /**
+   * Map finish reason to standard format
+   * Common implementation for all providers
+   */
+  protected mapFinishReason(reason: string): 'stop' | 'length' | 'content_filter' | 'tool_calls' {
+    switch (reason) {
+      case 'stop':
+        return 'stop';
+      case 'length':
+        return 'length';
+      case 'content_filter':
+        return 'content_filter';
+      case 'tool_calls':
+        return 'tool_calls';
+      default:
+        this.logger.warn(`Unknown finish reason: ${reason}, defaulting to 'stop'`);
+        return 'stop';
+    }
+  }
+
+  /**
+   * Handle content field when tool calls are present
+   * According to OpenAI spec, content should be null when tool_calls are present
+   */
+  protected handleContentWithToolCalls(content: string | null, toolCalls?: any[]): string | null {
+    if (toolCalls && toolCalls.length > 0) {
+      return null;
+    }
+    return content || '';
+  }
 }

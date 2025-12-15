@@ -173,6 +173,13 @@ export class RouterService {
           `Request successful: ${model.name} (${model.provider}) in ${attemptCount} attempt(s)`,
         );
 
+        // Log tool calls if present
+        if (result.toolCalls && result.toolCalls.length > 0) {
+          this.logger.debug(
+            `Model ${model.name} called ${result.toolCalls.length} tool(s): ${result.toolCalls.map(t => t.function.name).join(', ')}`,
+          );
+        }
+
         return this.buildSuccessResponse({
           result,
           model,

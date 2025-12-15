@@ -8,6 +8,7 @@ import type {
   ChatCompletionResult,
   ChatCompletionStreamChunk,
 } from './interfaces/provider.interface.js';
+import type { Tool, ToolCall, ToolChoice } from './interfaces/tools.interface.js';
 
 /**
  * OpenRouter API request format
@@ -17,7 +18,8 @@ interface OpenRouterRequest {
   messages: Array<{
     role: string;
     content: string | Array<{ type: string; text?: string; image_url?: { url: string; detail?: string } }> | null;
-    tool_calls?: any[];
+    name?: string;
+    tool_calls?: ToolCall[];
     tool_call_id?: string;
   }>;
   temperature?: number;
@@ -27,8 +29,8 @@ interface OpenRouterRequest {
   presence_penalty?: number;
   stop?: string | string[];
   response_format?: { type: 'json_object' };
-  tools?: any[];
-  tool_choice?: string | any;
+  tools?: Tool[];
+  tool_choice?: ToolChoice;
   stream?: boolean;
 }
 
@@ -42,7 +44,7 @@ interface OpenRouterResponse {
     message: {
       role: string;
       content: string | null;
-      tool_calls?: any[];
+      tool_calls?: ToolCall[];
     };
     finish_reason: string;
   }>;
@@ -63,7 +65,7 @@ interface OpenRouterStreamChunk {
     delta: {
       role?: 'assistant';
       content?: string;
-      tool_calls?: any[];
+      tool_calls?: ToolCall[];
     };
     finish_reason?: string;
   }>;
@@ -234,7 +236,7 @@ export class OpenRouterProvider extends BaseProvider {
     return {
       id: response.id,
       model: response.model,
-      content: choice.message.content || '',
+      content: this.handleContentWithToolCalls(choice.message.content, choice.message.tool_calls),
       toolCalls: choice.message.tool_calls,
       finishReason: this.mapFinishReason(choice.finish_reason),
       usage: {
@@ -245,20 +247,4 @@ export class OpenRouterProvider extends BaseProvider {
     };
   }
 
-  /**
-   * Map finish reason to standard format
-   */
-  private mapFinishReason(reason: string): 'stop' | 'length' | 'content_filter' {
-    switch (reason) {
-      case 'stop':
-        return 'stop';
-      case 'length':
-        return 'length';
-      case 'content_filter':
-        return 'content_filter';
-      default:
-        this.logger.warn(`Unknown finish reason: ${reason}, defaulting to 'stop'`);
-        return 'stop';
-    }
-  }
 }

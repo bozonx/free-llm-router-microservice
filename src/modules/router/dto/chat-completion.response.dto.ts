@@ -1,3 +1,5 @@
+import type { ToolCall } from '../../providers/interfaces/tools.interface.js';
+
 /**
  * Router metadata included in responses
  */
@@ -59,7 +61,7 @@ export interface RouterErrorInfo {
 export interface ChatCompletionChoice {
   index: number;
   message: ChatCompletionMessage;
-  finish_reason: 'stop' | 'length' | 'content_filter';
+  finish_reason: 'stop' | 'length' | 'content_filter' | 'tool_calls';
 }
 
 /**
@@ -68,7 +70,7 @@ export interface ChatCompletionChoice {
 export interface ChatCompletionMessage {
   role: 'assistant';
   content: string | null;
-  tool_calls?: any[];
+  tool_calls?: ToolCall[];
 }
 
 /**

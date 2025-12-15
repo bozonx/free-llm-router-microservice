@@ -10,8 +10,58 @@ import {
   Max,
   ArrayMinSize,
   ValidateIf,
+  IsObject,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import type { Tool, ToolChoice } from '../../providers/interfaces/tools.interface.js';
+import { IsValidToolChoice } from '../validators/tool-choice.validator.js';
+
+/**
+ * Function parameters DTO (JSON Schema)
+ */
+export class FunctionParametersDto {
+  @IsString()
+  @IsIn(['object'])
+  public type!: 'object';
+
+  @IsObject()
+  public properties!: Record<string, any>;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  public required?: string[];
+}
+
+/**
+ * Tool function DTO
+ */
+export class ToolFunctionDto {
+  @IsString()
+  public name!: string;
+
+  @IsOptional()
+  @IsString()
+  public description?: string;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => FunctionParametersDto)
+  public parameters?: FunctionParametersDto;
+}
+
+/**
+ * Tool DTO
+ */
+export class ToolDto {
+  @IsString()
+  @IsIn(['function'])
+  public type!: 'function';
+
+  @ValidateNested()
+  @Type(() => ToolFunctionDto)
+  public function!: ToolFunctionDto;
+}
 
 /**
  * Chat message DTO
@@ -72,7 +122,7 @@ export class ChatMessageDto {
 
   @IsOptional()
   @IsArray()
-  public tool_calls?: any[];
+  public tool_calls?: any[]; // Keep flexible for different formats from LLMs
 
   @IsOptional()
   @IsString()
@@ -125,10 +175,13 @@ export class ChatCompletionRequestDto {
   // Function calling fields
   @IsOptional()
   @IsArray()
-  public tools?: any[];
+  @ValidateNested({ each: true })
+  @Type(() => ToolDto)
+  public tools?: ToolDto[];
 
   @IsOptional()
-  public tool_choice?: string | any;
+  @IsValidToolChoice()
+  public tool_choice?: ToolChoice;
 
   // Router-specific fields
   @IsOptional()

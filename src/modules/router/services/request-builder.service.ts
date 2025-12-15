@@ -14,6 +14,7 @@ export class RequestBuilderService {
       messages: request.messages.map(msg => ({
         role: msg.role,
         content: msg.content,
+        name: msg.name,
         tool_calls: msg.tool_calls,
         tool_call_id: msg.tool_call_id,
       })),
