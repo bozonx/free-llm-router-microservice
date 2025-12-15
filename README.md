@@ -225,7 +225,10 @@ OpenAI-совместимый endpoint для chat completions.
       }
     }
   ],
-  "tool_choice": "auto"        // "auto", "none" или { "type": "function", "function": { "name": "..." } }
+  "tool_choice": "auto",        // "auto", "none" или { "type": "function", "function": { "name": "..." } }
+  
+  // Streaming
+  "stream": false               // Enable Server-Sent Events streaming (default: false)
 }
 ```
 
@@ -402,6 +405,38 @@ curl -X POST http://localhost:8080/api/v1/chat/completions \
     ]
   }'
 ```
+
+### Streaming (Server-Sent Events)
+
+```bash
+# Streaming response with incremental chunks
+curl -N -X POST http://localhost:8080/api/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [
+      {"role": "user", "content": "Count from 1 to 10"}
+    ],
+    "stream": true
+  }'
+```
+
+**Ответ (SSE формат):**
+```
+data: {"id":"chatcmpl-123","object":"chat.completion.chunk","created":1677858242,"model":"meta-llama/llama-3.3-70b-instruct:free","choices":[{"index":0,"delta":{"role":"assistant"},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-123","object":"chat.completion.chunk","created":1677858242,"model":"meta-llama/llama-3.3-70b-instruct:free","choices":[{"index":0,"delta":{"content":"1"},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-123","object":"chat.completion.chunk","created":1677858242,"model":"meta-llama/llama-3.3-70b-instruct:free","choices":[{"index":0,"delta":{"content":", 2"},"finish_reason":null}]}
+
+data: [DONE]
+```
+
+**Примечание:** Streaming режим:
+- Использует Server-Sent Events (SSE)
+- Не поддерживает retry/fallback (выбирается первая подходящая модель)
+- Завершается сообщением `data: [DONE]`
+- При ошибке stream прерывается с сообщением об ошибке
+
 
 ## 🔄 Логика работы
 
@@ -656,7 +691,7 @@ npm install n8n-nodes-bozonx-free-llm-router-microservice
 - [x] n8n node
 - [x] **Vanilla UI Dashboard** — мониторинг и тестирование сервиса (доступно на `/`)
 - [x] Поддержка function calling / tools
-- [ ] Streaming (SSE) поддержка
+- [x] Streaming (SSE) поддержка
 
 ### v1.2
 

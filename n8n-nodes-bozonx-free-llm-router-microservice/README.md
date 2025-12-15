@@ -14,6 +14,8 @@ This node provides a LangChain-compatible model interface that can be connected 
 - 🛡️ **Authentication** - Supports None, Basic Auth, and Bearer Token authentication
 - ⚙️ **Full Control** - Access to all OpenAI-compatible parameters
 
+**Note:** Streaming (SSE) is currently supported at the microservice level but not yet implemented in the n8n node. Use the microservice API directly for streaming needs.
+
 ## Installation
 
 ### Community Nodes (Recommended)
