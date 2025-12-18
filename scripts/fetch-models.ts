@@ -1,34 +1,13 @@
 import axios from 'axios';
 import yaml from 'js-yaml';
 
-// API Configuration
-const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/models';
-
-// Default Values
-const DEFAULT_WEIGHT = 1;
-const DEFAULT_CONTEXT_SIZE = 4096;
-const DEFAULT_MAX_OUTPUT_TOKENS = 4096;
-const FREE_MODEL_PRICE = 0;
-
-// Output Configuration
-const REQUIRED_OUTPUT_MODALITY = 'text';
-
-// Supported Parameters
-const SUPPORTED_PARAMS = {
-    TOOLS: 'tools',
-    TOOL_CHOICE: 'tool_choice',
-    RESPONSE_FORMAT: 'response_format',
-    STRUCTURED_OUTPUTS: 'structured_outputs',
-} as const;
-
-// Input Modalities
-const INPUT_MODALITIES = {
-    TEXT: 'text',
-    IMAGE: 'image',
-    VIDEO: 'video',
-    AUDIO: 'audio',
-    FILE: 'file',
-} as const;
+// ============================================================================
+// CONSTANTS THAT NEED REGULAR UPDATES
+// ============================================================================
+// These constants should be reviewed and updated periodically as new models
+// and capabilities are released. Update patterns to include new model families,
+// versions, and language support as they become available.
+// ============================================================================
 
 // Tag Patterns - Use Cases
 const USE_CASE_PATTERNS = {
@@ -63,32 +42,6 @@ const LANGUAGE_PATTERNS = {
     GREEK: /llama-3|gemini|gpt-|claude|mistral|mixtral|command/,
     SWEDISH: /llama-3|gemini|gpt-|claude|mistral|mixtral|command/,
     DUTCH: /llama-3|gemini|gpt-|claude|mistral|mixtral|command/,
-} as const;
-
-// Language Code Mapping
-const LANGUAGE_CODES = {
-    ENGLISH: 'en',
-    SPANISH: 'es',
-    FRENCH: 'fr',
-    GERMAN: 'de',
-    ITALIAN: 'it',
-    PORTUGUESE: 'pt',
-    RUSSIAN: 'ru',
-    CHINESE: 'zh',
-    JAPANESE: 'ja',
-    KOREAN: 'ko',
-    VIETNAMESE: 'vi',
-    THAI: 'th',
-    INDONESIAN: 'id',
-    ARABIC: 'ar',
-    HINDI: 'hi',
-    TURKISH: 'tr',
-    POLISH: 'pl',
-    UKRAINIAN: 'uk',
-    CZECH: 'cs',
-    GREEK: 'el',
-    SWEDISH: 'sv',
-    DUTCH: 'nl',
 } as const;
 
 // Model Family Patterns
@@ -141,25 +94,6 @@ const REASONING_PATTERNS = [
     'think',
 ] as const;
 
-// Special Tags
-const SPECIAL_TAGS = {
-    GENERAL: 'general',
-    REASONING: 'reasoning',
-    VISION: 'vision',
-} as const;
-
-// Model Name Cleanup
-const MODEL_NAME_SUFFIX_TO_REMOVE = ':free';
-
-// Provider Configuration
-const DEFAULT_PROVIDER = 'openrouter';
-const FALLBACK_PROVIDER_PREFIX = 'other';
-
-// Weight Tiers
-const TIER_1_WEIGHT = 3;
-const TIER_2_WEIGHT = 2;
-const TIER_3_WEIGHT = 1;
-
 // Tier 1 Models - Flagship top-tier models
 // Patterns are designed to match current and future versions
 const TIER_1_PATTERNS = [
@@ -203,6 +137,90 @@ const TIER_2_PATTERNS = [
     // Nemotron (all variants)
     /nemotron/,
 ] as const;
+
+// Minimum Token Requirements
+const MIN_CONTEXT_SIZE = 80000;
+const MIN_MAX_OUTPUT_TOKENS = 80000;
+
+// ============================================================================
+// STATIC CONFIGURATION CONSTANTS
+// ============================================================================
+// These constants rarely change and define the basic configuration
+// ============================================================================
+
+// API Configuration
+const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/models';
+
+// Default Values
+const DEFAULT_WEIGHT = 1;
+const DEFAULT_CONTEXT_SIZE = 4096;
+const DEFAULT_MAX_OUTPUT_TOKENS = 4096;
+const FREE_MODEL_PRICE = 0;
+
+// Output Configuration
+const REQUIRED_OUTPUT_MODALITY = 'text';
+
+// Supported Parameters
+const SUPPORTED_PARAMS = {
+    TOOLS: 'tools',
+    TOOL_CHOICE: 'tool_choice',
+    RESPONSE_FORMAT: 'response_format',
+    STRUCTURED_OUTPUTS: 'structured_outputs',
+} as const;
+
+// Input Modalities
+const INPUT_MODALITIES = {
+    TEXT: 'text',
+    IMAGE: 'image',
+    VIDEO: 'video',
+    AUDIO: 'audio',
+    FILE: 'file',
+} as const;
+
+// Language Code Mapping
+const LANGUAGE_CODES = {
+    ENGLISH: 'en',
+    SPANISH: 'es',
+    FRENCH: 'fr',
+    GERMAN: 'de',
+    ITALIAN: 'it',
+    PORTUGUESE: 'pt',
+    RUSSIAN: 'ru',
+    CHINESE: 'zh',
+    JAPANESE: 'ja',
+    KOREAN: 'ko',
+    VIETNAMESE: 'vi',
+    THAI: 'th',
+    INDONESIAN: 'id',
+    ARABIC: 'ar',
+    HINDI: 'hi',
+    TURKISH: 'tr',
+    POLISH: 'pl',
+    UKRAINIAN: 'uk',
+    CZECH: 'cs',
+    GREEK: 'el',
+    SWEDISH: 'sv',
+    DUTCH: 'nl',
+} as const;
+
+// Special Tags
+const SPECIAL_TAGS = {
+    GENERAL: 'general',
+    REASONING: 'reasoning',
+    VISION: 'vision',
+} as const;
+
+// Model Name Cleanup
+const MODEL_NAME_SUFFIX_TO_REMOVE = ':free';
+
+// Provider Configuration
+const DEFAULT_PROVIDER = 'openrouter';
+const FALLBACK_PROVIDER_PREFIX = 'other';
+
+// Weight Tiers
+const TIER_1_WEIGHT = 3;
+const TIER_2_WEIGHT = 2;
+const TIER_3_WEIGHT = 1;
 
 interface OpenRouterModel {
     id: string;
@@ -529,6 +547,14 @@ async function fetchAndFilterModels() {
 
             // Filter only by json output and tools support
             if (!supportsTools || !supportsJson) return false;
+
+            // Filter by minimum token requirements
+            const contextSize = model.context_length || DEFAULT_CONTEXT_SIZE;
+            const maxOutputTokens = model.top_provider?.max_completion_tokens || DEFAULT_MAX_OUTPUT_TOKENS;
+
+            if (contextSize < MIN_CONTEXT_SIZE || maxOutputTokens < MIN_MAX_OUTPUT_TOKENS) {
+                return false;
+            }
 
             return true;
         });
