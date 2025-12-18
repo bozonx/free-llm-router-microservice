@@ -318,6 +318,8 @@ async function fetchAndFilterModels() {
                     lowerId.includes('qwen') ||
                     lowerId.includes('deepseek') ||
                     lowerId.includes('command') ||
+                    lowerId.includes('phi') ||
+                    lowerId.includes('gemma') ||
                     lowerId.includes('nemotron');
             };
 
@@ -326,7 +328,9 @@ async function fetchAndFilterModels() {
                 return supportsToolsHeuristic(id) || lowerId.includes('instruct');
             };
 
-            const supportsTools = model.supported_parameters?.includes('tools') || supportsToolsHeuristic(model.id);
+            const supportsTools = model.supported_parameters?.includes('tools') ||
+                model.supported_parameters?.includes('tool_choice') ||
+                supportsToolsHeuristic(model.id);
             const supportsJson = model.supported_parameters?.includes('response_format') ||
                 model.supported_parameters?.includes('structured_outputs') ||
                 supportsJsonHeuristic(model.id);

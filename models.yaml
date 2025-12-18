@@ -112,6 +112,21 @@ models:
     available: true
     weight: 1
     supportsImage: true
+  - name: gemma-3-12b-it
+    provider: openrouter
+    model: google/gemma-3-12b-it:free
+    type: fast
+    contextSize: 32768
+    maxOutputTokens: 8192
+    tags:
+      - gemma
+      - gemma-3
+      - general
+      - vision
+    jsonResponse: true
+    available: true
+    weight: 1
+    supportsImage: true
   - name: gemma-3-27b-it
     provider: openrouter
     model: google/gemma-3-27b-it:free
@@ -127,6 +142,47 @@ models:
     available: true
     weight: 1
     supportsImage: true
+  - name: gemma-3-4b-it
+    provider: openrouter
+    model: google/gemma-3-4b-it:free
+    type: fast
+    contextSize: 32768
+    maxOutputTokens: 8192
+    tags:
+      - gemma
+      - gemma-3
+      - general
+      - vision
+    jsonResponse: true
+    available: true
+    weight: 1
+    supportsImage: true
+  - name: gemma-3n-e2b-it
+    provider: openrouter
+    model: google/gemma-3n-e2b-it:free
+    type: fast
+    contextSize: 8192
+    maxOutputTokens: 2048
+    tags:
+      - gemma
+      - gemma-3
+      - general
+    jsonResponse: true
+    available: true
+    weight: 1
+  - name: gemma-3n-e4b-it
+    provider: openrouter
+    model: google/gemma-3n-e4b-it:free
+    type: fast
+    contextSize: 8192
+    maxOutputTokens: 2048
+    tags:
+      - gemma
+      - gemma-3
+      - general
+    jsonResponse: true
+    available: true
+    weight: 1
   - name: kat-coder-pro
     provider: openrouter
     model: kwaipilot/kat-coder-pro:free
