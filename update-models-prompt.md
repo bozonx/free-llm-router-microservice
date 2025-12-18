@@ -2,26 +2,71 @@
 
 ## Task Overview
 
-You are tasked with updating the `models.yaml` file by fetching the latest model information from the OpenRouter API and other providers. The goal is to keep the model list current by adding new models, updating existing ones, and removing models that are no longer available.
+You are tasked with updating the `models.yaml` file by fetching the latest model information from the OpenRouter API. The goal is to keep the model list current by adding new models, updating existing ones, and removing models that are no longer available.
+
+## Step 1: Run the Fetch Script
+
+**IMPORTANT**: Before proceeding with the update, you MUST first run the fetch script to get the filtered list of models:
+
+```bash
+cd /mnt/disk2/workspace/free-llm-router-microservice
+pnpm update-models
+```
+
+This script will:
+- Fetch all models from OpenRouter API
+- Filter out non-LLM models (image/video/STT/embedding models)
+- Filter out models that don't support streaming, tools, and JSON response
+- Keep only FREE models (pricing.prompt === '0' AND pricing.completion === '0')
+- Output the filtered list as JSON to stdout
+
+**Capture the output** of this script - it contains all the models you need to process.
+
+## Step 2: Analyze the Script Output
+
+The script outputs a JSON object with the following structure:
+
+```json
+{
+  "fetchedAt": "2025-12-18T10:00:00.000Z",
+  "totalModels": 500,
+  "filteredModels": 30,
+  "models": [
+    {
+      "id": "meta-llama/llama-3.3-70b-instruct:free",
+      "name": "Meta: Llama 3.3 70B Instruct",
+      "contextLength": 131072,
+      "maxOutputTokens": 4096,
+      "pricing": {
+        "prompt": "0",
+        "completion": "0"
+      },
+      "architecture": {
+        "modality": "text",
+        "tokenizer": "llama3",
+        "instruct_type": "llama3"
+      }
+    }
+  ]
+}
+```
+
+Use this data to update `models.yaml`.
 
 ## Requirements
 
-### 1. Fetch Models from API
+### 1. Model Filtering
 
-- **OpenRouter API**: Make a GET request to `https://openrouter.ai/api/v1/models`
-- **Filter Criteria**: Only include FREE models where `pricing.prompt === '0'` AND `pricing.completion === '0'`
-- **Future**: Additional providers will be added later (placeholder for now)
+**Note**: The fetch script has already filtered models based on the following criteria:
+- ✅ Only FREE models (pricing.prompt === '0' AND pricing.completion === '0')
+- ✅ Only text-based LLM models (excludes image/video/STT/embedding models)
+- ✅ Only models supporting streaming
+- ✅ Only models supporting tools/function calling
+- ✅ Only models supporting JSON response mode
 
-### 2. Model Filtering Rules
+You can trust that all models in the script output meet these requirements.
 
-Only include models that support ALL of the following capabilities:
-- **Streaming**: `architecture.modalities` should include streaming support
-- **Tools**: Model must support function calling/tools
-- **JSON Response**: Model must support JSON mode output
-
-**Important**: Models that don't support all three capabilities should be excluded from `models.yaml`.
-
-### 3. Model Properties to Extract
+### 2. Model Properties to Extract
 
 For each model, extract and map the following properties:
 
@@ -40,7 +85,7 @@ weight: number           # Priority weight (see weight rules)
 supportsVision: boolean  # Optional, only if model supports vision
 ```
 
-### 4. Naming Rules
+### 3. Naming Rules
 
 **Simplified Name (`name` field)**:
 - Extract the model name after the provider prefix
@@ -50,13 +95,13 @@ supportsVision: boolean  # Optional, only if model supports vision
   - `google/gemini-2.0-flash-exp:free` → `gemini-2.0-flash-exp`
   - `mistralai/mistral-7b-instruct:free` → `mistral-7b-instruct`
 
-### 5. Type Detection Rules
+### 4. Type Detection Rules
 
 Determine the `type` field based on model characteristics:
 - **reasoning**: If model ID contains 'reasoning', 'deepseek-r1', 'r1t', or similar reasoning indicators
 - **fast**: All other models (default)
 
-### 6. Speed Tier Detection Rules
+### 5. Speed Tier Detection Rules
 
 Determine `speedTier` based on model size and characteristics:
 - **fast**: Models with < 20B parameters, or models optimized for speed
@@ -69,7 +114,7 @@ Use heuristics from model name/ID:
 - Contains '120b', '235b', '405b' → slow
 - Reasoning models → slow (regardless of size)
 
-### 7. Tagging Rules
+### 6. Tagging Rules
 
 Generate tags based on model characteristics:
 
@@ -95,7 +140,7 @@ Generate tags based on model characteristics:
 - Omit minor versions and patch versions
 - This allows selecting models by family without being tied to exact versions
 
-### 8. Weight Rules
+### 7. Weight Rules
 
 Assign priority weights based on model quality/popularity:
 - **10**: Premium models (e.g., llama-3.3-70b, claude-3-opus)
@@ -103,13 +148,13 @@ Assign priority weights based on model quality/popularity:
 - **3**: Google Gemini models
 - **1**: Default for all other models
 
-### 9. Vision Support Detection
+### 8. Vision Support Detection
 
 Set `supportsVision: true` only if:
 - `architecture.modalities` includes 'image' or 'vision'
 - OR model ID contains 'vision', 'vl', 'multimodal'
 
-### 10. File Organization
+### 9. File Organization
 
 The `models.yaml` file must be organized as follows:
 
@@ -166,7 +211,7 @@ models:
 3. Within each subsection, sort models alphabetically by `name` field
 4. Add comments for each section with metadata (last updated, count)
 
-### 11. Update Strategy
+### 10. Update Strategy
 
 When updating `models.yaml`:
 
@@ -180,7 +225,7 @@ When updating `models.yaml`:
 5. **Reorganize**: Sort and group according to organization rules
 6. **Write**: Output the updated YAML file
 
-### 12. Example Model Entry
+### 11. Example Model Entry
 
 ```yaml
 - name: llama-3.3-70b-instruct
@@ -198,7 +243,7 @@ When updating `models.yaml`:
   weight: 10
 ```
 
-### 13. Validation Checklist
+### 12. Validation Checklist
 
 Before finalizing the updated `models.yaml`, verify:
 
