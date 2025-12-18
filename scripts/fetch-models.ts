@@ -1,6 +1,160 @@
 import axios from 'axios';
 import yaml from 'js-yaml';
 
+// API Configuration
+const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/models';
+
+// Default Values
+const DEFAULT_WEIGHT = 1;
+const DEFAULT_CONTEXT_SIZE = 4096;
+const DEFAULT_MAX_OUTPUT_TOKENS = 4096;
+const FREE_MODEL_PRICE = 0;
+
+// Output Configuration
+const REQUIRED_OUTPUT_MODALITY = 'text';
+
+// Supported Parameters
+const SUPPORTED_PARAMS = {
+    TOOLS: 'tools',
+    TOOL_CHOICE: 'tool_choice',
+    RESPONSE_FORMAT: 'response_format',
+    STRUCTURED_OUTPUTS: 'structured_outputs',
+} as const;
+
+// Input Modalities
+const INPUT_MODALITIES = {
+    TEXT: 'text',
+    IMAGE: 'image',
+    VIDEO: 'video',
+    AUDIO: 'audio',
+    FILE: 'file',
+} as const;
+
+// Tag Patterns - Use Cases
+const USE_CASE_PATTERNS = {
+    CODING: /code|coder|codestral|devstral|programming|kat-coder/,
+    CREATIVE: /creative|story|writer|poet|dolphin|hermes/,
+    ANALYSIS: /analysis|analyst|research|deepresearch|data/,
+    CHAT: /chat|assistant|instruct|conversational/,
+    AGENTIC: /llama-3\.|gemini|claude|gpt-4|deepseek|qwen|command|agent/,
+} as const;
+
+// Tag Patterns - Language Support
+const LANGUAGE_PATTERNS = {
+    ENGLISH: /llama-3|gemini|gpt-|claude|mistral|mixtral|qwen|deepseek|command|phi/,
+    SPANISH: /llama-3|gemini|mistral|mixtral|command|gpt-|claude/,
+    FRENCH: /llama-3|gemini|mistral|mixtral|command|gpt-|claude/,
+    GERMAN: /llama-3|gemini|mistral|mixtral|command|gpt-|claude/,
+    ITALIAN: /llama-3|gemini|mistral|mixtral|command|gpt-|claude/,
+    PORTUGUESE: /llama-3|gemini|mistral|mixtral|command|gpt-|claude/,
+    RUSSIAN: /deepseek|qwen|glm|tongyi|yandex|saiga|rugpt|llama-3|gemini|gpt-/,
+    CHINESE: /qwen|glm|deepseek|tongyi|yi-|llama-3|gemini|gpt-|claude/,
+    JAPANESE: /llama-3|gemini|gpt-|claude|qwen|deepseek|command/,
+    KOREAN: /llama-3|gemini|gpt-|claude|qwen|deepseek|command/,
+    VIETNAMESE: /llama-3|gemini|gpt-|claude|qwen|deepseek|command/,
+    THAI: /llama-3|gemini|gpt-|claude|qwen|deepseek|command/,
+    INDONESIAN: /llama-3|gemini|gpt-|claude|qwen|deepseek|command/,
+    ARABIC: /llama-3|gemini|gpt-|claude|command|qwen/,
+    HINDI: /llama-3|gemini|gpt-|claude|command|qwen/,
+    TURKISH: /llama-3|gemini|gpt-|claude|mistral|mixtral|command/,
+    POLISH: /llama-3|gemini|gpt-|claude|mistral|mixtral|command/,
+    UKRAINIAN: /llama-3|gemini|gpt-|claude|mistral|mixtral|command/,
+    CZECH: /llama-3|gemini|gpt-|claude|mistral|mixtral|command/,
+    GREEK: /llama-3|gemini|gpt-|claude|mistral|mixtral|command/,
+    SWEDISH: /llama-3|gemini|gpt-|claude|mistral|mixtral|command/,
+    DUTCH: /llama-3|gemini|gpt-|claude|mistral|mixtral|command/,
+} as const;
+
+// Language Code Mapping
+const LANGUAGE_CODES = {
+    ENGLISH: 'en',
+    SPANISH: 'es',
+    FRENCH: 'fr',
+    GERMAN: 'de',
+    ITALIAN: 'it',
+    PORTUGUESE: 'pt',
+    RUSSIAN: 'ru',
+    CHINESE: 'zh',
+    JAPANESE: 'ja',
+    KOREAN: 'ko',
+    VIETNAMESE: 'vi',
+    THAI: 'th',
+    INDONESIAN: 'id',
+    ARABIC: 'ar',
+    HINDI: 'hi',
+    TURKISH: 'tr',
+    POLISH: 'pl',
+    UKRAINIAN: 'uk',
+    CZECH: 'cs',
+    GREEK: 'el',
+    SWEDISH: 'sv',
+    DUTCH: 'nl',
+} as const;
+
+// Model Family Patterns
+const MODEL_FAMILIES = {
+    llama: /llama/,
+    gemini: /gemini/,
+    gemma: /gemma/,
+    qwen: /qwen/,
+    deepseek: /deepseek/,
+    mistral: /mistral/,
+    mixtral: /mixtral/,
+    claude: /claude/,
+    gpt: /gpt-/,
+    phi: /phi-/,
+    command: /command/,
+    nemotron: /nemotron/,
+    glm: /glm/,
+    hermes: /hermes/,
+    dolphin: /dolphin/,
+    yi: /\byi-/,
+    nova: /nova/,
+    olmo: /olmo/,
+} as const;
+
+// Tools Support Heuristics
+const TOOLS_SUPPORT_PATTERNS = [
+    'gpt-',
+    'claude-3',
+    'gemini-',
+    'llama-3',
+    'mistral',
+    'mixtral',
+    'qwen',
+    'deepseek',
+    'command',
+    'phi',
+    'gemma',
+    'nemotron',
+] as const;
+
+// JSON Support Heuristics (includes tools support + additional patterns)
+const JSON_SUPPORT_ADDITIONAL_PATTERNS = [
+    'instruct',
+] as const;
+
+// Reasoning Model Patterns
+const REASONING_PATTERNS = [
+    'reasoning',
+    'r1',
+    'think',
+] as const;
+
+// Special Tags
+const SPECIAL_TAGS = {
+    GENERAL: 'general',
+    REASONING: 'reasoning',
+    VISION: 'vision',
+} as const;
+
+// Model Name Cleanup
+const MODEL_NAME_SUFFIX_TO_REMOVE = ':free';
+
+// Provider Configuration
+const DEFAULT_PROVIDER = 'openrouter';
+const FALLBACK_PROVIDER_PREFIX = 'other';
+
 interface OpenRouterModel {
     id: string;
     name: string;
@@ -44,7 +198,7 @@ interface FilteredModel {
  * Determine weight - always returns 1 as requested
  */
 function determineWeight(id: string): number {
-    return 1;
+    return DEFAULT_WEIGHT;
 }
 
 /**
@@ -53,7 +207,7 @@ function determineWeight(id: string): number {
 function extractName(id: string): string {
     const parts = id.split('/');
     const main = parts.length > 1 ? parts[1] : parts[0];
-    return main.replace(':free', '');
+    return main.replace(MODEL_NAME_SUFFIX_TO_REMOVE, '');
 }
 
 /**
@@ -64,27 +218,27 @@ function detectUseCaseTags(id: string, modelName: string): string[] {
     const combined = `${id} ${modelName}`.toLowerCase();
 
     // Coding
-    if (combined.match(/code|coder|codestral|devstral|programming|kat-coder/)) {
+    if (combined.match(USE_CASE_PATTERNS.CODING)) {
         tags.push('coding');
     }
 
     // Creative writing
-    if (combined.match(/creative|story|writer|poet|dolphin|hermes/)) {
+    if (combined.match(USE_CASE_PATTERNS.CREATIVE)) {
         tags.push('creative');
     }
 
     // Analysis & data
-    if (combined.match(/analysis|analyst|research|deepresearch|data/)) {
+    if (combined.match(USE_CASE_PATTERNS.ANALYSIS)) {
         tags.push('analysis');
     }
 
     // Chat & assistants
-    if (combined.match(/chat|assistant|instruct|conversational/)) {
+    if (combined.match(USE_CASE_PATTERNS.CHAT)) {
         tags.push('chat');
     }
 
     // Agentic capabilities (models good at following complex instructions)
-    if (combined.match(/llama-3\.|gemini|claude|gpt-4|deepseek|qwen|command|agent/)) {
+    if (combined.match(USE_CASE_PATTERNS.AGENTIC)) {
         tags.push('agentic');
     }
 
@@ -100,113 +254,113 @@ function detectLanguageTags(id: string, modelName: string): string[] {
     const combined = `${id} ${modelName}`.toLowerCase();
 
     // English - most multilingual models
-    if (combined.match(/llama-3|gemini|gpt-|claude|mistral|mixtral|qwen|deepseek|command|phi/)) {
-        tags.push('best-for-en');
+    if (combined.match(LANGUAGE_PATTERNS.ENGLISH)) {
+        tags.push(`best-for-${LANGUAGE_CODES.ENGLISH}`);
     }
 
     // Spanish - major multilingual models
-    if (combined.match(/llama-3|gemini|mistral|mixtral|command|gpt-|claude/)) {
-        tags.push('best-for-es');
+    if (combined.match(LANGUAGE_PATTERNS.SPANISH)) {
+        tags.push(`best-for-${LANGUAGE_CODES.SPANISH}`);
     }
 
     // French - major multilingual models
-    if (combined.match(/llama-3|gemini|mistral|mixtral|command|gpt-|claude/)) {
-        tags.push('best-for-fr');
+    if (combined.match(LANGUAGE_PATTERNS.FRENCH)) {
+        tags.push(`best-for-${LANGUAGE_CODES.FRENCH}`);
     }
 
     // German - major multilingual models
-    if (combined.match(/llama-3|gemini|mistral|mixtral|command|gpt-|claude/)) {
-        tags.push('best-for-de');
+    if (combined.match(LANGUAGE_PATTERNS.GERMAN)) {
+        tags.push(`best-for-${LANGUAGE_CODES.GERMAN}`);
     }
 
     // Italian - major multilingual models
-    if (combined.match(/llama-3|gemini|mistral|mixtral|command|gpt-|claude/)) {
-        tags.push('best-for-it');
+    if (combined.match(LANGUAGE_PATTERNS.ITALIAN)) {
+        tags.push(`best-for-${LANGUAGE_CODES.ITALIAN}`);
     }
 
     // Portuguese - major multilingual models
-    if (combined.match(/llama-3|gemini|mistral|mixtral|command|gpt-|claude/)) {
-        tags.push('best-for-pt');
+    if (combined.match(LANGUAGE_PATTERNS.PORTUGUESE)) {
+        tags.push(`best-for-${LANGUAGE_CODES.PORTUGUESE}`);
     }
 
     // Russian - models with good Russian support
-    if (combined.match(/deepseek|qwen|glm|tongyi|yandex|saiga|rugpt|llama-3|gemini|gpt-/)) {
-        tags.push('best-for-ru');
+    if (combined.match(LANGUAGE_PATTERNS.RUSSIAN)) {
+        tags.push(`best-for-${LANGUAGE_CODES.RUSSIAN}`);
     }
 
     // Chinese - Chinese and multilingual models
-    if (combined.match(/qwen|glm|deepseek|tongyi|yi-|llama-3|gemini|gpt-|claude/)) {
-        tags.push('best-for-zh');
+    if (combined.match(LANGUAGE_PATTERNS.CHINESE)) {
+        tags.push(`best-for-${LANGUAGE_CODES.CHINESE}`);
     }
 
     // Japanese - multilingual models with Asian language support
-    if (combined.match(/llama-3|gemini|gpt-|claude|qwen|deepseek|command/)) {
-        tags.push('best-for-ja');
+    if (combined.match(LANGUAGE_PATTERNS.JAPANESE)) {
+        tags.push(`best-for-${LANGUAGE_CODES.JAPANESE}`);
     }
 
     // Korean - multilingual models with Asian language support
-    if (combined.match(/llama-3|gemini|gpt-|claude|qwen|deepseek|command/)) {
-        tags.push('best-for-ko');
+    if (combined.match(LANGUAGE_PATTERNS.KOREAN)) {
+        tags.push(`best-for-${LANGUAGE_CODES.KOREAN}`);
     }
 
     // Vietnamese - multilingual models with Asian language support
-    if (combined.match(/llama-3|gemini|gpt-|claude|qwen|deepseek|command/)) {
-        tags.push('best-for-vi');
+    if (combined.match(LANGUAGE_PATTERNS.VIETNAMESE)) {
+        tags.push(`best-for-${LANGUAGE_CODES.VIETNAMESE}`);
     }
 
     // Thai - multilingual models with Asian language support
-    if (combined.match(/llama-3|gemini|gpt-|claude|qwen|deepseek|command/)) {
-        tags.push('best-for-th');
+    if (combined.match(LANGUAGE_PATTERNS.THAI)) {
+        tags.push(`best-for-${LANGUAGE_CODES.THAI}`);
     }
 
     // Indonesian - multilingual models
-    if (combined.match(/llama-3|gemini|gpt-|claude|qwen|deepseek|command/)) {
-        tags.push('best-for-id');
+    if (combined.match(LANGUAGE_PATTERNS.INDONESIAN)) {
+        tags.push(`best-for-${LANGUAGE_CODES.INDONESIAN}`);
     }
 
     // Arabic - multilingual models
-    if (combined.match(/llama-3|gemini|gpt-|claude|command|qwen/)) {
-        tags.push('best-for-ar');
+    if (combined.match(LANGUAGE_PATTERNS.ARABIC)) {
+        tags.push(`best-for-${LANGUAGE_CODES.ARABIC}`);
     }
 
     // Hindi - multilingual models with Indian language support
-    if (combined.match(/llama-3|gemini|gpt-|claude|command|qwen/)) {
-        tags.push('best-for-hi');
+    if (combined.match(LANGUAGE_PATTERNS.HINDI)) {
+        tags.push(`best-for-${LANGUAGE_CODES.HINDI}`);
     }
 
     // Turkish - multilingual models
-    if (combined.match(/llama-3|gemini|gpt-|claude|mistral|mixtral|command/)) {
-        tags.push('best-for-tr');
+    if (combined.match(LANGUAGE_PATTERNS.TURKISH)) {
+        tags.push(`best-for-${LANGUAGE_CODES.TURKISH}`);
     }
 
     // Polish - European multilingual models
-    if (combined.match(/llama-3|gemini|gpt-|claude|mistral|mixtral|command/)) {
-        tags.push('best-for-pl');
+    if (combined.match(LANGUAGE_PATTERNS.POLISH)) {
+        tags.push(`best-for-${LANGUAGE_CODES.POLISH}`);
     }
 
     // Ukrainian - European multilingual models
-    if (combined.match(/llama-3|gemini|gpt-|claude|mistral|mixtral|command/)) {
-        tags.push('best-for-uk');
+    if (combined.match(LANGUAGE_PATTERNS.UKRAINIAN)) {
+        tags.push(`best-for-${LANGUAGE_CODES.UKRAINIAN}`);
     }
 
     // Czech - European multilingual models
-    if (combined.match(/llama-3|gemini|gpt-|claude|mistral|mixtral|command/)) {
-        tags.push('best-for-cs');
+    if (combined.match(LANGUAGE_PATTERNS.CZECH)) {
+        tags.push(`best-for-${LANGUAGE_CODES.CZECH}`);
     }
 
     // Greek - European multilingual models
-    if (combined.match(/llama-3|gemini|gpt-|claude|mistral|mixtral|command/)) {
-        tags.push('best-for-el');
+    if (combined.match(LANGUAGE_PATTERNS.GREEK)) {
+        tags.push(`best-for-${LANGUAGE_CODES.GREEK}`);
     }
 
     // Swedish - European multilingual models
-    if (combined.match(/llama-3|gemini|gpt-|claude|mistral|mixtral|command/)) {
-        tags.push('best-for-sv');
+    if (combined.match(LANGUAGE_PATTERNS.SWEDISH)) {
+        tags.push(`best-for-${LANGUAGE_CODES.SWEDISH}`);
     }
 
     // Dutch - European multilingual models
-    if (combined.match(/llama-3|gemini|gpt-|claude|mistral|mixtral|command/)) {
-        tags.push('best-for-nl');
+    if (combined.match(LANGUAGE_PATTERNS.DUTCH)) {
+        tags.push(`best-for-${LANGUAGE_CODES.DUTCH}`);
     }
 
     return tags;
@@ -219,29 +373,7 @@ function extractFamilyTags(id: string, modelName: string): string[] {
     const tags: string[] = [];
     const combined = `${id} ${modelName}`.toLowerCase();
 
-    // Model families
-    const families: Record<string, RegExp> = {
-        'llama': /llama/,
-        'gemini': /gemini/,
-        'gemma': /gemma/,
-        'qwen': /qwen/,
-        'deepseek': /deepseek/,
-        'mistral': /mistral/,
-        'mixtral': /mixtral/,
-        'claude': /claude/,
-        'gpt': /gpt-/,
-        'phi': /phi-/,
-        'command': /command/,
-        'nemotron': /nemotron/,
-        'glm': /glm/,
-        'hermes': /hermes/,
-        'dolphin': /dolphin/,
-        'yi': /\byi-/,
-        'nova': /nova/,
-        'olmo': /olmo/,
-    };
-
-    for (const [family, pattern] of Object.entries(families)) {
+    for (const [family, pattern] of Object.entries(MODEL_FAMILIES)) {
         if (pattern.test(combined)) {
             tags.push(family);
 
@@ -260,7 +392,7 @@ function extractFamilyTags(id: string, modelName: string): string[] {
  * Generate all tags for a model
  */
 function generateTags(id: string, modelName: string, isReasoning: boolean, supportsImage: boolean): string[] {
-    const tags: string[] = ['general'];
+    const tags: string[] = [SPECIAL_TAGS.GENERAL];
 
     // Add use case tags
     tags.push(...detectUseCaseTags(id, modelName));
@@ -273,12 +405,12 @@ function generateTags(id: string, modelName: string, isReasoning: boolean, suppo
 
     // Add reasoning tag if applicable
     if (isReasoning) {
-        tags.push('reasoning');
+        tags.push(SPECIAL_TAGS.REASONING);
     }
 
     // Add vision tag if applicable
     if (supportsImage) {
-        tags.push('vision');
+        tags.push(SPECIAL_TAGS.VISION);
     }
 
     // Remove duplicates and sort
@@ -287,7 +419,7 @@ function generateTags(id: string, modelName: string, isReasoning: boolean, suppo
 
 async function fetchAndFilterModels() {
     try {
-        const response = await axios.get('https://openrouter.ai/api/v1/models');
+        const response = await axios.get(OPENROUTER_API_URL);
         const allModels: OpenRouterModel[] = response.data.data;
 
         // Filter models based on user requirements:
@@ -297,42 +429,33 @@ async function fetchAndFilterModels() {
 
         const filtered = allModels.filter(model => {
             // Must be free (standard for this project)
-            const isFree = parseFloat(model.pricing.prompt) === 0 && parseFloat(model.pricing.completion) === 0;
+            const isFree = parseFloat(model.pricing.prompt) === FREE_MODEL_PRICE &&
+                parseFloat(model.pricing.completion) === FREE_MODEL_PRICE;
             if (!isFree) return false;
 
             // Output modalities check
-            const outputModalities = model.architecture?.output_modalities || ['text'];
+            const outputModalities = model.architecture?.output_modalities || [INPUT_MODALITIES.TEXT];
 
             // Output must be text only as requested
-            if (!outputModalities.includes('text')) return false;
+            if (!outputModalities.includes(REQUIRED_OUTPUT_MODALITY)) return false;
 
             // Capability check - filter only by json output and tools support
             const supportsToolsHeuristic = (id: string) => {
                 const lowerId = id.toLowerCase();
-                return lowerId.includes('gpt-') ||
-                    lowerId.includes('claude-3') ||
-                    lowerId.includes('gemini-') ||
-                    lowerId.includes('llama-3') ||
-                    lowerId.includes('mistral') ||
-                    lowerId.includes('mixtral') ||
-                    lowerId.includes('qwen') ||
-                    lowerId.includes('deepseek') ||
-                    lowerId.includes('command') ||
-                    lowerId.includes('phi') ||
-                    lowerId.includes('gemma') ||
-                    lowerId.includes('nemotron');
+                return TOOLS_SUPPORT_PATTERNS.some(pattern => lowerId.includes(pattern));
             };
 
             const supportsJsonHeuristic = (id: string) => {
                 const lowerId = id.toLowerCase();
-                return supportsToolsHeuristic(id) || lowerId.includes('instruct');
+                return supportsToolsHeuristic(id) ||
+                    JSON_SUPPORT_ADDITIONAL_PATTERNS.some(pattern => lowerId.includes(pattern));
             };
 
-            const supportsTools = model.supported_parameters?.includes('tools') ||
-                model.supported_parameters?.includes('tool_choice') ||
+            const supportsTools = model.supported_parameters?.includes(SUPPORTED_PARAMS.TOOLS) ||
+                model.supported_parameters?.includes(SUPPORTED_PARAMS.TOOL_CHOICE) ||
                 supportsToolsHeuristic(model.id);
-            const supportsJson = model.supported_parameters?.includes('response_format') ||
-                model.supported_parameters?.includes('structured_outputs') ||
+            const supportsJson = model.supported_parameters?.includes(SUPPORTED_PARAMS.RESPONSE_FORMAT) ||
+                model.supported_parameters?.includes(SUPPORTED_PARAMS.STRUCTURED_OUTPUTS) ||
                 supportsJsonHeuristic(model.id);
 
             // Filter only by json output and tools support
@@ -342,21 +465,20 @@ async function fetchAndFilterModels() {
         });
 
         const mapped: FilteredModel[] = filtered.map(model => {
-            const isReasoning = model.id.toLowerCase().includes('reasoning') ||
-                model.id.toLowerCase().includes('r1') ||
-                model.id.toLowerCase().includes('think');
+            const lowerId = model.id.toLowerCase();
+            const isReasoning = REASONING_PATTERNS.some(pattern => lowerId.includes(pattern));
 
             const name = extractName(model.id);
-            const inputModalities = model.architecture?.input_modalities || ['text'];
-            const supportsImage = inputModalities.includes('image');
+            const inputModalities = model.architecture?.input_modalities || [INPUT_MODALITIES.TEXT];
+            const supportsImage = inputModalities.includes(INPUT_MODALITIES.IMAGE);
 
             const result: FilteredModel = {
                 name: name,
-                provider: 'openrouter',
+                provider: DEFAULT_PROVIDER,
                 model: model.id,
                 type: isReasoning ? 'reasoning' : 'fast',
-                contextSize: model.context_length || 4096,
-                maxOutputTokens: model.top_provider?.max_completion_tokens || 4096,
+                contextSize: model.context_length || DEFAULT_CONTEXT_SIZE,
+                maxOutputTokens: model.top_provider?.max_completion_tokens || DEFAULT_MAX_OUTPUT_TOKENS,
                 tags: generateTags(model.id, name, isReasoning, supportsImage),
                 jsonResponse: true,
                 available: true,
@@ -364,16 +486,16 @@ async function fetchAndFilterModels() {
             };
 
             // Set multimodal support flags based on input_modalities
-            if (inputModalities.includes('image')) {
+            if (inputModalities.includes(INPUT_MODALITIES.IMAGE)) {
                 result.supportsImage = true;
             }
-            if (inputModalities.includes('video')) {
+            if (inputModalities.includes(INPUT_MODALITIES.VIDEO)) {
                 result.supportsVideo = true;
             }
-            if (inputModalities.includes('audio')) {
+            if (inputModalities.includes(INPUT_MODALITIES.AUDIO)) {
                 result.supportsAudio = true;
             }
-            if (inputModalities.includes('file')) {
+            if (inputModalities.includes(INPUT_MODALITIES.FILE)) {
                 result.supportsFile = true;
             }
 
@@ -383,7 +505,7 @@ async function fetchAndFilterModels() {
         // Group by provider prefix
         const grouped: Record<string, FilteredModel[]> = {};
         for (const model of mapped) {
-            const providerPrefix = model.model.split('/')[0] || 'other';
+            const providerPrefix = model.model.split('/')[0] || FALLBACK_PROVIDER_PREFIX;
             if (!grouped[providerPrefix]) grouped[providerPrefix] = [];
             grouped[providerPrefix].push(model);
         }
