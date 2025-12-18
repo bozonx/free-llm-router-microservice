@@ -155,6 +155,36 @@ const MODEL_NAME_SUFFIX_TO_REMOVE = ':free';
 const DEFAULT_PROVIDER = 'openrouter';
 const FALLBACK_PROVIDER_PREFIX = 'other';
 
+// Weight Tiers
+const TIER_1_WEIGHT = 3;
+const TIER_2_WEIGHT = 2;
+const TIER_3_WEIGHT = 1;
+
+// Tier 1 Models - Flagship top-tier models
+const TIER_1_PATTERNS = [
+    /gpt-4/,
+    /claude-3-(opus|sonnet)/,
+    /gemini-(1\.5-pro|pro|ultra)/,
+    /llama-3\.(1|3)-(70b|405b)/,
+    /command-r-plus/,
+    /deepseek-v3/,
+    /qwen-2\.5-(72b|110b)/,
+] as const;
+
+// Tier 2 Models - Strong mid-tier models
+const TIER_2_PATTERNS = [
+    /llama-3\.(1|3)-8b/,
+    /mistral-(medium|large|nemo)/,
+    /mixtral/,
+    /qwen-2\.5-(32b|14b)/,
+    /gemma-2-27b/,
+    /phi-3-medium/,
+    /deepseek-v2\.5/,
+    /command-r[^-]/,
+    /glm-4/,
+    /nemotron/,
+] as const;
+
 interface OpenRouterModel {
     id: string;
     name: string;
@@ -195,10 +225,30 @@ interface FilteredModel {
 }
 
 /**
- * Determine weight - always returns 1 as requested
+ * Determine weight based on model tier
+ * Tier 1 (weight 3): Flagship models - GPT-4, Claude 3 Opus/Sonnet, Gemini Pro/Ultra, Llama 3.1/3.3 70B+, etc.
+ * Tier 2 (weight 2): Strong mid-tier models - Llama 3 8B, Mistral, Mixtral, Qwen 2.5 32B+, etc.
+ * Tier 3 (weight 1): All other models
  */
 function determineWeight(id: string): number {
-    return DEFAULT_WEIGHT;
+    const lowerId = id.toLowerCase();
+
+    // Check Tier 1 patterns
+    for (const pattern of TIER_1_PATTERNS) {
+        if (pattern.test(lowerId)) {
+            return TIER_1_WEIGHT;
+        }
+    }
+
+    // Check Tier 2 patterns
+    for (const pattern of TIER_2_PATTERNS) {
+        if (pattern.test(lowerId)) {
+            return TIER_2_WEIGHT;
+        }
+    }
+
+    // Default to Tier 3
+    return TIER_3_WEIGHT;
 }
 
 /**
