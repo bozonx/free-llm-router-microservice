@@ -181,11 +181,11 @@ export class FreeLlmRouter implements INodeType {
                         description: 'Minimum context window size required for model filtering',
                     },
                     {
-                        displayName: 'Filter: Prefer Fast',
-                        name: 'filterPreferFast',
+                        displayName: 'Filter: Prefer Lowest Latency',
+                        name: 'filterPreferLowestLatency',
                         type: 'boolean',
                         default: false,
-                        description: 'Whether to prefer models with lowest latency',
+                        description: 'Whether to prefer models with lowest measured latency (based on real statistics)',
                     },
                     {
                         displayName: 'Filter: Minimum Success Rate',
@@ -272,7 +272,7 @@ export class FreeLlmRouter implements INodeType {
             temperature?: number;
             maxTokens?: number;
             filterMinContextSize?: number;
-            filterPreferFast?: boolean;
+            filterPreferLowestLatency?: boolean;
             filterMinSuccessRate?: number;
             maxModelSwitches?: number;
             maxSameModelRetries?: number;
@@ -324,8 +324,8 @@ export class FreeLlmRouter implements INodeType {
         if (options.filterMinContextSize !== undefined && options.filterMinContextSize > 0) {
             modelKwargs.min_context_size = options.filterMinContextSize;
         }
-        if (options.filterPreferFast) {
-            modelKwargs.prefer_fast = options.filterPreferFast;
+        if (options.filterPreferLowestLatency) {
+            modelKwargs.prefer_fast = options.filterPreferLowestLatency;
         }
         if (options.filterMinSuccessRate !== undefined && options.filterMinSuccessRate > 0) {
             modelKwargs.min_success_rate = options.filterMinSuccessRate;
