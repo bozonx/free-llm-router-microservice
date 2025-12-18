@@ -175,7 +175,7 @@ const SIZE_PATTERNS = {
 } as const;
 
 // Context Size Thresholds
-const LONG_CONTEXT_THRESHOLD = 128000;
+const LONG_CONTEXT_THRESHOLD = 500000;
 
 // Minimum Token Requirements
 const MIN_CONTEXT_SIZE = 80000;
@@ -580,7 +580,8 @@ function generateTags(
     modelName: string,
     isReasoning: boolean,
     supportsImage: boolean,
-    contextSize: number
+    contextSize: number,
+    maxOutputTokens: number
 ): string[] {
     const tags: string[] = [];
 
@@ -604,8 +605,8 @@ function generateTags(
         tags.push(SPECIAL_TAGS.VISION);
     }
 
-    // Add long-context tag if applicable
-    if (contextSize >= LONG_CONTEXT_THRESHOLD) {
+    // Add long-context tag if both input and output meet threshold
+    if (contextSize >= LONG_CONTEXT_THRESHOLD && maxOutputTokens >= LONG_CONTEXT_THRESHOLD) {
         tags.push('long-context');
     }
 
@@ -683,7 +684,7 @@ async function fetchAndFilterModels() {
                 type: isReasoning ? 'reasoning' : 'fast',
                 contextSize: model.context_length || DEFAULT_CONTEXT_SIZE,
                 maxOutputTokens: model.top_provider?.max_completion_tokens || DEFAULT_MAX_OUTPUT_TOKENS,
-                tags: generateTags(model.id, name, isReasoning, supportsImage, model.context_length || DEFAULT_CONTEXT_SIZE),
+                tags: generateTags(model.id, name, isReasoning, supportsImage, model.context_length || DEFAULT_CONTEXT_SIZE, model.top_provider?.max_completion_tokens || DEFAULT_MAX_OUTPUT_TOKENS),
                 jsonResponse: true,
                 available: true,
                 weight: determineWeight(model.id),
