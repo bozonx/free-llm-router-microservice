@@ -9,7 +9,6 @@ models:
       - analysis
       - best-for-ru
       - best-for-zh
-      - general
     jsonResponse: true
     available: true
     weight: 1
@@ -30,7 +29,6 @@ models:
       - best-for-vi
       - best-for-zh
       - deepseek
-      - general
     jsonResponse: true
     available: true
     weight: 3
@@ -41,7 +39,6 @@ models:
     contextSize: 128000
     maxOutputTokens: 128000
     tags:
-      - general
       - nemotron
       - vision
     jsonResponse: true
@@ -78,7 +75,6 @@ models:
       - best-for-uk
       - best-for-vi
       - best-for-zh
-      - general
       - gpt
     jsonResponse: true
     available: true
@@ -102,7 +98,6 @@ models:
       - best-for-vi
       - best-for-zh
       - coding
-      - general
       - qwen
       - qwen-3
     jsonResponse: true
@@ -114,9 +109,7 @@ models:
     type: reasoning
     contextSize: 163840
     maxOutputTokens: 163840
-    tags:
-      - general
-      - reasoning
+    tags: []
     jsonResponse: true
     available: true
     weight: 1
@@ -126,8 +119,7 @@ models:
     type: fast
     contextSize: 262144
     maxOutputTokens: 262144
-    tags:
-      - general
+    tags: []
     jsonResponse: true
     available: true
     weight: 1
@@ -140,7 +132,6 @@ models:
     tags:
       - best-for-ru
       - best-for-zh
-      - general
       - glm
       - glm-4
     jsonResponse: true

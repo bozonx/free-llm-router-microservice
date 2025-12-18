@@ -205,8 +205,6 @@ const LANGUAGE_CODES = {
 
 // Special Tags
 const SPECIAL_TAGS = {
-    GENERAL: 'general',
-    REASONING: 'reasoning',
     VISION: 'vision',
 } as const;
 
@@ -479,7 +477,7 @@ function extractFamilyTags(id: string, modelName: string): string[] {
  * Generate all tags for a model
  */
 function generateTags(id: string, modelName: string, isReasoning: boolean, supportsImage: boolean): string[] {
-    const tags: string[] = [SPECIAL_TAGS.GENERAL];
+    const tags: string[] = [];
 
     // Add use case tags
     tags.push(...detectUseCaseTags(id, modelName));
@@ -489,11 +487,6 @@ function generateTags(id: string, modelName: string, isReasoning: boolean, suppo
 
     // Add family tags
     tags.push(...extractFamilyTags(id, modelName));
-
-    // Add reasoning tag if applicable
-    if (isReasoning) {
-        tags.push(SPECIAL_TAGS.REASONING);
-    }
 
     // Add vision tag if applicable
     if (supportsImage) {
