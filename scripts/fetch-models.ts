@@ -30,12 +30,14 @@ interface FilteredModel {
     type: 'fast' | 'reasoning';
     contextSize: number;
     maxOutputTokens: number;
-    speedTier: 'fast' | 'medium' | 'slow';
     tags: string[];
     jsonResponse: boolean;
     available: boolean;
     weight: number;
-    supportsVision?: boolean;
+    supportsImage?: boolean;
+    supportsVideo?: boolean;
+    supportsAudio?: boolean;
+    supportsFile?: boolean;
 }
 
 /**
@@ -57,27 +59,6 @@ function extractName(id: string): string {
     const parts = id.split('/');
     const main = parts.length > 1 ? parts[1] : parts[0];
     return main.replace(':free', '');
-}
-
-/**
- * Determine speed tier based on model size and characteristics
- */
-function determineSpeedTier(id: string, modelName: string, isReasoning: boolean): 'fast' | 'medium' | 'slow' {
-    if (isReasoning) return 'slow';
-
-    const combined = `${id} ${modelName}`.toLowerCase();
-
-    // Fast: < 20B parameters
-    if (combined.match(/\b(3b|4b|7b|9b|12b)\b/)) return 'fast';
-
-    // Slow: > 100B parameters
-    if (combined.match(/\b(120b|235b|405b|670b)\b/)) return 'slow';
-
-    // Medium: 20B-100B parameters
-    if (combined.match(/\b(20b|24b|27b|30b|32b|70b)\b/)) return 'medium';
-
-    // Default to fast for unknown sizes
-    return 'fast';
 }
 
 /**
@@ -188,7 +169,7 @@ function extractFamilyTags(id: string, modelName: string): string[] {
 /**
  * Generate all tags for a model
  */
-function generateTags(id: string, modelName: string, isReasoning: boolean, supportsVision: boolean): string[] {
+function generateTags(id: string, modelName: string, isReasoning: boolean, supportsImage: boolean): string[] {
     const tags: string[] = ['general'];
 
     // Add use case tags
@@ -206,7 +187,7 @@ function generateTags(id: string, modelName: string, isReasoning: boolean, suppo
     }
 
     // Add vision tag if applicable
-    if (supportsVision) {
+    if (supportsImage) {
         tags.push('vision');
     }
 
@@ -284,7 +265,7 @@ async function fetchAndFilterModels() {
 
             const name = extractName(model.id);
             const inputModalities = model.architecture?.input_modalities || ['text'];
-            const supportsVision = inputModalities.includes('image');
+            const supportsImage = inputModalities.includes('image');
 
             const result: FilteredModel = {
                 name: name,
@@ -293,16 +274,24 @@ async function fetchAndFilterModels() {
                 type: isReasoning ? 'reasoning' : 'fast',
                 contextSize: model.context_length || 4096,
                 maxOutputTokens: model.top_provider?.max_completion_tokens || 4096,
-                speedTier: determineSpeedTier(model.id, name, isReasoning),
-                tags: generateTags(model.id, name, isReasoning, supportsVision),
+                tags: generateTags(model.id, name, isReasoning, supportsImage),
                 jsonResponse: true,
                 available: true,
                 weight: determineWeight(model.id),
             };
 
-            // Set vision support flag
-            if (supportsVision) {
-                result.supportsVision = true;
+            // Set multimodal support flags based on input_modalities
+            if (inputModalities.includes('image')) {
+                result.supportsImage = true;
+            }
+            if (inputModalities.includes('video')) {
+                result.supportsVideo = true;
+            }
+            if (inputModalities.includes('audio')) {
+                result.supportsAudio = true;
+            }
+            if (inputModalities.includes('file')) {
+                result.supportsFile = true;
             }
 
             return result;
