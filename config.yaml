@@ -75,18 +75,6 @@ routing:
 #     tags: [code, reasoning] # Override tags for filtering
 #     contextSize: 32000      # Override context size
 
-# Rate limiting settings (optional, disabled by default)
-# rateLimiting:
-#   enabled: false            # Enable rate limiting
-#   
-
-#   # Per-client limit (by X-Client-ID header or IP)
-#   perClient:
-#     enabled: true
-#     requestsPerMinute: 20   # Max requests per minute per client
-#     burstSize: 5            # Extra tokens for burst traffic
-#     
-#   # Per-model limit (protection against skew)
-#   perModel:
-#     enabled: true
-#     requestsPerMinute: 30   # Max requests per minute per model
+# Global model rate limit (protection against skew)
+# Max requests per minute per model. Optional.
+modelRequestsPerMinute: 30

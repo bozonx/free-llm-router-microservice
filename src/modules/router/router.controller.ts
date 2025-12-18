@@ -13,7 +13,6 @@ import {
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { RouterService } from './router.service.js';
 import { ModelsService } from '../models/models.service.js';
-import { RateLimiterGuard } from '../rate-limiter/rate-limiter.guard.js';
 import { ChatCompletionRequestDto } from './dto/chat-completion.request.dto.js';
 import type {
   ChatCompletionResponseDto,
@@ -35,12 +34,10 @@ export class RouterController {
   /**
    * Chat completion endpoint (OpenAI compatible)
    * POST /api/v1/chat/completions
-   * Protected by rate limiter
    * Supports both streaming (SSE) and non-streaming modes
    */
   @Post('chat/completions')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(RateLimiterGuard)
   public async chatCompletion(
     @Body() request: ChatCompletionRequestDto,
     @Req() req: FastifyRequest,

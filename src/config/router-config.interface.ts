@@ -149,11 +149,6 @@ export interface ModelOverrideConfig {
   maxConcurrent?: number;
 }
 
-/**
- * Rate limiting configuration (imported from rate-limiter module)
- */
-export type { RateLimitingConfig } from '../modules/rate-limiter/interfaces/rate-limiter.interface.js';
-import type { RateLimitingConfig } from '../modules/rate-limiter/interfaces/rate-limiter.interface.js';
 
 /**
  * Router configuration
@@ -188,7 +183,8 @@ export interface RouterConfig {
   modelOverrides?: ModelOverrideConfig[];
 
   /**
-   * Rate limiting configuration (optional)
+   * Global model rate limit (requests per minute per model)
+   * Protection against skew/overload of specific models
    */
-  rateLimiting?: RateLimitingConfig;
+  modelRequestsPerMinute?: number;
 }

@@ -23,6 +23,8 @@ import {
   ProviderNotFoundError,
   RequestCancelledError,
 } from '../../common/errors/router.errors.js';
+import { RateLimiterService } from '../rate-limiter/rate-limiter.service.js';
+import { HttpException, HttpStatus } from '@nestjs/common';
 
 /**
  * Router service for handling chat completion requests with fallback logic
@@ -40,6 +42,7 @@ export class RouterService {
     private readonly requestBuilder: RequestBuilderService,
     @Inject(PROVIDERS_MAP) private readonly providersMap: ProvidersMap,
     @Inject(ROUTER_CONFIG) private readonly config: RouterConfig,
+    private readonly rateLimiterService: RateLimiterService,
   ) { }
 
   /**
@@ -469,6 +472,20 @@ export class RouterService {
     abortSignal: AbortSignal,
   ): Promise<ChatCompletionResult> {
     this.checkAbortSignal(abortSignal);
+
+    // Check rate limit for this model
+    if (!this.rateLimiterService.checkModel(model.name)) {
+      throw new HttpException(
+        {
+          error: {
+            message: 'Model rate limit exceeded',
+            type: 'rate_limit_error',
+            code: 'rate_limit_exceeded',
+          },
+        },
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
 
     const provider = this.providersMap.get(model.provider);
     if (!provider) {

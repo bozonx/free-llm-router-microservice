@@ -2,14 +2,12 @@ import { BaseValidator } from './config-validator.js';
 import { ProviderValidator } from './provider-validator.js';
 import { RoutingValidator } from './routing-validator.js';
 import { CircuitBreakerValidator } from './circuit-breaker-validator.js';
-import { RateLimitingValidator } from './rate-limiting-validator.js';
 import type { RouterConfig } from '../router-config.interface.js';
 
 export class RouterConfigValidator extends BaseValidator<RouterConfig> {
   private readonly providerValidator: ProviderValidator = new ProviderValidator();
   private readonly routingValidator: RoutingValidator = new RoutingValidator();
   private readonly circuitBreakerValidator: CircuitBreakerValidator = new CircuitBreakerValidator();
-  private readonly rateLimitingValidator: RateLimitingValidator = new RateLimitingValidator();
 
   public validate(value: unknown, path = 'RouterConfig'): asserts value is RouterConfig {
     this.assertType(value, 'object', path);
@@ -20,7 +18,13 @@ export class RouterConfigValidator extends BaseValidator<RouterConfig> {
     this.providerValidator.validate(config.providers, `${path}.providers`);
     this.routingValidator.validate(config.routing, `${path}.routing`);
     this.circuitBreakerValidator.validate(config.circuitBreaker, `${path}.circuitBreaker`);
-    this.rateLimitingValidator.validate(config.rateLimiting, `${path}.rateLimiting`);
+
+    if (config.modelRequestsPerMinute !== undefined) {
+      this.assertNumber(config.modelRequestsPerMinute, `${path}.modelRequestsPerMinute`);
+      if (config.modelRequestsPerMinute <= 0) {
+        throw new Error(`${path}.modelRequestsPerMinute must be a positive number`);
+      }
+    }
 
     // Cross-validation: ensure fallback provider is configured and enabled
     this.validateFallbackProvider(config, path);
@@ -113,3 +117,4 @@ export class RouterConfigValidator extends BaseValidator<RouterConfig> {
     }
   }
 }
+

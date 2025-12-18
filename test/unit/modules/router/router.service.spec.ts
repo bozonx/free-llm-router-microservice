@@ -9,6 +9,7 @@ import { RetryHandlerService } from '../../../../src/modules/router/services/ret
 import { RequestBuilderService } from '../../../../src/modules/router/services/request-builder.service.js';
 import { PROVIDERS_MAP } from '../../../../src/modules/providers/providers.module.js';
 import { ROUTER_CONFIG } from '../../../../src/config/router-config.provider.js';
+import { RateLimiterService } from '../../../../src/modules/rate-limiter/rate-limiter.service.js';
 import type { ChatCompletionRequestDto } from '../../../../src/modules/router/dto/chat-completion.request.dto.js';
 import type { LlmProvider } from '../../../../src/modules/providers/interfaces/provider.interface.js';
 import type { ModelDefinition } from '../../../../src/modules/models/interfaces/model.interface.js';
@@ -20,6 +21,7 @@ describe('RouterService', () => {
   let stateService: jest.Mocked<StateService>;
   let circuitBreaker: jest.Mocked<CircuitBreakerService>;
   let shutdownService: jest.Mocked<ShutdownService>;
+  let rateLimiterService: jest.Mocked<RateLimiterService>;
   let providersMap: Map<string, LlmProvider>;
   let mockProvider: jest.Mocked<LlmProvider>;
 
@@ -84,7 +86,8 @@ describe('RouterService', () => {
     mockProvider = {
       name: 'openrouter',
       chatCompletion: jest.fn(),
-    } as jest.Mocked<LlmProvider>;
+      chatCompletionStream: jest.fn(),
+    } as unknown as jest.Mocked<LlmProvider>;
 
     // Create providers map
     providersMap = new Map();
@@ -138,6 +141,11 @@ describe('RouterService', () => {
       getAbortSignal: jest.fn().mockReturnValue(null),
     } as any;
 
+    // Create mock rate limiter service
+    rateLimiterService = {
+      checkModel: jest.fn().mockReturnValue(true),
+    } as any;
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         RouterService,
@@ -158,6 +166,10 @@ describe('RouterService', () => {
         {
           provide: ShutdownService,
           useValue: shutdownService,
+        },
+        {
+          provide: RateLimiterService,
+          useValue: rateLimiterService,
         },
         {
           provide: PROVIDERS_MAP,

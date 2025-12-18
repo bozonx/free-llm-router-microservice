@@ -79,17 +79,20 @@ describe('RouterConfigValidator', () => {
       expect(() => validator.validate(config)).not.toThrow();
     });
 
-    it('should validate config with rateLimiting', () => {
+    it('should validate config with modelRequestsPerMinute', () => {
       const config = {
         ...createValidConfig(),
-        rateLimiting: {
-          enabled: true,
-          global: { requestsPerMinute: 100 },
-          perClient: { enabled: true, requestsPerMinute: 20, burstSize: 5 },
-          perModel: { enabled: true, requestsPerMinute: 30 },
-        },
+        modelRequestsPerMinute: 30,
       };
       expect(() => validator.validate(config)).not.toThrow();
+    });
+
+    it('should reject invalid modelRequestsPerMinute', () => {
+      const config = {
+        ...createValidConfig(),
+        modelRequestsPerMinute: -5,
+      };
+      expect(() => validator.validate(config)).toThrow('must be a positive number');
     });
 
     it('should validate config with missing baseUrl', () => {

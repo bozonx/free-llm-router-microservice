@@ -1,6 +1,5 @@
 import { Module, Global } from '@nestjs/common';
 import { RateLimiterService } from './rate-limiter.service.js';
-import { RateLimiterGuard } from './rate-limiter.guard.js';
 import { routerConfigProvider } from '../../config/router-config.provider.js';
 
 /**
@@ -10,7 +9,7 @@ import { routerConfigProvider } from '../../config/router-config.provider.js';
  */
 @Global()
 @Module({
-  providers: [routerConfigProvider, RateLimiterService, RateLimiterGuard],
-  exports: [RateLimiterService, RateLimiterGuard],
+  providers: [routerConfigProvider, RateLimiterService],
+  exports: [RateLimiterService],
 })
-export class RateLimiterModule {}
+export class RateLimiterModule { }

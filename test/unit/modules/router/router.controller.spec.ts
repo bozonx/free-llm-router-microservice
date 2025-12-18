@@ -3,8 +3,6 @@ import { Test, type TestingModule } from '@nestjs/testing';
 import { RouterController } from '../../../../src/modules/router/router.controller.js';
 import { RouterService } from '../../../../src/modules/router/router.service.js';
 import { ModelsService } from '../../../../src/modules/models/models.service.js';
-import { RateLimiterGuard } from '../../../../src/modules/rate-limiter/rate-limiter.guard.js';
-import { RateLimiterService } from '../../../../src/modules/rate-limiter/rate-limiter.service.js';
 import type { ChatCompletionRequestDto } from '../../../../src/modules/router/dto/chat-completion.request.dto.js';
 import type { ChatCompletionResponseDto } from '../../../../src/modules/router/dto/chat-completion.response.dto.js';
 import type { ModelDefinition } from '../../../../src/modules/models/interfaces/model.interface.js';
@@ -43,6 +41,7 @@ describe('RouterController', () => {
       model_name: 'test-model',
       attempts: 1,
       fallback_used: false,
+      errors: [],
     },
   };
 
@@ -73,15 +72,6 @@ describe('RouterController', () => {
     },
   ];
 
-  // Mock for RateLimiterService
-  const mockRateLimiterService = {
-    isEnabled: jest.fn().mockReturnValue(false),
-    checkAll: jest.fn().mockReturnValue({ allowed: true }),
-    getRateLimitInfo: jest
-      .fn()
-      .mockReturnValue({ limit: 100, remaining: 99, reset: Math.floor(Date.now() / 1000) + 60 }),
-  };
-
   beforeEach(async () => {
     // Create mocks
     routerService = {
@@ -103,11 +93,6 @@ describe('RouterController', () => {
           provide: ModelsService,
           useValue: modelsService,
         },
-        {
-          provide: RateLimiterService,
-          useValue: mockRateLimiterService,
-        },
-        RateLimiterGuard,
       ],
     }).compile();
 
