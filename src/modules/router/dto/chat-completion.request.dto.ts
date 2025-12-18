@@ -268,6 +268,14 @@ export class ChatCompletionRequestDto {
   @IsBoolean()
   public supports_file?: boolean;
 
+  /**
+   * Tools/function calling support required
+   * If true, only select models that support function calling and tool use
+   */
+  @IsOptional()
+  @IsBoolean()
+  public supports_tools?: boolean;
+
   // Routing behavior overrides (per-request)
   /**
    * Maximum number of model switches for this request

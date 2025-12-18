@@ -229,6 +229,13 @@ export class FreeLlmRouter implements INodeType {
                         description: 'Whether to require models that support file input',
                     },
                     {
+                        displayName: 'Filter: Supports Tools',
+                        name: 'filterSupportsTools',
+                        type: 'boolean',
+                        default: false,
+                        description: 'Whether to require models that support function calling and tool use',
+                    },
+                    {
                         displayName: 'Routing: Provider Timeout (seconds)',
                         name: 'timeout',
                         type: 'number',
@@ -306,6 +313,7 @@ export class FreeLlmRouter implements INodeType {
             filterSupportsVideo?: boolean;
             filterSupportsAudio?: boolean;
             filterSupportsFile?: boolean;
+            filterSupportsTools?: boolean;
             maxModelSwitches?: number;
             maxSameModelRetries?: number;
             retryDelay?: number;
@@ -373,6 +381,9 @@ export class FreeLlmRouter implements INodeType {
         }
         if (options.filterSupportsFile) {
             modelKwargs.supports_file = true;
+        }
+        if (options.filterSupportsTools) {
+            modelKwargs.supports_tools = true;
         }
         if (options.maxModelSwitches !== undefined && options.maxModelSwitches > 0) {
             modelKwargs.max_model_switches = options.maxModelSwitches;

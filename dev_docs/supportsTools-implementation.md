@@ -64,6 +64,13 @@ modelOverrides:
     supportsTools: true
 ```
 
+### Использование в n8n:
+
+В n8n ноде `Free LLM Router Model` доступен фильтр:
+- **Filter: Supports Tools** - фильтрация моделей с поддержкой function calling
+
+Этот фильтр передается в API как параметр `supports_tools`.
+
 ## Обоснование
 
 ### Почему отдельные параметры, а не только теги?

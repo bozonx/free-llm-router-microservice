@@ -43,7 +43,7 @@ export class RouterService {
     @Inject(PROVIDERS_MAP) private readonly providersMap: ProvidersMap,
     @Inject(ROUTER_CONFIG) private readonly config: RouterConfig,
     private readonly rateLimiterService: RateLimiterService,
-  ) {}
+  ) { }
 
   /**
    * Handle chat completion request with retry and fallback logic
@@ -483,6 +483,7 @@ export class RouterService {
         supportsVideo: request.supports_video ? true : undefined,
         supportsAudio: request.supports_audio ? true : undefined,
         supportsFile: request.supports_file ? true : undefined,
+        supportsTools: request.supports_tools ? true : undefined,
         // Keep deprecated field for backward compatibility
         supportsVision: needsVision || request.supports_vision ? true : undefined,
       },
@@ -495,8 +496,8 @@ export class RouterService {
       this.logger.warn(`Model ${model.name} does not support vision, but request contains images`);
       throw new Error(
         `Selected model '${model.name}' does not support image analysis. ` +
-          `Please use a vision-capable model (e.g., gemini-2.0-flash-exp, nemotron-nano-12b-v2-vl) ` +
-          `or filter by tag 'vision'`,
+        `Please use a vision-capable model (e.g., gemini-2.0-flash-exp, nemotron-nano-12b-v2-vl) ` +
+        `or filter by tag 'vision'`,
       );
     }
 
