@@ -243,6 +243,14 @@ export class FreeLlmRouter implements INodeType {
                         placeholder: '1000',
                         description: 'Delay between retries in milliseconds for this request. Overrides microservice config value if set.',
                     },
+                    {
+                        displayName: 'Fallback Model',
+                        name: 'fallbackModel',
+                        type: 'string',
+                        default: '',
+                        placeholder: 'deepseek/deepseek-chat',
+                        description: 'Fallback model in format "provider/model" (e.g., "deepseek/deepseek-chat" or "openrouter/deepseek-r1"). Applied only if fallback is enabled in microservice config. Provider is the first part before "/", model can contain additional "/" characters.',
+                    },
                 ],
             },
         ],
@@ -264,6 +272,7 @@ export class FreeLlmRouter implements INodeType {
             maxModelSwitches?: number;
             maxSameModelRetries?: number;
             retryDelay?: number;
+            fallbackModel?: string;
         };
 
         const temperature = options.temperature ?? 0.7;
@@ -328,6 +337,22 @@ export class FreeLlmRouter implements INodeType {
 
         if (options.timeout !== undefined && options.timeout > 0) {
             modelKwargs.timeout_secs = options.timeout;
+        }
+
+        // Parse and apply fallback model if provided
+        if (options.fallbackModel && options.fallbackModel.trim()) {
+            const fallbackValue = options.fallbackModel.trim();
+            const firstSlashIndex = fallbackValue.indexOf('/');
+
+            if (firstSlashIndex > 0) {
+                const fallbackProvider = fallbackValue.substring(0, firstSlashIndex);
+                const fallbackModelName = fallbackValue.substring(firstSlashIndex + 1);
+
+                if (fallbackProvider && fallbackModelName) {
+                    modelKwargs.fallback_provider = fallbackProvider;
+                    modelKwargs.fallback_model = fallbackModelName;
+                }
+            }
         }
 
         // Create model instance

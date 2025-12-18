@@ -111,6 +111,15 @@ All standard OpenAI parameters are supported:
 - **Presence Penalty** (-2 to 2): Encourages new topics
 - **Timeout**: Request timeout in milliseconds
 
+### Routing Options
+
+Advanced routing parameters for fine-tuning request behavior:
+
+- **Max Model Switches**: Maximum number of different models to try
+- **Max Same Model Retries**: Maximum retries on the same model for temporary errors (429, network errors)
+- **Retry Delay**: Delay between retries in milliseconds
+- **Fallback Model**: Override fallback model in format `provider/model` (e.g., `deepseek/deepseek-chat` or `openrouter/deepseek-r1`). Applied only if fallback is enabled in microservice config. Provider is the first part before `/`, model can contain additional `/` characters.
+
 ## Example Workflows
 
 ### Simple Chat with Auto Selection

@@ -186,18 +186,23 @@ export class RouterService {
       }
 
       // If all free models failed, try fallback to paid model
-      if (this.config.routing.fallback.enabled) {
+      // Use per-request fallback settings if provided, otherwise use config
+      const fallbackEnabled = this.config.routing.fallback?.enabled !== false;
+      if (fallbackEnabled) {
         this.logger.warn('All free models failed in streaming, attempting fallback to paid model');
 
         try {
-          const fallbackProvider = this.providersMap.get(this.config.routing.fallback.provider);
+          const fallbackProviderName = request.fallback_provider ?? this.config.routing.fallback.provider;
+          const fallbackModelName = request.fallback_model ?? this.config.routing.fallback.model;
+
+          const fallbackProvider = this.providersMap.get(fallbackProviderName);
           if (!fallbackProvider) {
-            throw new ProviderNotFoundError(this.config.routing.fallback.provider);
+            throw new ProviderNotFoundError(fallbackProviderName);
           }
 
           const completionParams = this.requestBuilder.buildChatCompletionParams(
             request,
-            this.config.routing.fallback.model,
+            fallbackModelName,
             abortSignal,
           );
 
@@ -209,8 +214,8 @@ export class RouterService {
             // Add router metadata to first chunk
             if (isFirstChunk) {
               chunk._router = {
-                provider: this.config.routing.fallback.provider,
-                model_name: this.config.routing.fallback.model,
+                provider: fallbackProviderName,
+                model_name: fallbackModelName,
                 attempts: attemptCount + 1,
                 fallback_used: true,
               };
@@ -323,7 +328,9 @@ export class RouterService {
     }
 
     // If all retries failed, check if fallback is enabled
-    if (this.config.routing.fallback.enabled) {
+    // Use per-request fallback settings if provided, otherwise use config
+    const fallbackEnabled = this.config.routing.fallback?.enabled !== false;
+    if (fallbackEnabled) {
       const fallbackResponse = await this.tryFallback(request, abortSignal, errors, attemptCount);
       if (fallbackResponse) {
         return fallbackResponse;
@@ -377,18 +384,22 @@ export class RouterService {
     request: ChatCompletionRequestDto,
     abortSignal: AbortSignal,
   ): Promise<{ result: ChatCompletionResult; model: ModelDefinition }> {
+    // Use per-request fallback settings if provided, otherwise use config
+    const fallbackProviderName = request.fallback_provider ?? this.config.routing.fallback.provider;
+    const fallbackModelName = request.fallback_model ?? this.config.routing.fallback.model;
+
     this.logger.debug(
-      `Executing fallback: ${this.config.routing.fallback.provider}/${this.config.routing.fallback.model}`,
+      `Executing fallback: ${fallbackProviderName}/${fallbackModelName}`,
     );
 
-    const fallbackProvider = this.providersMap.get(this.config.routing.fallback.provider);
+    const fallbackProvider = this.providersMap.get(fallbackProviderName);
     if (!fallbackProvider) {
-      throw new ProviderNotFoundError(this.config.routing.fallback.provider);
+      throw new ProviderNotFoundError(fallbackProviderName);
     }
 
     const completionParams = this.requestBuilder.buildChatCompletionParams(
       request,
-      this.config.routing.fallback.model,
+      fallbackModelName,
       abortSignal,
     );
 
@@ -400,8 +411,8 @@ export class RouterService {
     return {
       result,
       model: {
-        name: this.config.routing.fallback.model,
-        provider: this.config.routing.fallback.provider,
+        name: fallbackModelName,
+        provider: fallbackProviderName,
       } as ModelDefinition,
     };
   }
@@ -580,9 +591,11 @@ export class RouterService {
         fallbackUsed: true,
       });
     } catch (error) {
+      const fallbackProviderName = request.fallback_provider ?? this.config.routing.fallback.provider;
+      const fallbackModelName = request.fallback_model ?? this.config.routing.fallback.model;
       const fallbackError = ErrorExtractor.extractErrorInfo(error, {
-        name: this.config.routing.fallback.model,
-        provider: this.config.routing.fallback.provider,
+        name: fallbackModelName,
+        provider: fallbackProviderName,
       });
       errors.push(fallbackError);
       this.logger.error(`Fallback model failed: ${fallbackError.error}`);

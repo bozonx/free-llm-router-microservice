@@ -270,4 +270,22 @@ export class ChatCompletionRequestDto {
   @IsNumber()
   @Min(1)
   public timeout_secs?: number;
+
+  /**
+   * Fallback provider for this request
+   * Overrides config.routing.fallback.provider if fallback is enabled
+   * Applied only if routing.fallback.enabled is true or undefined
+   */
+  @IsOptional()
+  @IsString()
+  public fallback_provider?: string;
+
+  /**
+   * Fallback model for this request
+   * Overrides config.routing.fallback.model if fallback is enabled
+   * Applied only if routing.fallback.enabled is true or undefined
+   */
+  @IsOptional()
+  @IsString()
+  public fallback_model?: string;
 }
