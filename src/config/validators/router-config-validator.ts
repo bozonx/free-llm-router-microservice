@@ -20,10 +20,7 @@ export class RouterConfigValidator extends BaseValidator<RouterConfig> {
     this.circuitBreakerValidator.validate(config.circuitBreaker, `${path}.circuitBreaker`);
 
     if (config.modelRequestsPerMinute !== undefined) {
-      this.assertNumber(config.modelRequestsPerMinute, `${path}.modelRequestsPerMinute`);
-      if (config.modelRequestsPerMinute <= 0) {
-        throw new Error(`${path}.modelRequestsPerMinute must be a positive number`);
-      }
+      this.assertNumber(config.modelRequestsPerMinute, `${path}.modelRequestsPerMinute`, 1, 2000);
     }
 
     // Cross-validation: ensure fallback provider is configured and enabled

@@ -25,22 +25,32 @@ export function loadRouterConfig(): RouterConfig {
       (config as Record<string, unknown>)['modelsFile'] = './models.yaml';
     }
     if (!('modelRequestsPerMinute' in config)) {
-      (config as Record<string, unknown>)['modelRequestsPerMinute'] = 100;
+      (config as Record<string, unknown>)['modelRequestsPerMinute'] = 200;
     }
 
     // Set default routing values
-    const anyConfig = config as any;
-    if (!anyConfig.routing) {
-      anyConfig.routing = {};
+    if (!('routing' in config)) {
+      (config as Record<string, unknown>)['routing'] = {};
     }
-    if (anyConfig.routing.retryDelay === undefined) {
-      anyConfig.routing.retryDelay = 3000;
+    const routing = (config as any).routing;
+    if (routing.maxModelSwitches === undefined) {
+      routing.maxModelSwitches = 3;
     }
-
+    if (routing.maxSameModelRetries === undefined) {
+      routing.maxSameModelRetries = 2;
+    }
+    if (routing.retryDelay === undefined) {
+      routing.retryDelay = 3000;
+    }
+    if (routing.timeoutSecs === undefined) {
+      routing.timeoutSecs = 60;
+    }
     validateRouterConfig(config);
 
-    return config;
+    return config as RouterConfig;
   }
+
+  throw new Error('Router configuration must be a valid YAML object');
 
   /**
    * Load environment variables from .env files
@@ -109,3 +119,4 @@ export function loadRouterConfig(): RouterConfig {
     const validator: RouterConfigValidator = new RouterConfigValidator();
     validator.validate(config);
   }
+}

@@ -126,6 +126,7 @@ export class FreeLlmRouter implements INodeType {
                         type: 'number',
                         typeOptions: {
                             minValue: 1,
+                            maxValue: 128000,
                         },
                         default: 1000,
                         description: 'Maximum number of tokens to generate in the response',
@@ -205,9 +206,10 @@ export class FreeLlmRouter implements INodeType {
                         type: 'number',
                         typeOptions: {
                             minValue: 1,
+                            maxValue: 600,
                         },
                         default: undefined,
-                        placeholder: '30',
+                        placeholder: '60',
                         description: 'Maximum time in seconds to wait for a response from a provider for a single attempt. Overrides microservice config value if set.',
                     },
                     {
@@ -216,6 +218,7 @@ export class FreeLlmRouter implements INodeType {
                         type: 'number',
                         typeOptions: {
                             minValue: 1,
+                            maxValue: 10,
                         },
                         default: undefined,
                         placeholder: '3',
@@ -227,6 +230,7 @@ export class FreeLlmRouter implements INodeType {
                         type: 'number',
                         typeOptions: {
                             minValue: 0,
+                            maxValue: 5,
                         },
                         default: undefined,
                         placeholder: '2',
@@ -238,6 +242,7 @@ export class FreeLlmRouter implements INodeType {
                         type: 'number',
                         typeOptions: {
                             minValue: 0,
+                            maxValue: 30000,
                         },
                         default: undefined,
                         placeholder: '3000',

@@ -142,6 +142,7 @@ export class ChatCompletionRequestDto {
   @IsOptional()
   @IsNumber()
   @Min(1)
+  @Max(128000)
   public max_tokens?: number;
 
   @IsOptional()
@@ -242,6 +243,7 @@ export class ChatCompletionRequestDto {
   @IsOptional()
   @IsNumber()
   @Min(1)
+  @Max(10)
   public max_model_switches?: number;
 
   /**
@@ -251,6 +253,7 @@ export class ChatCompletionRequestDto {
   @IsOptional()
   @IsNumber()
   @Min(0)
+  @Max(5)
   public max_same_model_retries?: number;
 
   /**
@@ -260,6 +263,7 @@ export class ChatCompletionRequestDto {
   @IsOptional()
   @IsNumber()
   @Min(0)
+  @Max(30000)
   public retry_delay?: number;
 
   /**
@@ -269,6 +273,7 @@ export class ChatCompletionRequestDto {
   @IsOptional()
   @IsNumber()
   @Min(1)
+  @Max(600)
   public timeout_secs?: number;
 
   /**

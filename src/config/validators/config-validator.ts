@@ -33,7 +33,12 @@ export abstract class BaseValidator<T> {
     }
   }
 
-  protected assertNumber(value: unknown, path: string, min?: number): asserts value is number {
+  protected assertNumber(
+    value: unknown,
+    path: string,
+    min?: number,
+    max?: number,
+  ): asserts value is number {
     if (typeof value !== 'number') {
       throw new ConfigValidationError(
         `${path} must be a number, got ${typeof value} (value: ${String(value)})`,
@@ -41,6 +46,9 @@ export abstract class BaseValidator<T> {
     }
     if (min !== undefined && value < min) {
       throw new ConfigValidationError(`${path} must be >= ${min}, got ${value}`);
+    }
+    if (max !== undefined && value > max) {
+      throw new ConfigValidationError(`${path} must be <= ${max}, got ${value}`);
     }
   }
 

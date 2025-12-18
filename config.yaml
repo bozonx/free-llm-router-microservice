@@ -37,7 +37,7 @@ routing:
   # Note: Jitter ±20% is hardcoded in RETRY_JITTER_PERCENT constant
   
   # Provider request timeout in seconds
-  timeoutSecs: 30
+  timeoutSecs: 60
   
   # Fallback to paid model (single attempt, no retries)
   fallback:
@@ -75,5 +75,5 @@ routing:
 #     contextSize: 32000      # Override context size
 
 # Global model rate limit (protection against skew)
-# Max requests per minute per model. Default: 100.
-modelRequestsPerMinute: 100
+# Max requests per minute per model. Default: 200.
+modelRequestsPerMinute: 200

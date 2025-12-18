@@ -12,19 +12,19 @@ export class CircuitBreakerValidator extends BaseValidator<RouterConfig['circuit
     const cb = value;
 
     if (cb.failureThreshold !== undefined) {
-      this.assertNumber(cb.failureThreshold, `${path}.failureThreshold`, 1);
+      this.assertNumber(cb.failureThreshold, `${path}.failureThreshold`, 1, 50);
     }
 
     if (cb.cooldownPeriodMins !== undefined) {
-      this.assertNumber(cb.cooldownPeriodMins, `${path}.cooldownPeriodMins`, 0);
+      this.assertNumber(cb.cooldownPeriodMins, `${path}.cooldownPeriodMins`, 0, 1440);
     }
 
     if (cb.successThreshold !== undefined) {
-      this.assertNumber(cb.successThreshold, `${path}.successThreshold`, 1);
+      this.assertNumber(cb.successThreshold, `${path}.successThreshold`, 1, 10);
     }
 
     if (cb.statsWindowSizeMins !== undefined) {
-      this.assertNumber(cb.statsWindowSizeMins, `${path}.statsWindowSizeMins`, 0);
+      this.assertNumber(cb.statsWindowSizeMins, `${path}.statsWindowSizeMins`, 0, 60);
     }
   }
 }
