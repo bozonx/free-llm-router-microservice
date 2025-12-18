@@ -168,6 +168,11 @@ export interface ModelOverrideConfig {
    * Override file/document input support
    */
   supportsFile?: boolean;
+
+  /**
+   * Override tools/function calling support
+   */
+  supportsTools?: boolean;
 }
 
 /**

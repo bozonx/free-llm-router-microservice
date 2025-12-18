@@ -59,6 +59,11 @@ export interface FilterCriteria {
   supportsFile?: boolean;
 
   /**
+   * Tools/function calling support required
+   */
+  supportsTools?: boolean;
+
+  /**
    * Provider filter
    */
   provider?: string;
@@ -72,7 +77,7 @@ export class ModelsService implements OnModuleInit {
   private readonly logger = new Logger(ModelsService.name);
   private models: ModelDefinition[] = [];
 
-  constructor(@Inject(ROUTER_CONFIG) private readonly config: RouterConfig) {}
+  constructor(@Inject(ROUTER_CONFIG) private readonly config: RouterConfig) { }
 
   public async onModuleInit(): Promise<void> {
     const modelsSource = this.config.modelsFile;
@@ -245,6 +250,7 @@ export class ModelsService implements OnModuleInit {
     if (override.supportsVideo !== undefined) model.supportsVideo = override.supportsVideo;
     if (override.supportsAudio !== undefined) model.supportsAudio = override.supportsAudio;
     if (override.supportsFile !== undefined) model.supportsFile = override.supportsFile;
+    if (override.supportsTools !== undefined) model.supportsTools = override.supportsTools;
   }
 
   private convertModel(model: Record<string, unknown>): ModelDefinition {
@@ -290,6 +296,9 @@ export class ModelsService implements OnModuleInit {
     }
     if (model.supportsFile !== undefined) {
       result.supportsFile = model.supportsFile as boolean;
+    }
+    if (model.supportsTools !== undefined) {
+      result.supportsTools = model.supportsTools as boolean;
     }
   }
 
@@ -389,6 +398,10 @@ export class ModelsService implements OnModuleInit {
     }
 
     if (criteria.supportsFile && !model.supportsFile) {
+      return false;
+    }
+
+    if (criteria.supportsTools && !model.supportsTools) {
       return false;
     }
 

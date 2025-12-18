@@ -294,11 +294,10 @@ interface FilteredModel {
     jsonResponse: boolean;
     available: boolean;
     weight: number;
-    supportsImage?: boolean; // deprecated, use input modalities
-    supportsVideo?: boolean; // deprecated, use input modalities
-    supportsAudio?: boolean; // deprecated, use input modalities
-    supportsFile?: boolean; // deprecated, use input modalities
-    inputModalities?: string[];
+    supportsImage?: boolean;
+    supportsVideo?: boolean;
+    supportsAudio?: boolean;
+    supportsFile?: boolean;
     supportsTools?: boolean;
 }
 
@@ -748,7 +747,6 @@ async function fetchAndFilterModels() {
                 available: true,
                 weight: determineWeight(model.id),
                 supportsTools: supportsTools,
-                inputModalities: inputModalities,
             };
 
             // Set multimodal support flags based on input_modalities

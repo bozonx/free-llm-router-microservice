@@ -83,6 +83,12 @@ export interface SelectionCriteria {
    * If true, only select models that support file/document content
    */
   supportsFile?: boolean;
+
+  /**
+   * Tools/function calling support required
+   * If true, only select models that support function calling and tool use
+   */
+  supportsTools?: boolean;
 }
 
 /**

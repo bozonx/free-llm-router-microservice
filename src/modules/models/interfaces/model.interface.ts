@@ -94,6 +94,13 @@ export interface ModelDefinition {
    * Default: false
    */
   supportsFile?: boolean;
+
+  /**
+   * Tools/function calling support
+   * If true, model supports function calling and tool use
+   * Default: false
+   */
+  supportsTools?: boolean;
 }
 
 /**
