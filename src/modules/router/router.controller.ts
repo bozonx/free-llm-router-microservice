@@ -158,7 +158,7 @@ export class RouterController {
         jsonResponse: model.jsonResponse,
         available: model.available,
         weight: model.weight,
-        maxConcurrent: model.maxConcurrent,
+
         supportsVision: model.supportsVision,
       })),
     };

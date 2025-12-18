@@ -143,10 +143,7 @@ export interface ModelOverrideConfig {
    */
   available?: boolean;
 
-  /**
-   * Override max concurrent requests
-   */
-  maxConcurrent?: number;
+
 }
 
 

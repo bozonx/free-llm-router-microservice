@@ -240,7 +240,7 @@ export class FreeLlmRouter implements INodeType {
                             minValue: 0,
                         },
                         default: undefined,
-                        placeholder: '1000',
+                        placeholder: '3000',
                         description: 'Delay between retries in milliseconds for this request. Overrides microservice config value if set.',
                     },
                     {

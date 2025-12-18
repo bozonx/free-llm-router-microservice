@@ -124,7 +124,6 @@ export class RouterService {
         );
 
         // Stream chunks from provider
-        this.stateService.incrementActiveRequests(model.name);
         const startTime = Date.now();
 
         try {
@@ -180,9 +179,8 @@ export class RouterService {
           }
 
           // Continue to next model
-        } finally {
-          this.stateService.decrementActiveRequests(model.name);
         }
+
       }
 
       // If all free models failed, try fallback to paid model
@@ -349,35 +347,29 @@ export class RouterService {
   }): Promise<ChatCompletionResult> {
     const { model, request, abortSignal, maxSameModelRetries, retryDelay } = params;
 
-    this.stateService.incrementActiveRequests(model.name);
-
     const effectiveMaxRetries = maxSameModelRetries ?? this.config.routing.maxSameModelRetries;
     const effectiveRetryDelay = retryDelay ?? this.config.routing.retryDelay;
 
-    try {
-      return await this.retryHandler.executeWithRetry({
-        operation: async () => this.executeSingleRequest(model, request, abortSignal),
-        maxRetries: effectiveMaxRetries,
-        retryDelay: effectiveRetryDelay,
-        shouldRetry: error => {
-          const errorInfo = ErrorExtractor.extractErrorInfo(error, model);
-          // Retry on rate limit (429) or retryable network errors (ENETUNREACH, ECONNRESET)
-          return (
-            ErrorExtractor.isRateLimitError(errorInfo.code) ||
-            ErrorExtractor.isRetryableNetworkError(error)
-          );
-        },
-        onRetry: (attempt, error) => {
-          const isNetworkError = ErrorExtractor.isRetryableNetworkError(error);
-          const errorType = isNetworkError ? 'Network error' : 'Rate limit';
-          this.logger.debug(
-            `${errorType} for ${model.name}, retrying (attempt ${attempt}/${effectiveMaxRetries})`,
-          );
-        },
-      });
-    } finally {
-      this.stateService.decrementActiveRequests(model.name);
-    }
+    return await this.retryHandler.executeWithRetry({
+      operation: async () => this.executeSingleRequest(model, request, abortSignal),
+      maxRetries: effectiveMaxRetries,
+      retryDelay: effectiveRetryDelay,
+      shouldRetry: error => {
+        const errorInfo = ErrorExtractor.extractErrorInfo(error, model);
+        // Retry on rate limit (429) or retryable network errors (ENETUNREACH, ECONNRESET)
+        return (
+          ErrorExtractor.isRateLimitError(errorInfo.code) ||
+          ErrorExtractor.isRetryableNetworkError(error)
+        );
+      },
+      onRetry: (attempt, error) => {
+        const isNetworkError = ErrorExtractor.isRetryableNetworkError(error);
+        const errorType = isNetworkError ? 'Network error' : 'Rate limit';
+        this.logger.debug(
+          `${errorType} for ${model.name}, retrying (attempt ${attempt}/${effectiveMaxRetries})`,
+        );
+      },
+    });
   }
 
   private async executeFallback(

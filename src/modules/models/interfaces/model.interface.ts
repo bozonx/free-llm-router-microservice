@@ -69,11 +69,7 @@ export interface ModelDefinition {
    */
   weight?: number;
 
-  /**
-   * Maximum concurrent requests to this model
-   * Default: unlimited (Infinity)
-   */
-  maxConcurrent?: number;
+
 
   /**
    * Vision support (multimodal - text + images)

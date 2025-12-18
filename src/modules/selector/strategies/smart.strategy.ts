@@ -19,7 +19,7 @@ import {
  * - Model weights (for weighted random selection)
  * - Statistics (latency, success rate)
  * - Request filters (tags, type, min_context_size, prefer_fast, min_success_rate)
- * - Overload protection (maxConcurrent)
+
  */
 @Injectable()
 export class SmartStrategy implements SelectionStrategy {
@@ -29,7 +29,7 @@ export class SmartStrategy implements SelectionStrategy {
     private readonly stateService: StateService,
     private readonly circuitBreaker: CircuitBreakerService,
     @Inject(ROUTER_CONFIG) private readonly config: RouterConfig,
-  ) {}
+  ) { }
 
   public select(models: ModelDefinition[], criteria: SelectionCriteria): ModelDefinition | null {
     if (models.length === 0) {
@@ -63,7 +63,6 @@ export class SmartStrategy implements SelectionStrategy {
   private applyFilters(models: ModelDefinition[], criteria: SelectionCriteria): ModelDefinition[] {
     let candidates = this.filterExcluded(models, criteria.excludeModels);
     candidates = this.circuitBreaker.filterAvailable(candidates);
-    candidates = this.filterByCapacity(candidates);
 
     if (criteria.minSuccessRate !== undefined) {
       candidates = this.filterBySuccessRate(candidates, criteria.minSuccessRate);
@@ -87,15 +86,7 @@ export class SmartStrategy implements SelectionStrategy {
     );
   }
 
-  private filterByCapacity(models: ModelDefinition[]): ModelDefinition[] {
-    return models.filter(model => this.hasCapacity(model));
-  }
 
-  private hasCapacity(model: ModelDefinition): boolean {
-    const state = this.stateService.getState(model.name);
-    const maxConcurrent = model.maxConcurrent ?? Infinity;
-    return state.activeRequests < maxConcurrent;
-  }
 
   private filterBySuccessRate(models: ModelDefinition[], minRate: number): ModelDefinition[] {
     return models.filter(model => this.meetsSuccessRateThreshold(model, minRate));

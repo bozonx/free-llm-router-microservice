@@ -23,7 +23,7 @@ routing:
   maxSameModelRetries: 2
 
   # Retry delay in milliseconds
-  retryDelay: 1000
+  retryDelay: 3000
 
   # Request timeout in seconds
   timeoutSecs: 30

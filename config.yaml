@@ -33,7 +33,7 @@ routing:
   maxSameModelRetries: 2
   
   # Delay between retries (ms) - for 429 and network errors on the same model
-  retryDelay: 1000
+  retryDelay: 3000
   # Note: Jitter ±20% is hardcoded in RETRY_JITTER_PERCENT constant
   
   # Provider request timeout in seconds
@@ -61,11 +61,10 @@ routing:
 #   - maxOutputTokens: Maximum output tokens
 #   - speedTier: Speed category ('fast' | 'medium' | 'slow')
 #   - available: Enable/disable model (true/false)
-#   - maxConcurrent: Maximum concurrent requests to this model
+#   - available: Enable/disable model (true/false)
 # modelOverrides:
 #   - name: llama-3.3-70b
 #     weight: 5               # Adjust selection probability
-#     maxConcurrent: 10       # Limit concurrent requests
 #   - name: deepseek-r1
 #     provider: deepseek      # Optional: validate provider match
 #     weight: 15              # Increase selection probability

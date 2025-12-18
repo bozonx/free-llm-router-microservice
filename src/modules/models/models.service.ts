@@ -218,8 +218,7 @@ export class ModelsService implements OnModuleInit {
     if (override.contextSize !== undefined) model.contextSize = override.contextSize;
     if (override.maxOutputTokens !== undefined) model.maxOutputTokens = override.maxOutputTokens;
     if (override.speedTier !== undefined) model.speedTier = override.speedTier;
-    if (override.available !== undefined) model.available = override.available;
-    if (override.maxConcurrent !== undefined) model.maxConcurrent = override.maxConcurrent;
+
   }
 
   private convertModel(model: Record<string, unknown>): ModelDefinition {
@@ -251,9 +250,6 @@ export class ModelsService implements OnModuleInit {
   private addOptionalFields(result: ModelDefinition, model: Record<string, unknown>): void {
     if (model.weight !== undefined) {
       result.weight = model.weight as number;
-    }
-    if (model.maxConcurrent !== undefined) {
-      result.maxConcurrent = model.maxConcurrent as number;
     }
     if (model.supportsVision !== undefined) {
       result.supportsVision = model.supportsVision as boolean;

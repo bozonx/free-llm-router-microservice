@@ -27,9 +27,7 @@ export class ModelValidator {
       this.assertNumberInRange(model.weight, 1, 100, 'weight');
     }
 
-    if (model.maxConcurrent !== undefined) {
-      this.assertPositiveNumber(model.maxConcurrent, 'maxConcurrent');
-    }
+
   }
 
   private static assertString(value: unknown, fieldName: string): asserts value is string {

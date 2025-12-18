@@ -62,8 +62,7 @@ export interface ModelState {
   /** Consecutive success count (for HALF_OPEN recovery) */
   consecutiveSuccesses: number;
 
-  /** Current active request count */
-  activeRequests: number;
+
 
   /** Statistics for sliding window */
   stats: ModelStats;

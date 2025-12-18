@@ -112,9 +112,7 @@ export class RouterConfigValidator extends BaseValidator<RouterConfig> {
       this.assertBoolean(override.available, `${path}.available`);
     }
 
-    if (override.maxConcurrent !== undefined) {
-      this.assertNumber(override.maxConcurrent, `${path}.maxConcurrent`);
-    }
+
   }
 }
 

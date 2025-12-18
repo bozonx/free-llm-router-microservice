@@ -18,7 +18,7 @@ export class StateService implements OnModuleInit, OnModuleDestroy {
   constructor(
     private readonly modelsService: ModelsService,
     @Inject(CIRCUIT_BREAKER_CONFIG) private readonly config: CircuitBreakerConfig,
-  ) {}
+  ) { }
 
   /**
    * Initialize states for all models on module start
@@ -130,21 +130,7 @@ export class StateService implements OnModuleInit, OnModuleDestroy {
     this.logger.warn(`Model ${modelName} marked as permanently unavailable: ${reason}`);
   }
 
-  /**
-   * Increment active requests counter
-   */
-  public incrementActiveRequests(modelName: string): void {
-    const state = this.getState(modelName);
-    state.activeRequests++;
-  }
 
-  /**
-   * Decrement active requests counter
-   */
-  public decrementActiveRequests(modelName: string): void {
-    const state = this.getState(modelName);
-    state.activeRequests = Math.max(0, state.activeRequests - 1);
-  }
 
   /**
    * Set circuit state for a model
@@ -209,7 +195,6 @@ export class StateService implements OnModuleInit, OnModuleDestroy {
       circuitState: 'CLOSED',
       consecutiveFailures: 0,
       consecutiveSuccesses: 0,
-      activeRequests: 0,
       stats: this.createInitialStats(),
     };
   }

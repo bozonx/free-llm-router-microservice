@@ -74,7 +74,7 @@ export class AdminController {
     const totalRequests = states.reduce((sum, s) => sum + s.stats.totalRequests, 0);
     const successfulRequests = states.reduce((sum, s) => sum + s.stats.successCount, 0);
     const failedRequests = states.reduce((sum, s) => sum + s.stats.errorCount, 0);
-    const activeConnections = states.reduce((sum, s) => sum + s.activeRequests, 0);
+
 
     // Weighted Average Latency calculation:
     // We weigh the average latency of each model by its number of successful requests.
@@ -110,7 +110,7 @@ export class AdminController {
       modelsAvailable,
       modelsInOpenState,
       modelsPermanentlyUnavailable,
-      activeConnections,
+
     };
   }
 

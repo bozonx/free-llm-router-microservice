@@ -138,7 +138,7 @@ export interface ModelInfo {
   jsonResponse: boolean;
   available: boolean;
   weight?: number;
-  maxConcurrent?: number;
+
 }
 
 /**
