@@ -161,27 +161,46 @@ const TIER_2_WEIGHT = 2;
 const TIER_3_WEIGHT = 1;
 
 // Tier 1 Models - Flagship top-tier models
+// Patterns are designed to match current and future versions
 const TIER_1_PATTERNS = [
-    /gpt-4/,
-    /claude-3-(opus|sonnet)/,
-    /gemini-(1\.5-pro|pro|ultra)/,
-    /llama-3\.(1|3)-(70b|405b)/,
+    // GPT-4 and future versions (GPT-5, GPT-6, etc.)
+    /gpt-[4-9]/,
+    // Claude 3+ Opus/Sonnet and future versions
+    /claude-[3-9][.\d]*-(opus|sonnet)/,
+    // Gemini Pro/Ultra variants (current and future versions)
+    /gemini-([1-9]\.?[0-9]*-)?(pro|ultra)/,
+    // Llama 3+ large models (70B, 405B and larger)
+    /llama-[3-9]\.?\d*-(70b|[1-9]\d{2}b)/,
+    // Command R Plus
     /command-r-plus/,
-    /deepseek-v3/,
-    /qwen-2\.5-(72b|110b)/,
+    // DeepSeek V3 and future versions
+    /deepseek-v[3-9]/,
+    // Qwen 2.5+ large models (72B, 110B and larger)
+    /qwen-[2-9]\.?\d*-(72b|110b|[1-9]\d{2}b)/,
 ] as const;
 
 // Tier 2 Models - Strong mid-tier models
+// Patterns are designed to match current and future versions
 const TIER_2_PATTERNS = [
-    /llama-3\.(1|3)-8b/,
+    // Llama 3+ small-medium models (8B, 13B, etc. but not 70B+)
+    /llama-[3-9]\.?\d*-(8b|13b|[1-5]\d?b)(?!70b|405b)/,
+    // Mistral Medium/Large/Nemo and future variants
     /mistral-(medium|large|nemo)/,
+    // All Mixtral variants
     /mixtral/,
-    /qwen-2\.5-(32b|14b)/,
-    /gemma-2-27b/,
-    /phi-3-medium/,
-    /deepseek-v2\.5/,
-    /command-r[^-]/,
-    /glm-4/,
+    // Qwen 2+ medium models (14B-32B range)
+    /qwen-[2-9]\.?\d*-(14b|32b|[1-6]\d?b)(?!72b|110b)/,
+    // Gemma 2+ 27B models
+    /gemma-[2-9]\.?\d*-27b/,
+    // Phi-3+ Medium and larger
+    /phi-[3-9]\.?\d*-(medium|large)/,
+    // DeepSeek V2.5 and similar mid-tier versions
+    /deepseek-v2\.[5-9]/,
+    // Command R (base version, not Plus)
+    /command-r(?!-plus)/,
+    // GLM-4 and future versions
+    /glm-[4-9]/,
+    // Nemotron (all variants)
     /nemotron/,
 ] as const;
 
