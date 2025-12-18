@@ -19,6 +19,8 @@ RUN pnpm install --prod --frozen-lockfile --prefer-offline || pnpm install --pro
 
 # Copy pre-built application
 COPY dist ./dist
+COPY public ./public
+COPY models.yaml ./
 
 EXPOSE 8080
 
