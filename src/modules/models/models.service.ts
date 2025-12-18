@@ -51,7 +51,7 @@ export class ModelsService implements OnModuleInit {
   private readonly logger = new Logger(ModelsService.name);
   private models: ModelDefinition[] = [];
 
-  constructor(@Inject(ROUTER_CONFIG) private readonly config: RouterConfig) { }
+  constructor(@Inject(ROUTER_CONFIG) private readonly config: RouterConfig) {}
 
   public async onModuleInit(): Promise<void> {
     const modelsSource = this.config.modelsFile;
@@ -217,8 +217,9 @@ export class ModelsService implements OnModuleInit {
     if (override.tags !== undefined) model.tags = override.tags;
     if (override.contextSize !== undefined) model.contextSize = override.contextSize;
     if (override.maxOutputTokens !== undefined) model.maxOutputTokens = override.maxOutputTokens;
-    if (override.speedTier !== undefined) model.speedTier = override.speedTier;
-
+    if (override.available !== undefined) model.available = override.available;
+    if (override.jsonResponse !== undefined) model.jsonResponse = override.jsonResponse;
+    if (override.supportsVision !== undefined) model.supportsVision = override.supportsVision;
   }
 
   private convertModel(model: Record<string, unknown>): ModelDefinition {
@@ -236,7 +237,6 @@ export class ModelsService implements OnModuleInit {
       type: model.type as 'fast' | 'reasoning',
       contextSize: model.contextSize as number,
       maxOutputTokens: model.maxOutputTokens as number,
-      speedTier: model.speedTier as 'fast' | 'medium' | 'slow',
       tags: (model.tags as unknown[]).map(String),
       jsonResponse: model.jsonResponse as boolean,
       available: model.available as boolean,

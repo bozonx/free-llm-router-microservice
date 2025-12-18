@@ -7,4 +7,4 @@ import { ModelsModule } from '../models/models.module.js';
   imports: [StateModule, ModelsModule],
   controllers: [AdminController],
 })
-export class AdminModule { }
+export class AdminModule {}

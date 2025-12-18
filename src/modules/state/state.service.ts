@@ -18,7 +18,7 @@ export class StateService implements OnModuleInit, OnModuleDestroy {
   constructor(
     private readonly modelsService: ModelsService,
     @Inject(CIRCUIT_BREAKER_CONFIG) private readonly config: CircuitBreakerConfig,
-  ) { }
+  ) {}
 
   /**
    * Initialize states for all models on module start
@@ -129,8 +129,6 @@ export class StateService implements OnModuleInit, OnModuleDestroy {
     state.unavailableReason = reason;
     this.logger.warn(`Model ${modelName} marked as permanently unavailable: ${reason}`);
   }
-
-
 
   /**
    * Set circuit state for a model

@@ -17,7 +17,10 @@ interface OpenRouterRequest {
   model: string;
   messages: Array<{
     role: string;
-    content: string | Array<{ type: string; text?: string; image_url?: { url: string; detail?: string } }> | null;
+    content:
+      | string
+      | Array<{ type: string; text?: string; image_url?: { url: string; detail?: string } }>
+      | null;
     name?: string;
     tool_calls?: ToolCall[];
     tool_call_id?: string;
@@ -246,5 +249,4 @@ export class OpenRouterProvider extends BaseProvider {
       },
     };
   }
-
 }

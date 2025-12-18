@@ -43,7 +43,7 @@ export class RouterService {
     @Inject(PROVIDERS_MAP) private readonly providersMap: ProvidersMap,
     @Inject(ROUTER_CONFIG) private readonly config: RouterConfig,
     private readonly rateLimiterService: RateLimiterService,
-  ) { }
+  ) {}
 
   /**
    * Handle chat completion request with retry and fallback logic
@@ -58,7 +58,8 @@ export class RouterService {
     try {
       // Use per-request overrides or fall back to config
       const maxModelSwitches = request.max_model_switches ?? this.config.routing.maxModelSwitches;
-      const maxSameModelRetries = request.max_same_model_retries ?? this.config.routing.maxSameModelRetries;
+      const maxSameModelRetries =
+        request.max_same_model_retries ?? this.config.routing.maxSameModelRetries;
       const retryDelay = request.retry_delay ?? this.config.routing.retryDelay;
 
       return await this.executeWithShutdownHandling(request, clientSignal, {
@@ -86,7 +87,8 @@ export class RouterService {
     try {
       // Use per-request overrides or fall back to config
       const maxModelSwitches = request.max_model_switches ?? this.config.routing.maxModelSwitches;
-      const maxSameModelRetries = request.max_same_model_retries ?? this.config.routing.maxSameModelRetries;
+      const maxSameModelRetries =
+        request.max_same_model_retries ?? this.config.routing.maxSameModelRetries;
       const retryDelay = request.retry_delay ?? this.config.routing.retryDelay;
 
       // Combine client signal with shutdown signal
@@ -180,7 +182,6 @@ export class RouterService {
 
           // Continue to next model
         }
-
       }
 
       // If all free models failed, try fallback to paid model
@@ -190,7 +191,8 @@ export class RouterService {
         this.logger.warn('All free models failed in streaming, attempting fallback to paid model');
 
         try {
-          const fallbackProviderName = request.fallback_provider ?? this.config.routing.fallback.provider;
+          const fallbackProviderName =
+            request.fallback_provider ?? this.config.routing.fallback.provider;
           const fallbackModelName = request.fallback_model ?? this.config.routing.fallback.model;
 
           const fallbackProvider = this.providersMap.get(fallbackProviderName);
@@ -264,7 +266,8 @@ export class RouterService {
     let attemptCount = 0;
 
     const parsedModel = parseModelInput(request.model);
-    const maxModelSwitches = routingOverrides?.maxModelSwitches ?? this.config.routing.maxModelSwitches;
+    const maxModelSwitches =
+      routingOverrides?.maxModelSwitches ?? this.config.routing.maxModelSwitches;
 
     for (let i = 0; i < maxModelSwitches; i++) {
       attemptCount++;
@@ -380,9 +383,7 @@ export class RouterService {
     const fallbackProviderName = request.fallback_provider ?? this.config.routing.fallback.provider;
     const fallbackModelName = request.fallback_model ?? this.config.routing.fallback.model;
 
-    this.logger.debug(
-      `Executing fallback: ${fallbackProviderName}/${fallbackModelName}`,
-    );
+    this.logger.debug(`Executing fallback: ${fallbackProviderName}/${fallbackModelName}`);
 
     const fallbackProvider = this.providersMap.get(fallbackProviderName);
     if (!fallbackProvider) {
@@ -483,13 +484,11 @@ export class RouterService {
 
     // Validate vision capability if request contains images
     if (needsVision && model && !model.supportsVision) {
-      this.logger.warn(
-        `Model ${model.name} does not support vision, but request contains images`,
-      );
+      this.logger.warn(`Model ${model.name} does not support vision, but request contains images`);
       throw new Error(
         `Selected model '${model.name}' does not support image analysis. ` +
-        `Please use a vision-capable model (e.g., gemini-2.0-flash-exp, nemotron-nano-12b-v2-vl) ` +
-        `or filter by tag 'vision'`,
+          `Please use a vision-capable model (e.g., gemini-2.0-flash-exp, nemotron-nano-12b-v2-vl) ` +
+          `or filter by tag 'vision'`,
       );
     }
 
@@ -583,7 +582,8 @@ export class RouterService {
         fallbackUsed: true,
       });
     } catch (error) {
-      const fallbackProviderName = request.fallback_provider ?? this.config.routing.fallback.provider;
+      const fallbackProviderName =
+        request.fallback_provider ?? this.config.routing.fallback.provider;
       const fallbackModelName = request.fallback_model ?? this.config.routing.fallback.model;
       const fallbackError = ErrorExtractor.extractErrorInfo(error, {
         name: fallbackModelName,

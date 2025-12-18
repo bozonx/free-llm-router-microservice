@@ -215,7 +215,6 @@ models:
     type: reasoning
     contextSize: 64000
     maxOutputTokens: 8000
-    speedTier: slow
     tags: [reasoning, code, math]
     jsonResponse: true
     available: true
@@ -226,7 +225,6 @@ models:
     type: fast
     contextSize: 128000
     maxOutputTokens: 4096
-    speedTier: fast
     tags: [general, code]
     jsonResponse: true
     available: true
@@ -246,7 +244,6 @@ models:
 | `type` | enum | fast / reasoning |
 | `contextSize` | number | Размер контекста в токенах |
 | `maxOutputTokens` | number | Максимум токенов в ответе |
-| `speedTier` | enum | fast / medium / slow |
 | `tags` | string[] | Теги для фильтрации |
 | `jsonResponse` | boolean | Поддержка JSON mode |
 | `available` | boolean | Доступна ли модель |

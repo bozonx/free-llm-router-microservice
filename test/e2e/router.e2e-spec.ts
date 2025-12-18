@@ -41,7 +41,6 @@ describe('Router (e2e)', () => {
 
       expect(firstModel).toHaveProperty('model');
       expect(firstModel).toHaveProperty('maxOutputTokens');
-      expect(firstModel).toHaveProperty('speedTier');
       expect(firstModel).toHaveProperty('jsonResponse');
 
       expect(['fast', 'reasoning']).toContain(firstModel.type);

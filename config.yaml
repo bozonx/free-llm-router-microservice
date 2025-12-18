@@ -59,7 +59,6 @@ routing:
 #   - tags: Tags for filtering
 #   - contextSize: Context window size in tokens
 #   - maxOutputTokens: Maximum output tokens
-#   - speedTier: Speed category ('fast' | 'medium' | 'slow')
 #   - available: Enable/disable model (true/false)
 #   - available: Enable/disable model (true/false)
 # modelOverrides:
@@ -69,7 +68,6 @@ routing:
 #     provider: deepseek      # Optional: validate provider match
 #     weight: 15              # Increase selection probability
 #     available: false        # Temporarily disable model
-#     speedTier: slow         # Override speed tier
 #   - name: qwen-2.5-72b
 #     tags: [code, reasoning] # Override tags for filtering
 #     contextSize: 32000      # Override context size

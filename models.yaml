@@ -5,7 +5,6 @@ models:
     type: fast
     contextSize: 262144
     maxOutputTokens: 4096
-    speedTier: fast
     tags:
       - general
     jsonResponse: true
@@ -17,7 +16,6 @@ models:
     type: fast
     contextSize: 131072
     maxOutputTokens: 163840
-    speedTier: fast
     tags:
       - general
     jsonResponse: true
@@ -29,7 +27,6 @@ models:
     type: fast
     contextSize: 1000000
     maxOutputTokens: 65535
-    speedTier: fast
     tags:
       - general
     jsonResponse: true
@@ -41,7 +38,6 @@ models:
     type: fast
     contextSize: 131072
     maxOutputTokens: 4096
-    speedTier: fast
     tags:
       - general
     jsonResponse: true
@@ -53,7 +49,6 @@ models:
     type: fast
     contextSize: 163840
     maxOutputTokens: 163840
-    speedTier: fast
     tags:
       - general
     jsonResponse: true
@@ -65,7 +60,6 @@ models:
     type: fast
     contextSize: 65536
     maxOutputTokens: 65536
-    speedTier: fast
     tags:
       - general
     jsonResponse: true
@@ -77,7 +71,6 @@ models:
     type: fast
     contextSize: 256000
     maxOutputTokens: 32768
-    speedTier: fast
     tags:
       - general
       - code
@@ -90,7 +83,6 @@ models:
     type: fast
     contextSize: 128000
     maxOutputTokens: 128000
-    speedTier: fast
     tags:
       - general
       - vision
@@ -104,7 +96,6 @@ models:
     type: fast
     contextSize: 131072
     maxOutputTokens: 131072
-    speedTier: fast
     tags:
       - general
     jsonResponse: true
@@ -116,7 +107,6 @@ models:
     type: fast
     contextSize: 128000
     maxOutputTokens: 4096
-    speedTier: fast
     tags:
       - general
     jsonResponse: true
@@ -128,7 +118,6 @@ models:
     type: fast
     contextSize: 131072
     maxOutputTokens: 4096
-    speedTier: fast
     tags:
       - general
     jsonResponse: true
@@ -140,7 +129,6 @@ models:
     type: fast
     contextSize: 131072
     maxOutputTokens: 128000
-    speedTier: fast
     tags:
       - general
     jsonResponse: true
@@ -152,7 +140,6 @@ models:
     type: fast
     contextSize: 131072
     maxOutputTokens: 131072
-    speedTier: fast
     tags:
       - general
     jsonResponse: true
@@ -164,7 +151,6 @@ models:
     type: fast
     contextSize: 262000
     maxOutputTokens: 262000
-    speedTier: fast
     tags:
       - general
       - code
@@ -177,7 +163,6 @@ models:
     type: fast
     contextSize: 32768
     maxOutputTokens: 4096
-    speedTier: fast
     tags:
       - general
     jsonResponse: true
@@ -189,7 +174,6 @@ models:
     type: fast
     contextSize: 32768
     maxOutputTokens: 4096
-    speedTier: fast
     tags:
       - general
     jsonResponse: true
@@ -201,7 +185,6 @@ models:
     type: fast
     contextSize: 8192
     maxOutputTokens: 2048
-    speedTier: fast
     tags:
       - general
     jsonResponse: true
@@ -213,7 +196,6 @@ models:
     type: reasoning
     contextSize: 163840
     maxOutputTokens: 4096
-    speedTier: fast
     tags:
       - general
       - reasoning
@@ -226,7 +208,6 @@ models:
     type: fast
     contextSize: 8192
     maxOutputTokens: 2048
-    speedTier: fast
     tags:
       - general
     jsonResponse: true
@@ -238,7 +219,6 @@ models:
     type: fast
     contextSize: 40960
     maxOutputTokens: 4096
-    speedTier: fast
     tags:
       - general
     jsonResponse: true
@@ -250,7 +230,6 @@ models:
     type: fast
     contextSize: 262144
     maxOutputTokens: 4096
-    speedTier: fast
     tags:
       - general
     jsonResponse: true
@@ -262,7 +241,6 @@ models:
     type: fast
     contextSize: 131072
     maxOutputTokens: 4096
-    speedTier: fast
     tags:
       - general
     jsonResponse: true
@@ -274,7 +252,6 @@ models:
     type: reasoning
     contextSize: 163840
     maxOutputTokens: 4096
-    speedTier: fast
     tags:
       - general
       - reasoning
@@ -287,7 +264,6 @@ models:
     type: fast
     contextSize: 128000
     maxOutputTokens: 4096
-    speedTier: fast
     tags:
       - general
     jsonResponse: true
@@ -299,7 +275,6 @@ models:
     type: fast
     contextSize: 32768
     maxOutputTokens: 8192
-    speedTier: fast
     tags:
       - general
     jsonResponse: true
@@ -311,7 +286,6 @@ models:
     type: fast
     contextSize: 32768
     maxOutputTokens: 8192
-    speedTier: fast
     tags:
       - general
     jsonResponse: true
@@ -323,7 +297,6 @@ models:
     type: fast
     contextSize: 131072
     maxOutputTokens: 4096
-    speedTier: fast
     tags:
       - general
     jsonResponse: true
@@ -335,7 +308,6 @@ models:
     type: fast
     contextSize: 1048576
     maxOutputTokens: 8192
-    speedTier: fast
     tags:
       - general
       - vision
@@ -349,7 +321,6 @@ models:
     type: fast
     contextSize: 131072
     maxOutputTokens: 4096
-    speedTier: fast
     tags:
       - general
     jsonResponse: true
@@ -361,7 +332,6 @@ models:
     type: fast
     contextSize: 131072
     maxOutputTokens: 4096
-    speedTier: fast
     tags:
       - general
     jsonResponse: true
@@ -373,7 +343,6 @@ models:
     type: fast
     contextSize: 131072
     maxOutputTokens: 4096
-    speedTier: fast
     tags:
       - general
     jsonResponse: true
@@ -385,7 +354,6 @@ models:
     type: fast
     contextSize: 32768
     maxOutputTokens: 16384
-    speedTier: fast
     tags:
       - general
     jsonResponse: true
@@ -397,7 +365,6 @@ models:
     type: fast
     contextSize: 64000
     maxOutputTokens: 8000
-    speedTier: fast
     tags:
       - general
       - code

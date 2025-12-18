@@ -9,9 +9,7 @@ export class RequestBuilderService {
    */
   public hasImageContent(messages: ChatCompletionRequestDto['messages']): boolean {
     return messages.some(
-      (msg) =>
-        Array.isArray(msg.content) &&
-        msg.content.some((part) => part.type === 'image_url'),
+      msg => Array.isArray(msg.content) && msg.content.some(part => part.type === 'image_url'),
     );
   }
 

@@ -4,7 +4,6 @@ import type { Tool, ToolCall, ToolChoice } from './tools.interface.js';
  * Chat message structure
  */
 export interface ChatMessage {
-
   /**
    * Message role
    */
@@ -13,7 +12,10 @@ export interface ChatMessage {
   /**
    * Message content
    */
-  content: string | Array<{ type: string; text?: string; image_url?: { url: string; detail?: string } }> | null;
+  content:
+    | string
+    | Array<{ type: string; text?: string; image_url?: { url: string; detail?: string } }>
+    | null;
 
   /**
    * Optional message name (for function/tool messages)

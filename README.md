@@ -129,7 +129,6 @@ models:
     type: reasoning
     contextSize: 64000
     maxOutputTokens: 8000
-    speedTier: slow
     tags: [reasoning, code, math]
     jsonResponse: true
     available: true

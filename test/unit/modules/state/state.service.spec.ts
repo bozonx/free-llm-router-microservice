@@ -17,7 +17,6 @@ describe('StateService', () => {
       type: 'fast',
       contextSize: 128000,
       maxOutputTokens: 4096,
-      speedTier: 'fast',
       tags: ['general'],
       jsonResponse: true,
       available: true,
@@ -29,7 +28,6 @@ describe('StateService', () => {
       type: 'reasoning',
       contextSize: 64000,
       maxOutputTokens: 8192,
-      speedTier: 'medium',
       tags: ['code'],
       jsonResponse: false,
       available: true,
@@ -79,7 +77,6 @@ describe('StateService', () => {
       expect(state.circuitState).toBe('CLOSED');
       expect(state.consecutiveFailures).toBe(0);
       expect(state.consecutiveSuccesses).toBe(0);
-      expect(state.activeRequests).toBe(0);
     });
   });
 
@@ -151,28 +148,6 @@ describe('StateService', () => {
       const state = service.getState('test-model-1');
       expect(state.circuitState).toBe('PERMANENTLY_UNAVAILABLE');
       expect(state.unavailableReason).toBe('404 Not Found');
-    });
-  });
-
-  describe('activeRequests', () => {
-    it('should increment active requests', () => {
-      service.incrementActiveRequests('test-model-1');
-      const state = service.getState('test-model-1');
-      expect(state.activeRequests).toBe(1);
-    });
-
-    it('should decrement active requests', () => {
-      service.incrementActiveRequests('test-model-1');
-      service.incrementActiveRequests('test-model-1');
-      service.decrementActiveRequests('test-model-1');
-      const state = service.getState('test-model-1');
-      expect(state.activeRequests).toBe(1);
-    });
-
-    it('should not go below zero', () => {
-      service.decrementActiveRequests('test-model-1');
-      const state = service.getState('test-model-1');
-      expect(state.activeRequests).toBe(0);
     });
   });
 

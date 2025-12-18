@@ -29,7 +29,7 @@ export class SmartStrategy implements SelectionStrategy {
     private readonly stateService: StateService,
     private readonly circuitBreaker: CircuitBreakerService,
     @Inject(ROUTER_CONFIG) private readonly config: RouterConfig,
-  ) { }
+  ) {}
 
   public select(models: ModelDefinition[], criteria: SelectionCriteria): ModelDefinition | null {
     if (models.length === 0) {
@@ -85,8 +85,6 @@ export class SmartStrategy implements SelectionStrategy {
       excludeModels.includes(`${model.provider}/${model.name}`)
     );
   }
-
-
 
   private filterBySuccessRate(models: ModelDefinition[], minRate: number): ModelDefinition[] {
     return models.filter(model => this.meetsSuccessRateThreshold(model, minRate));

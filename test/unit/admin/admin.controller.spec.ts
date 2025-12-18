@@ -104,7 +104,6 @@ describe('AdminController', () => {
         {
           name: 'model1',
           circuitState: 'CLOSED',
-          activeRequests: 2,
           stats: {
             totalRequests: 100,
             successCount: 90,
@@ -115,7 +114,6 @@ describe('AdminController', () => {
         {
           name: 'model2',
           circuitState: 'OPEN',
-          activeRequests: 0,
           stats: {
             totalRequests: 50,
             successCount: 0,
@@ -140,7 +138,6 @@ describe('AdminController', () => {
         modelsAvailable: 1,
         modelsInOpenState: 1,
         modelsPermanentlyUnavailable: 0,
-        activeConnections: 2,
       });
     });
   });

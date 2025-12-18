@@ -12,4 +12,4 @@ import { routerConfigProvider } from '../../config/router-config.provider.js';
   providers: [routerConfigProvider, RateLimiterService],
   exports: [RateLimiterService],
 })
-export class RateLimiterModule { }
+export class RateLimiterModule {}

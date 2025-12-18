@@ -58,7 +58,7 @@ describe('RateLimiterService', () => {
       const module: TestingModule = await Test.createTestingModule({
         providers: [
           RateLimiterService,
-          { provide: ROUTER_CONFIG, useValue: createMockConfig(REQUESTS_PER_MINUTE) }
+          { provide: ROUTER_CONFIG, useValue: createMockConfig(REQUESTS_PER_MINUTE) },
         ],
       }).compile();
 

@@ -133,12 +133,10 @@ export interface ModelInfo {
   type: 'fast' | 'reasoning';
   contextSize: number;
   maxOutputTokens: number;
-  speedTier: 'fast' | 'medium' | 'slow';
   tags: string[];
   jsonResponse: boolean;
   available: boolean;
   weight?: number;
-
 }
 
 /**

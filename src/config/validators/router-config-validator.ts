@@ -101,15 +101,8 @@ export class RouterConfigValidator extends BaseValidator<RouterConfig> {
       this.assertNumber(override.maxOutputTokens, `${path}.maxOutputTokens`);
     }
 
-    if (override.speedTier !== undefined) {
-      this.assertString(override.speedTier, `${path}.speedTier`);
-    }
-
     if (override.available !== undefined) {
       this.assertBoolean(override.available, `${path}.available`);
     }
-
-
   }
 }
-

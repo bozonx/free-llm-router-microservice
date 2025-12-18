@@ -134,18 +134,20 @@ export interface ModelOverrideConfig {
   maxOutputTokens?: number;
 
   /**
-   * Override speed tier
-   */
-  speedTier?: 'fast' | 'medium' | 'slow';
-
-  /**
    * Override availability
    */
   available?: boolean;
 
+  /**
+   * Override JSON response support
+   */
+  jsonResponse?: boolean;
 
+  /**
+   * Override vision support
+   */
+  supportsVision?: boolean;
 }
-
 
 /**
  * Router configuration

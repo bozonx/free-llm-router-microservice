@@ -4,11 +4,6 @@
 export type ModelType = 'fast' | 'reasoning';
 
 /**
- * Model speed tier classification
- */
-export type ModelSpeedTier = 'fast' | 'medium' | 'slow';
-
-/**
  * LLM model definition
  */
 export interface ModelDefinition {
@@ -43,11 +38,6 @@ export interface ModelDefinition {
   maxOutputTokens: number;
 
   /**
-   * Model speed tier category
-   */
-  speedTier: ModelSpeedTier;
-
-  /**
    * Tags for filtering
    */
   tags: string[];
@@ -68,8 +58,6 @@ export interface ModelDefinition {
    * Default: 1
    */
   weight?: number;
-
-
 
   /**
    * Vision support (multimodal - text + images)

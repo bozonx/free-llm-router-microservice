@@ -1,10 +1,7 @@
 import { Injectable, OnModuleDestroy, Inject, Logger } from '@nestjs/common';
 import { ROUTER_CONFIG } from '../../config/router-config.provider.js';
 import type { RouterConfig } from '../../config/router-config.interface.js';
-import type {
-  RateLimitStatus,
-  TokenBucket,
-} from './interfaces/rate-limiter.interface.js';
+import type { RateLimitStatus, TokenBucket } from './interfaces/rate-limiter.interface.js';
 import {
   STALE_BUCKET_THRESHOLD_MS,
   RATE_LIMITER_CLEANUP_INTERVAL_MS,

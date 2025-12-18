@@ -1,4 +1,3 @@
-
 /**
  * Token Bucket state for a limiter
  */

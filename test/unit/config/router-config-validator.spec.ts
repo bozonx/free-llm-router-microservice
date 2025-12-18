@@ -92,7 +92,9 @@ describe('RouterConfigValidator', () => {
         ...createValidConfig(),
         modelRequestsPerMinute: -5,
       };
-      expect(() => validator.validate(config)).toThrow('must be a positive number');
+      expect(() => validator.validate(config)).toThrow(
+        'RouterConfig.modelRequestsPerMinute must be >= 1',
+      );
     });
 
     it('should validate config with missing baseUrl', () => {

@@ -47,7 +47,7 @@ export function loadRouterConfig(): RouterConfig {
     }
     validateRouterConfig(config);
 
-    return config as RouterConfig;
+    return config;
   }
 
   throw new Error('Router configuration must be a valid YAML object');

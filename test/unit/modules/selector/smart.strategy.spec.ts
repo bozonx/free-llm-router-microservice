@@ -20,7 +20,6 @@ describe('SmartStrategy', () => {
       type: 'fast',
       contextSize: 128000,
       maxOutputTokens: 4096,
-      speedTier: 'fast',
       tags: ['general'],
       jsonResponse: true,
       available: true,
@@ -33,7 +32,6 @@ describe('SmartStrategy', () => {
       type: 'reasoning',
       contextSize: 64000,
       maxOutputTokens: 8192,
-      speedTier: 'medium',
       tags: ['code'],
       jsonResponse: false,
       available: true,
@@ -46,7 +44,6 @@ describe('SmartStrategy', () => {
       type: 'fast',
       contextSize: 32000,
       maxOutputTokens: 4096,
-      speedTier: 'fast',
       tags: ['general'],
       jsonResponse: true,
       available: true,
@@ -80,7 +77,6 @@ describe('SmartStrategy', () => {
     circuitState: 'CLOSED' as const,
     consecutiveFailures: 0,
     consecutiveSuccesses: 0,
-    activeRequests: 0,
     stats: {
       totalRequests: 0,
       successCount: 0,
@@ -143,20 +139,6 @@ describe('SmartStrategy', () => {
 
       expect(circuitBreaker.filterAvailable).toHaveBeenCalled();
       expect(result?.name).toBe('model-low-weight');
-    });
-
-    it('should filter by maxConcurrent capacity', () => {
-      stateService.getState.mockImplementation((name: string) => {
-        if (name === 'model-with-max-concurrent') {
-          return createMockState({ name, activeRequests: 2 });
-        }
-        return createMockState({ name });
-      });
-
-      const result = strategy.select(mockModels, {});
-
-      // model-with-max-concurrent should be filtered out (2 >= 2)
-      expect(result?.name).not.toBe('model-with-max-concurrent');
     });
 
     it('should filter by minSuccessRate', () => {

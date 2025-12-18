@@ -40,7 +40,6 @@ export interface ModelDefinition {
   type: ModelType;
   contextSize: number;
   maxOutputTokens: number;
-  speedTier: ModelSpeedTier;
   tags: string[];
   jsonResponse: boolean;
   available: boolean;

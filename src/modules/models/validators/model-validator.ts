@@ -7,7 +7,6 @@ export class ModelValidationError extends Error {
 
 export class ModelValidator {
   private static readonly VALID_TYPES = ['fast', 'reasoning'] as const;
-  private static readonly VALID_SPEED_TIERS = ['fast', 'medium', 'slow'] as const;
 
   public static validateRequired(model: Record<string, unknown>): void {
     this.assertString(model.name, 'name');
@@ -16,7 +15,6 @@ export class ModelValidator {
     this.assertEnum(model.type, this.VALID_TYPES, 'type');
     this.assertPositiveNumber(model.contextSize, 'contextSize');
     this.assertPositiveNumber(model.maxOutputTokens, 'maxOutputTokens');
-    this.assertEnum(model.speedTier, this.VALID_SPEED_TIERS, 'speedTier');
     this.assertArray(model.tags, 'tags');
     this.assertBoolean(model.jsonResponse, 'jsonResponse');
     this.assertBoolean(model.available, 'available');
@@ -26,8 +24,6 @@ export class ModelValidator {
     if (model.weight !== undefined) {
       this.assertNumberInRange(model.weight, 1, 100, 'weight');
     }
-
-
   }
 
   private static assertString(value: unknown, fieldName: string): asserts value is string {

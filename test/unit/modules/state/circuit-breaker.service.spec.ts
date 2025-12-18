@@ -19,7 +19,6 @@ describe('CircuitBreakerService', () => {
       type: 'fast',
       contextSize: 128000,
       maxOutputTokens: 4096,
-      speedTier: 'fast',
       tags: ['general'],
       jsonResponse: true,
       available: true,

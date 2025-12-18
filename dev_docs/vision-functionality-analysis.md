@@ -448,7 +448,6 @@ public url!: string;
   type: fast
   contextSize: 1048576
   maxOutputTokens: 8192
-  speedTier: fast
   tags:
     - general
     - vision  # ✅ ДОБАВИТЬ
@@ -463,7 +462,6 @@ public url!: string;
   type: fast
   contextSize: 128000
   maxOutputTokens: 128000
-  speedTier: fast
   tags:
     - general
     - vision  # ✅ ДОБАВИТЬ
@@ -483,7 +481,6 @@ export interface ModelDefinition {
   type: 'fast' | 'reasoning';
   contextSize: number;
   maxOutputTokens?: number;
-  speedTier?: 'fast' | 'slow';
   tags?: string[];
   jsonResponse?: boolean;
   available: boolean;

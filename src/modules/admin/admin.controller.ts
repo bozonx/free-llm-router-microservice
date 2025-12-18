@@ -13,7 +13,7 @@ export class AdminController {
     private readonly stateService: StateService,
     private readonly rateLimiterService: RateLimiterService,
     private readonly modelsService: ModelsService,
-  ) { }
+  ) {}
 
   /**
    * Get current state of all models.
@@ -22,7 +22,7 @@ export class AdminController {
   @Get('state')
   public getStates() {
     const states = this.stateService.getAllStates();
-    const models = states.map((state) => {
+    const models = states.map(state => {
       const modelDef = this.modelsService.findByName(state.name);
       // Capitalize provider name for better display
       const provider = modelDef?.provider
@@ -75,7 +75,6 @@ export class AdminController {
     const successfulRequests = states.reduce((sum, s) => sum + s.stats.successCount, 0);
     const failedRequests = states.reduce((sum, s) => sum + s.stats.errorCount, 0);
 
-
     // Weighted Average Latency calculation:
     // We weigh the average latency of each model by its number of successful requests.
     // This gives a more accurate global average latency metric.
@@ -110,7 +109,6 @@ export class AdminController {
       modelsAvailable,
       modelsInOpenState,
       modelsPermanentlyUnavailable,
-
     };
   }
 
