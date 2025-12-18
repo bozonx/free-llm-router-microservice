@@ -201,6 +201,34 @@ export class FreeLlmRouter implements INodeType {
                         description: 'Minimum success rate for model selection (0-1)',
                     },
                     {
+                        displayName: 'Filter: Supports Image',
+                        name: 'filterSupportsImage',
+                        type: 'boolean',
+                        default: false,
+                        description: 'Whether to require models that support image input',
+                    },
+                    {
+                        displayName: 'Filter: Supports Video',
+                        name: 'filterSupportsVideo',
+                        type: 'boolean',
+                        default: false,
+                        description: 'Whether to require models that support video input',
+                    },
+                    {
+                        displayName: 'Filter: Supports Audio',
+                        name: 'filterSupportsAudio',
+                        type: 'boolean',
+                        default: false,
+                        description: 'Whether to require models that support audio input',
+                    },
+                    {
+                        displayName: 'Filter: Supports File',
+                        name: 'filterSupportsFile',
+                        type: 'boolean',
+                        default: false,
+                        description: 'Whether to require models that support file input',
+                    },
+                    {
                         displayName: 'Routing: Provider Timeout (seconds)',
                         name: 'timeout',
                         type: 'number',
@@ -274,6 +302,10 @@ export class FreeLlmRouter implements INodeType {
             filterMinContextSize?: number;
             filterPreferLowestLatency?: boolean;
             filterMinSuccessRate?: number;
+            filterSupportsImage?: boolean;
+            filterSupportsVideo?: boolean;
+            filterSupportsAudio?: boolean;
+            filterSupportsFile?: boolean;
             maxModelSwitches?: number;
             maxSameModelRetries?: number;
             retryDelay?: number;
@@ -329,6 +361,18 @@ export class FreeLlmRouter implements INodeType {
         }
         if (options.filterMinSuccessRate !== undefined && options.filterMinSuccessRate > 0) {
             modelKwargs.min_success_rate = options.filterMinSuccessRate;
+        }
+        if (options.filterSupportsImage) {
+            modelKwargs.supports_image = true;
+        }
+        if (options.filterSupportsVideo) {
+            modelKwargs.supports_video = true;
+        }
+        if (options.filterSupportsAudio) {
+            modelKwargs.supports_audio = true;
+        }
+        if (options.filterSupportsFile) {
+            modelKwargs.supports_file = true;
         }
         if (options.maxModelSwitches !== undefined && options.maxModelSwitches > 0) {
             modelKwargs.max_model_switches = options.maxModelSwitches;
