@@ -6,11 +6,11 @@
 
 - **Файл**: `config.yaml`
     - Удалить секцию `rateLimiting`.
-    - Добавить параметр верхнего уровня `modelRequestsPerMinute` (число, опционально, по умолчанию можно не задавать или задать дефолт).
+    - Добавить параметр верхнего уровня `modelRequestsPerMinute` (число, опционально, default: 100).
     - Пример нового формата:
       ```yaml
       # Model rate limiting
-      modelRequestsPerMinute: 30
+      modelRequestsPerMinute: 100
       ```
 
 - **Файл**: `src/config/router-config.interface.ts`

@@ -20,8 +20,13 @@ export function loadRouterConfig(): RouterConfig {
   const config = parseYamlConfig(substitutedContent, absolutePath);
 
   // Set default models file if not specified
-  if (config && typeof config === 'object' && !('modelsFile' in config)) {
-    (config as Record<string, unknown>)['modelsFile'] = './models.yaml';
+  if (config && typeof config === 'object') {
+    if (!('modelsFile' in config)) {
+      (config as Record<string, unknown>)['modelsFile'] = './models.yaml';
+    }
+    if (!('modelRequestsPerMinute' in config)) {
+      (config as Record<string, unknown>)['modelRequestsPerMinute'] = 100;
+    }
   }
 
   validateRouterConfig(config);

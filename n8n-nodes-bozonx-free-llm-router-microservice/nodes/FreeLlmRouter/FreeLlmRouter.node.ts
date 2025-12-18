@@ -206,6 +206,39 @@ export class FreeLlmRouter implements INodeType {
                         default: 0,
                         description: 'Minimum success rate for model selection (0-1)',
                     },
+                    {
+                        displayName: 'Max Model Switches',
+                        name: 'maxModelSwitches',
+                        type: 'number',
+                        typeOptions: {
+                            minValue: 1,
+                        },
+                        default: undefined,
+                        placeholder: '3 (from config)',
+                        description: 'Maximum number of model switches (trying different models) for this request. Overrides microservice config value if set.',
+                    },
+                    {
+                        displayName: 'Max Same Model Retries',
+                        name: 'maxSameModelRetries',
+                        type: 'number',
+                        typeOptions: {
+                            minValue: 0,
+                        },
+                        default: undefined,
+                        placeholder: '2 (from config)',
+                        description: 'Maximum retries on the same model for temporary errors (429, network errors) for this request. Overrides microservice config value if set.',
+                    },
+                    {
+                        displayName: 'Retry Delay (ms)',
+                        name: 'retryDelay',
+                        type: 'number',
+                        typeOptions: {
+                            minValue: 0,
+                        },
+                        default: undefined,
+                        placeholder: '1000 (from config)',
+                        description: 'Delay between retries in milliseconds for this request. Overrides microservice config value if set.',
+                    },
                 ],
             },
         ],
@@ -224,6 +257,9 @@ export class FreeLlmRouter implements INodeType {
             filterMinContextSize?: number;
             filterPreferFast?: boolean;
             filterMinSuccessRate?: number;
+            maxModelSwitches?: number;
+            maxSameModelRetries?: number;
+            retryDelay?: number;
         };
 
         const temperature = options.temperature ?? 0.7;
@@ -275,6 +311,15 @@ export class FreeLlmRouter implements INodeType {
         }
         if (options.filterMinSuccessRate !== undefined && options.filterMinSuccessRate > 0) {
             modelKwargs.min_success_rate = options.filterMinSuccessRate;
+        }
+        if (options.maxModelSwitches !== undefined && options.maxModelSwitches > 0) {
+            modelKwargs.max_model_switches = options.maxModelSwitches;
+        }
+        if (options.maxSameModelRetries !== undefined && options.maxSameModelRetries >= 0) {
+            modelKwargs.max_same_model_retries = options.maxSameModelRetries;
+        }
+        if (options.retryDelay !== undefined && options.retryDelay >= 0) {
+            modelKwargs.retry_delay = options.retryDelay;
         }
 
         // Create model instance

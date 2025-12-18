@@ -56,7 +56,16 @@ export class RouterService {
     this.shutdownService.registerRequest();
 
     try {
-      return await this.executeWithShutdownHandling(request, clientSignal);
+      // Use per-request overrides or fall back to config
+      const maxModelSwitches = request.max_model_switches ?? this.config.routing.maxModelSwitches;
+      const maxSameModelRetries = request.max_same_model_retries ?? this.config.routing.maxSameModelRetries;
+      const retryDelay = request.retry_delay ?? this.config.routing.retryDelay;
+
+      return await this.executeWithShutdownHandling(request, clientSignal, {
+        maxModelSwitches,
+        maxSameModelRetries,
+        retryDelay,
+      });
     } finally {
       // Always unregister request when done
       this.shutdownService.unregisterRequest();
@@ -75,6 +84,11 @@ export class RouterService {
     this.shutdownService.registerRequest();
 
     try {
+      // Use per-request overrides or fall back to config
+      const maxModelSwitches = request.max_model_switches ?? this.config.routing.maxModelSwitches;
+      const maxSameModelRetries = request.max_same_model_retries ?? this.config.routing.maxSameModelRetries;
+      const retryDelay = request.retry_delay ?? this.config.routing.retryDelay;
+
       // Combine client signal with shutdown signal
       const abortSignal = this.createCombinedAbortSignal(clientSignal);
       const parsedModel = parseModelInput(request.model);
@@ -83,7 +97,7 @@ export class RouterService {
       let isFirstChunk = true;
 
       // Try up to maxModelSwitches models
-      for (let i = 0; i < this.config.routing.maxModelSwitches; i++) {
+      for (let i = 0; i < maxModelSwitches; i++) {
         attemptCount++;
 
         const model = this.selectModel(request, parsedModel, excludedModels);
@@ -234,6 +248,11 @@ export class RouterService {
   private async executeWithShutdownHandling(
     request: ChatCompletionRequestDto,
     clientSignal?: AbortSignal,
+    routingOverrides?: {
+      maxModelSwitches: number;
+      maxSameModelRetries: number;
+      retryDelay: number;
+    },
   ): Promise<ChatCompletionResponseDto> {
     // Combine client signal with shutdown signal to handle both cases
     const abortSignal = this.createCombinedAbortSignal(clientSignal);
@@ -242,8 +261,9 @@ export class RouterService {
     let attemptCount = 0;
 
     const parsedModel = parseModelInput(request.model);
+    const maxModelSwitches = routingOverrides?.maxModelSwitches ?? this.config.routing.maxModelSwitches;
 
-    for (let i = 0; i < this.config.routing.maxModelSwitches; i++) {
+    for (let i = 0; i < maxModelSwitches; i++) {
       attemptCount++;
 
       const model = this.selectModel(request, parsedModel, excludedModels);
@@ -259,6 +279,8 @@ export class RouterService {
           model,
           request,
           abortSignal,
+          maxSameModelRetries: routingOverrides?.maxSameModelRetries,
+          retryDelay: routingOverrides?.retryDelay,
         });
 
         this.logger.debug(
@@ -315,16 +337,21 @@ export class RouterService {
     model: ModelDefinition;
     request: ChatCompletionRequestDto;
     abortSignal: AbortSignal;
+    maxSameModelRetries?: number;
+    retryDelay?: number;
   }): Promise<ChatCompletionResult> {
-    const { model, request, abortSignal } = params;
+    const { model, request, abortSignal, maxSameModelRetries, retryDelay } = params;
 
     this.stateService.incrementActiveRequests(model.name);
+
+    const effectiveMaxRetries = maxSameModelRetries ?? this.config.routing.maxSameModelRetries;
+    const effectiveRetryDelay = retryDelay ?? this.config.routing.retryDelay;
 
     try {
       return await this.retryHandler.executeWithRetry({
         operation: async () => this.executeSingleRequest(model, request, abortSignal),
-        maxRetries: this.config.routing.maxSameModelRetries,
-        retryDelay: this.config.routing.retryDelay,
+        maxRetries: effectiveMaxRetries,
+        retryDelay: effectiveRetryDelay,
         shouldRetry: error => {
           const errorInfo = ErrorExtractor.extractErrorInfo(error, model);
           // Retry on rate limit (429) or retryable network errors (ENETUNREACH, ECONNRESET)
@@ -337,7 +364,7 @@ export class RouterService {
           const isNetworkError = ErrorExtractor.isRetryableNetworkError(error);
           const errorType = isNetworkError ? 'Network error' : 'Rate limit';
           this.logger.debug(
-            `${errorType} for ${model.name}, retrying (attempt ${attempt}/${this.config.routing.maxSameModelRetries})`,
+            `${errorType} for ${model.name}, retrying (attempt ${attempt}/${effectiveMaxRetries})`,
           );
         },
       });

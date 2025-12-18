@@ -233,4 +233,32 @@ export class ChatCompletionRequestDto {
   @IsOptional()
   @IsBoolean()
   public supports_vision?: boolean;
+
+  // Routing behavior overrides (per-request)
+  /**
+   * Maximum number of model switches for this request
+   * Overrides config.routing.maxModelSwitches for this request only
+   */
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  public max_model_switches?: number;
+
+  /**
+   * Maximum retries on the same model for this request
+   * Overrides config.routing.maxSameModelRetries for this request only
+   */
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  public max_same_model_retries?: number;
+
+  /**
+   * Delay between retries in milliseconds for this request
+   * Overrides config.routing.retryDelay for this request only
+   */
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  public retry_delay?: number;
 }

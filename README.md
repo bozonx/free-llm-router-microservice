@@ -113,8 +113,8 @@ routing:
 #   statsWindowSizeMins: 10   # Окно статистики, мин (default: 10)
 
 # Global model rate limit (protection against skew)
-# Max requests per minute per model. Optional.
-modelRequestsPerMinute: 30
+# Max requests per minute per model. Default: 100.
+modelRequestsPerMinute: 100
 ```
 
 ### Список моделей
@@ -220,6 +220,11 @@ OpenAI-совместимый endpoint для chat completions.
     }
   ],
   "tool_choice": "auto",        // "auto", "none" или { "type": "function", "function": { "name": "..." } }
+  
+  // Routing behavior overrides (per-request)
+  "max_model_switches": 5,      // Override config.routing.maxModelSwitches for this request only
+  "max_same_model_retries": 3,  // Override config.routing.maxSameModelRetries for this request only
+  "retry_delay": 500,           // Override config.routing.retryDelay (ms) for this request only
   
   // Streaming
   "stream": false               // Enable Server-Sent Events streaming (default: false)

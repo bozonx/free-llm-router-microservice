@@ -76,5 +76,5 @@ routing:
 #     contextSize: 32000      # Override context size
 
 # Global model rate limit (protection against skew)
-# Max requests per minute per model. Optional.
-modelRequestsPerMinute: 30
+# Max requests per minute per model. Default: 100.
+modelRequestsPerMinute: 100
