@@ -36,6 +36,7 @@ models:
       - not-small
       - powerful
       - tier-1
+      - tier-1-2
     jsonResponse: true
     available: true
     weight: 3
@@ -49,6 +50,7 @@ models:
       - nemotron
       - small
       - stable
+      - tier-1-2
       - tier-2
       - vision
     jsonResponse: true
@@ -156,6 +158,7 @@ models:
       - glm
       - glm-4
       - latest
+      - tier-1-2
       - tier-2
     jsonResponse: true
     available: true

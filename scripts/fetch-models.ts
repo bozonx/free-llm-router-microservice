@@ -19,6 +19,8 @@ const USE_CASE_PATTERNS = {
     ROLEPLAY: /roleplay|rp|character|storytelling/,
     UNCENSORED: /dolphin|hermes|uncensored|noufani|unholy|wizard/,
     TRANSLATION: /translate|translation|multilingual/,
+    // Finance: reasoning models and strong analytical models (Tier 1-2)
+    FINANCE: /gpt-4|claude-3|gemini.*pro|llama-3\.(1|3).*70b|deepseek.*r1|qwen.*72b|qwen.*110b|command-r-plus/,
 } as const;
 
 // Tag Patterns - Language Support
@@ -381,6 +383,12 @@ function detectUseCaseTags(id: string, modelName: string): string[] {
         tags.push('translation');
     }
 
+    // Finance - models good for financial analysis, trading, market analysis
+    // Includes reasoning models and strong analytical capabilities
+    if (combined.match(USE_CASE_PATTERNS.FINANCE)) {
+        tags.push('finance');
+    }
+
     return tags;
 }
 
@@ -598,9 +606,15 @@ function generateTags(
 
     // Add tier tags based on weight
     const weight = determineWeight(id);
-    if (weight === TIER_1_WEIGHT) tags.push('tier-1');
-    else if (weight === TIER_2_WEIGHT) tags.push('tier-2');
-    else tags.push('tier-3');
+    if (weight === TIER_1_WEIGHT) {
+        tags.push('tier-1');
+        tags.push('tier-1-2');
+    } else if (weight === TIER_2_WEIGHT) {
+        tags.push('tier-2');
+        tags.push('tier-1-2');
+    } else {
+        tags.push('tier-3');
+    }
 
     // Add status tags
     tags.push(...detectStatusTags(id, modelName));

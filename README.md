@@ -174,6 +174,7 @@ mv models_updated.yaml models.yaml
 2. **Quality Tiers** (категории качества):
    - `tier-1` — флагманские топовые модели (GPT-4o, Claude 3.5 Sonnet, Gemini 1.5 Pro, Llama 3.3 70B+)
    - `tier-2` — сильные модели среднего уровня (Llama 3 8B, Mistral Nemo, Qwen 2.5 32B+, Mixtral)
+   - `tier-1-2` — модели первого и второго тиров вместе
    - `tier-3` — остальные модели
 
 3. **Use Cases** (сценарии использования):
@@ -182,6 +183,7 @@ mv models_updated.yaml models.yaml
    - `analysis` — модели для анализа данных и исследований
    - `chat` — модели, оптимизированные для диалогов
    - `agentic` — модели, отлично следующие сложным инструкциям
+   - `finance` — модели для финансового анализа, трейдинга и анализа рынка
 
 4. **Language Support** (языковая поддержка):
    - `best-for-ru`, `best-for-en`, `best-for-zh`, `best-for-es` и др. (всего более 20 языков)
