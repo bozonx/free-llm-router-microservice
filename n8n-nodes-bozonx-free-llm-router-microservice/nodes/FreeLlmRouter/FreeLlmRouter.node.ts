@@ -108,33 +108,6 @@ export class FreeLlmRouter implements INodeType {
                 default: {},
                 options: [
                     {
-                        displayName: 'Filter: Minimum Context Size',
-                        name: 'filterMinContextSize',
-                        type: 'number',
-                        default: 0,
-                        description: 'Minimum context window size required for model filtering',
-                    },
-                    {
-                        displayName: 'Filter: Prefer Fast',
-                        name: 'filterPreferFast',
-                        type: 'boolean',
-                        default: false,
-                        description: 'Whether to prefer models with lowest latency',
-                    },
-                    {
-                        displayName: 'Filter: Minimum Success Rate',
-                        name: 'filterMinSuccessRate',
-                        type: 'number',
-                        typeOptions: {
-                            numberPrecision: 2,
-                            minValue: 0,
-                            maxValue: 1,
-                            numberStepSize: 0.05,
-                        },
-                        default: 0,
-                        description: 'Minimum success rate for model selection (0-1)',
-                    },
-                    {
                         displayName: 'Temperature',
                         name: 'temperature',
                         type: 'number',
@@ -198,6 +171,33 @@ export class FreeLlmRouter implements INodeType {
                         default: 0,
                         description:
                             'Penalizes new tokens based on their presence. Positive values encourage new topics',
+                    },
+                    {
+                        displayName: 'Filter: Minimum Context Size',
+                        name: 'filterMinContextSize',
+                        type: 'number',
+                        default: 0,
+                        description: 'Minimum context window size required for model filtering',
+                    },
+                    {
+                        displayName: 'Filter: Prefer Fast',
+                        name: 'filterPreferFast',
+                        type: 'boolean',
+                        default: false,
+                        description: 'Whether to prefer models with lowest latency',
+                    },
+                    {
+                        displayName: 'Filter: Minimum Success Rate',
+                        name: 'filterMinSuccessRate',
+                        type: 'number',
+                        typeOptions: {
+                            numberPrecision: 2,
+                            minValue: 0,
+                            maxValue: 1,
+                            numberStepSize: 0.05,
+                        },
+                        default: 0,
+                        description: 'Minimum success rate for model selection (0-1)',
                     },
                     {
                         displayName: 'Routing: Provider Timeout (seconds)',
