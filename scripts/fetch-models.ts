@@ -41,14 +41,9 @@ interface FilteredModel {
 }
 
 /**
- * Determine weight based on model popularity and quality
+ * Determine weight - always returns 1 as requested
  */
 function determineWeight(id: string): number {
-    const lowerId = id.toLowerCase();
-    if (lowerId.includes('llama-3.3-70b')) return 10;
-    if (lowerId.includes('gemini-2.0-flash')) return 5;
-    if (lowerId.includes('r1')) return 5;
-    if (lowerId.includes('claude-3')) return 8;
     return 1;
 }
 
@@ -97,26 +92,86 @@ function detectUseCaseTags(id: string, modelName: string): string[] {
 }
 
 /**
- * Detect language support tags
- * Returns tags like 'best-for-ru', 'best-for-es', 'best-for-eo'
+ * Detect language support tags for 15 major European and Asian languages
+ * Returns tags like 'best-for-en', 'best-for-ru', 'best-for-zh', etc.
  */
 function detectLanguageTags(id: string, modelName: string): string[] {
     const tags: string[] = [];
     const combined = `${id} ${modelName}`.toLowerCase();
 
-    // Russian language support
-    if (combined.match(/deepseek|qwen|glm|tongyi|yandex|saiga|rugpt/)) {
-        tags.push('best-for-ru');
+    // English - most multilingual models
+    if (combined.match(/llama-3|gemini|gpt-|claude|mistral|mixtral|qwen|deepseek|command|phi/)) {
+        tags.push('best-for-en');
     }
 
-    // Spanish language support
-    if (combined.match(/llama-3|gemini|mistral|mixtral|command/)) {
+    // Spanish - major multilingual models
+    if (combined.match(/llama-3|gemini|mistral|mixtral|command|gpt-|claude/)) {
         tags.push('best-for-es');
     }
 
-    // Esperanto support (mostly multilingual models)
-    if (combined.match(/llama-3\.[2-9]|gemini-2|qwen|glm/)) {
-        tags.push('best-for-eo');
+    // French - major multilingual models
+    if (combined.match(/llama-3|gemini|mistral|mixtral|command|gpt-|claude/)) {
+        tags.push('best-for-fr');
+    }
+
+    // German - major multilingual models
+    if (combined.match(/llama-3|gemini|mistral|mixtral|command|gpt-|claude/)) {
+        tags.push('best-for-de');
+    }
+
+    // Italian - major multilingual models
+    if (combined.match(/llama-3|gemini|mistral|mixtral|command|gpt-|claude/)) {
+        tags.push('best-for-it');
+    }
+
+    // Portuguese - major multilingual models
+    if (combined.match(/llama-3|gemini|mistral|mixtral|command|gpt-|claude/)) {
+        tags.push('best-for-pt');
+    }
+
+    // Russian - models with good Russian support
+    if (combined.match(/deepseek|qwen|glm|tongyi|yandex|saiga|rugpt|llama-3|gemini/)) {
+        tags.push('best-for-ru');
+    }
+
+    // Chinese - Chinese and multilingual models
+    if (combined.match(/qwen|glm|deepseek|tongyi|yi-|llama-3|gemini|gpt-|claude/)) {
+        tags.push('best-for-zh');
+    }
+
+    // Japanese - multilingual models with Asian language support
+    if (combined.match(/llama-3|gemini|gpt-|claude|qwen|deepseek|command/)) {
+        tags.push('best-for-ja');
+    }
+
+    // Korean - multilingual models with Asian language support
+    if (combined.match(/llama-3|gemini|gpt-|claude|qwen|deepseek|command/)) {
+        tags.push('best-for-ko');
+    }
+
+    // Arabic - multilingual models
+    if (combined.match(/llama-3|gemini|gpt-|claude|command|qwen/)) {
+        tags.push('best-for-ar');
+    }
+
+    // Hindi - multilingual models with Indian language support
+    if (combined.match(/llama-3|gemini|gpt-|claude|command|qwen/)) {
+        tags.push('best-for-hi');
+    }
+
+    // Turkish - multilingual models
+    if (combined.match(/llama-3|gemini|gpt-|claude|mistral|mixtral|command/)) {
+        tags.push('best-for-tr');
+    }
+
+    // Polish - European multilingual models
+    if (combined.match(/llama-3|gemini|gpt-|claude|mistral|mixtral|command/)) {
+        tags.push('best-for-pl');
+    }
+
+    // Dutch - European multilingual models
+    if (combined.match(/llama-3|gemini|gpt-|claude|mistral|mixtral|command/)) {
+        tags.push('best-for-nl');
     }
 
     return tags;
@@ -201,31 +256,22 @@ async function fetchAndFilterModels() {
         const allModels: OpenRouterModel[] = response.data.data;
 
         // Filter models based on user requirements:
-        // - input_modalities: [ "text", "image", "file", "audio", "video" ]
-        // - output_modalities: [ "text" ]
-        // - support for: json output, tools, stream, vision
+        // - output_modalities: [ "text" ] (text output only)
+        // - support for: json output and tools
+        // Modalities are set as parameters (supportsImage, supportsVideo, etc.)
 
         const filtered = allModels.filter(model => {
             // Must be free (standard for this project)
             const isFree = model.pricing.prompt === '0' && model.pricing.completion === '0';
             if (!isFree) return false;
 
-            // Input modalities check
-            const inputModalities = model.architecture?.input_modalities || ['text'];
+            // Output modalities check
             const outputModalities = model.architecture?.output_modalities || ['text'];
 
-            // Output must be text as requested
+            // Output must be text only as requested
             if (!outputModalities.includes('text')) return false;
 
-            /**
-             * The user requested input_modalities [ "text", "image", "file", "audio", "video" ].
-             * Currently, no free models on OpenRouter support all 5. 
-             * We filter for models that support at least vision (text + image) 
-             * to keep the list functional while prioritizing high-capability models.
-             */
-            if (!inputModalities.includes('text') || !inputModalities.includes('image')) return false;
-
-            // Capability check
+            // Capability check - filter only by json output and tools support
             const supportsToolsHeuristic = (id: string) => {
                 const lowerId = id.toLowerCase();
                 return lowerId.includes('gpt-') ||
@@ -250,9 +296,7 @@ async function fetchAndFilterModels() {
                 model.supported_parameters?.includes('structured_outputs') ||
                 supportsJsonHeuristic(model.id);
 
-            // Vision check (already checked in modalities)
-            // Stream check (most modern models support it)
-
+            // Filter only by json output and tools support
             if (!supportsTools || !supportsJson) return false;
 
             return true;
