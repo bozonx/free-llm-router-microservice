@@ -1,33 +1,14 @@
 models:
-  - name: devstral-2512
+  - name: tongyi-deepresearch-30b-a3b
     provider: openrouter
-    model: mistralai/devstral-2512:free
-    type: fast
-    contextSize: 262144
-    maxOutputTokens: 4096
-    tags:
-      - general
-    jsonResponse: true
-    available: true
-    weight: 1
-  - name: deepseek-v3.1-nex-n1
-    provider: openrouter
-    model: nex-agi/deepseek-v3.1-nex-n1:free
+    model: alibaba/tongyi-deepresearch-30b-a3b:free
     type: fast
     contextSize: 131072
-    maxOutputTokens: 163840
+    maxOutputTokens: 131072
     tags:
-      - general
-    jsonResponse: true
-    available: true
-    weight: 1
-  - name: nova-2-lite-v1
-    provider: openrouter
-    model: amazon/nova-2-lite-v1:free
-    type: fast
-    contextSize: 1000000
-    maxOutputTokens: 65535
-    tags:
+      - analysis
+      - best-for-ru
+      - best-for-zh
       - general
     jsonResponse: true
     available: true
@@ -43,28 +24,109 @@ models:
     jsonResponse: true
     available: true
     weight: 1
-  - name: tng-r1t-chimera
+  - name: dolphin-mistral-24b-venice-edition
     provider: openrouter
-    model: tngtech/tng-r1t-chimera:free
+    model: cognitivecomputations/dolphin-mistral-24b-venice-edition:free
     type: fast
+    contextSize: 32768
+    maxOutputTokens: 4096
+    tags:
+      - best-for-cs
+      - best-for-de
+      - best-for-el
+      - best-for-en
+      - best-for-es
+      - best-for-fr
+      - best-for-it
+      - best-for-nl
+      - best-for-pl
+      - best-for-pt
+      - best-for-sv
+      - best-for-tr
+      - best-for-uk
+      - creative
+      - dolphin
+      - general
+      - mistral
+      - mistral-24
+    jsonResponse: true
+    available: true
+    weight: 1
+  - name: deepseek-r1-0528
+    provider: openrouter
+    model: deepseek/deepseek-r1-0528:free
+    type: reasoning
     contextSize: 163840
-    maxOutputTokens: 163840
+    maxOutputTokens: 4096
     tags:
+      - agentic
+      - best-for-en
+      - best-for-id
+      - best-for-ja
+      - best-for-ko
+      - best-for-ru
+      - best-for-th
+      - best-for-vi
+      - best-for-zh
+      - deepseek
       - general
+      - reasoning
     jsonResponse: true
     available: true
     weight: 1
-  - name: olmo-3-32b-think
+  - name: gemini-2.0-flash-exp
     provider: openrouter
-    model: allenai/olmo-3-32b-think:free
+    model: google/gemini-2.0-flash-exp:free
     type: fast
-    contextSize: 65536
-    maxOutputTokens: 65536
+    contextSize: 1048576
+    maxOutputTokens: 8192
     tags:
+      - agentic
+      - best-for-ar
+      - best-for-cs
+      - best-for-de
+      - best-for-el
+      - best-for-en
+      - best-for-es
+      - best-for-fr
+      - best-for-hi
+      - best-for-id
+      - best-for-it
+      - best-for-ja
+      - best-for-ko
+      - best-for-nl
+      - best-for-pl
+      - best-for-pt
+      - best-for-ru
+      - best-for-sv
+      - best-for-th
+      - best-for-tr
+      - best-for-uk
+      - best-for-vi
+      - best-for-zh
+      - gemini
+      - gemini-2
       - general
+      - vision
     jsonResponse: true
     available: true
     weight: 1
+    supportsImage: true
+  - name: gemma-3-27b-it
+    provider: openrouter
+    model: google/gemma-3-27b-it:free
+    type: fast
+    contextSize: 131072
+    maxOutputTokens: 4096
+    tags:
+      - gemma
+      - gemma-3
+      - general
+      - vision
+    jsonResponse: true
+    available: true
+    weight: 1
+    supportsImage: true
   - name: kat-coder-pro
     provider: openrouter
     model: kwaipilot/kat-coder-pro:free
@@ -72,8 +134,274 @@ models:
     contextSize: 256000
     maxOutputTokens: 32768
     tags:
+      - coding
       - general
-      - code
+    jsonResponse: true
+    available: true
+    weight: 1
+  - name: llama-3.1-405b-instruct
+    provider: openrouter
+    model: meta-llama/llama-3.1-405b-instruct:free
+    type: fast
+    contextSize: 131072
+    maxOutputTokens: 4096
+    tags:
+      - agentic
+      - best-for-ar
+      - best-for-cs
+      - best-for-de
+      - best-for-el
+      - best-for-en
+      - best-for-es
+      - best-for-fr
+      - best-for-hi
+      - best-for-id
+      - best-for-it
+      - best-for-ja
+      - best-for-ko
+      - best-for-nl
+      - best-for-pl
+      - best-for-pt
+      - best-for-ru
+      - best-for-sv
+      - best-for-th
+      - best-for-tr
+      - best-for-uk
+      - best-for-vi
+      - best-for-zh
+      - chat
+      - general
+      - llama
+      - llama-3
+    jsonResponse: true
+    available: true
+    weight: 1
+  - name: llama-3.2-3b-instruct
+    provider: openrouter
+    model: meta-llama/llama-3.2-3b-instruct:free
+    type: fast
+    contextSize: 131072
+    maxOutputTokens: 4096
+    tags:
+      - agentic
+      - best-for-ar
+      - best-for-cs
+      - best-for-de
+      - best-for-el
+      - best-for-en
+      - best-for-es
+      - best-for-fr
+      - best-for-hi
+      - best-for-id
+      - best-for-it
+      - best-for-ja
+      - best-for-ko
+      - best-for-nl
+      - best-for-pl
+      - best-for-pt
+      - best-for-ru
+      - best-for-sv
+      - best-for-th
+      - best-for-tr
+      - best-for-uk
+      - best-for-vi
+      - best-for-zh
+      - chat
+      - general
+      - llama
+      - llama-3
+    jsonResponse: true
+    available: true
+    weight: 1
+  - name: llama-3.3-70b-instruct
+    provider: openrouter
+    model: meta-llama/llama-3.3-70b-instruct:free
+    type: fast
+    contextSize: 131072
+    maxOutputTokens: 4096
+    tags:
+      - agentic
+      - best-for-ar
+      - best-for-cs
+      - best-for-de
+      - best-for-el
+      - best-for-en
+      - best-for-es
+      - best-for-fr
+      - best-for-hi
+      - best-for-id
+      - best-for-it
+      - best-for-ja
+      - best-for-ko
+      - best-for-nl
+      - best-for-pl
+      - best-for-pt
+      - best-for-ru
+      - best-for-sv
+      - best-for-th
+      - best-for-tr
+      - best-for-uk
+      - best-for-vi
+      - best-for-zh
+      - chat
+      - general
+      - llama
+      - llama-3
+    jsonResponse: true
+    available: true
+    weight: 1
+  - name: devstral-2512
+    provider: openrouter
+    model: mistralai/devstral-2512:free
+    type: fast
+    contextSize: 262144
+    maxOutputTokens: 4096
+    tags:
+      - best-for-cs
+      - best-for-de
+      - best-for-el
+      - best-for-en
+      - best-for-es
+      - best-for-fr
+      - best-for-it
+      - best-for-nl
+      - best-for-pl
+      - best-for-pt
+      - best-for-sv
+      - best-for-tr
+      - best-for-uk
+      - coding
+      - general
+      - mistral
+    jsonResponse: true
+    available: true
+    weight: 1
+  - name: mistral-7b-instruct
+    provider: openrouter
+    model: mistralai/mistral-7b-instruct:free
+    type: fast
+    contextSize: 32768
+    maxOutputTokens: 16384
+    tags:
+      - best-for-cs
+      - best-for-de
+      - best-for-el
+      - best-for-en
+      - best-for-es
+      - best-for-fr
+      - best-for-it
+      - best-for-nl
+      - best-for-pl
+      - best-for-pt
+      - best-for-sv
+      - best-for-tr
+      - best-for-uk
+      - chat
+      - general
+      - mistral
+      - mistral-7
+    jsonResponse: true
+    available: true
+    weight: 1
+  - name: mistral-small-3.1-24b-instruct
+    provider: openrouter
+    model: mistralai/mistral-small-3.1-24b-instruct:free
+    type: fast
+    contextSize: 128000
+    maxOutputTokens: 4096
+    tags:
+      - best-for-cs
+      - best-for-de
+      - best-for-el
+      - best-for-en
+      - best-for-es
+      - best-for-fr
+      - best-for-it
+      - best-for-nl
+      - best-for-pl
+      - best-for-pt
+      - best-for-sv
+      - best-for-tr
+      - best-for-uk
+      - chat
+      - general
+      - mistral
+      - vision
+    jsonResponse: true
+    available: true
+    weight: 1
+    supportsImage: true
+  - name: deepseek-v3.1-nex-n1
+    provider: openrouter
+    model: nex-agi/deepseek-v3.1-nex-n1:free
+    type: fast
+    contextSize: 131072
+    maxOutputTokens: 163840
+    tags:
+      - agentic
+      - best-for-en
+      - best-for-id
+      - best-for-ja
+      - best-for-ko
+      - best-for-ru
+      - best-for-th
+      - best-for-vi
+      - best-for-zh
+      - deepseek
+      - general
+    jsonResponse: true
+    available: true
+    weight: 1
+  - name: hermes-3-llama-3.1-405b
+    provider: openrouter
+    model: nousresearch/hermes-3-llama-3.1-405b:free
+    type: fast
+    contextSize: 131072
+    maxOutputTokens: 4096
+    tags:
+      - agentic
+      - analysis
+      - best-for-ar
+      - best-for-cs
+      - best-for-de
+      - best-for-el
+      - best-for-en
+      - best-for-es
+      - best-for-fr
+      - best-for-hi
+      - best-for-id
+      - best-for-it
+      - best-for-ja
+      - best-for-ko
+      - best-for-nl
+      - best-for-pl
+      - best-for-pt
+      - best-for-ru
+      - best-for-sv
+      - best-for-th
+      - best-for-tr
+      - best-for-uk
+      - best-for-vi
+      - best-for-zh
+      - creative
+      - general
+      - hermes
+      - hermes-3
+      - llama
+      - llama-3
+    jsonResponse: true
+    available: true
+    weight: 1
+  - name: nemotron-3-nano-30b-a3b
+    provider: openrouter
+    model: nvidia/nemotron-3-nano-30b-a3b:free
+    type: fast
+    contextSize: 256000
+    maxOutputTokens: 4096
+    tags:
+      - general
+      - nemotron
+      - nemotron-3
     jsonResponse: true
     available: true
     weight: 1
@@ -85,22 +413,13 @@ models:
     maxOutputTokens: 128000
     tags:
       - general
+      - nemotron
       - vision
     jsonResponse: true
     available: true
     weight: 1
     supportsImage: true
-  - name: tongyi-deepresearch-30b-a3b
-    provider: openrouter
-    model: alibaba/tongyi-deepresearch-30b-a3b:free
-    type: fast
-    contextSize: 131072
-    maxOutputTokens: 131072
-    tags:
-      - general
-    jsonResponse: true
-    available: true
-    weight: 1
+    supportsVideo: true
   - name: nemotron-nano-9b-v2
     provider: openrouter
     model: nvidia/nemotron-nano-9b-v2:free
@@ -109,6 +428,7 @@ models:
     maxOutputTokens: 4096
     tags:
       - general
+      - nemotron
     jsonResponse: true
     available: true
     weight: 1
@@ -119,7 +439,30 @@ models:
     contextSize: 131072
     maxOutputTokens: 4096
     tags:
+      - best-for-ar
+      - best-for-cs
+      - best-for-de
+      - best-for-el
+      - best-for-en
+      - best-for-es
+      - best-for-fr
+      - best-for-hi
+      - best-for-id
+      - best-for-it
+      - best-for-ja
+      - best-for-ko
+      - best-for-nl
+      - best-for-pl
+      - best-for-pt
+      - best-for-ru
+      - best-for-sv
+      - best-for-th
+      - best-for-tr
+      - best-for-uk
+      - best-for-vi
+      - best-for-zh
       - general
+      - gpt
     jsonResponse: true
     available: true
     weight: 1
@@ -129,6 +472,196 @@ models:
     type: fast
     contextSize: 131072
     maxOutputTokens: 128000
+    tags:
+      - best-for-ar
+      - best-for-cs
+      - best-for-de
+      - best-for-el
+      - best-for-en
+      - best-for-es
+      - best-for-fr
+      - best-for-hi
+      - best-for-id
+      - best-for-it
+      - best-for-ja
+      - best-for-ko
+      - best-for-nl
+      - best-for-pl
+      - best-for-pt
+      - best-for-ru
+      - best-for-sv
+      - best-for-th
+      - best-for-tr
+      - best-for-uk
+      - best-for-vi
+      - best-for-zh
+      - general
+      - gpt
+    jsonResponse: true
+    available: true
+    weight: 1
+  - name: qwen-2.5-vl-7b-instruct
+    provider: openrouter
+    model: qwen/qwen-2.5-vl-7b-instruct:free
+    type: fast
+    contextSize: 32768
+    maxOutputTokens: 4096
+    tags:
+      - agentic
+      - best-for-ar
+      - best-for-en
+      - best-for-hi
+      - best-for-id
+      - best-for-ja
+      - best-for-ko
+      - best-for-ru
+      - best-for-th
+      - best-for-vi
+      - best-for-zh
+      - chat
+      - general
+      - qwen
+      - qwen-2
+      - vision
+    jsonResponse: true
+    available: true
+    weight: 1
+    supportsImage: true
+  - name: qwen3-235b-a22b
+    provider: openrouter
+    model: qwen/qwen3-235b-a22b:free
+    type: fast
+    contextSize: 131072
+    maxOutputTokens: 4096
+    tags:
+      - agentic
+      - best-for-ar
+      - best-for-en
+      - best-for-hi
+      - best-for-id
+      - best-for-ja
+      - best-for-ko
+      - best-for-ru
+      - best-for-th
+      - best-for-vi
+      - best-for-zh
+      - general
+      - qwen
+      - qwen-3
+    jsonResponse: true
+    available: true
+    weight: 1
+  - name: qwen3-4b
+    provider: openrouter
+    model: qwen/qwen3-4b:free
+    type: fast
+    contextSize: 40960
+    maxOutputTokens: 4096
+    tags:
+      - agentic
+      - best-for-ar
+      - best-for-en
+      - best-for-hi
+      - best-for-id
+      - best-for-ja
+      - best-for-ko
+      - best-for-ru
+      - best-for-th
+      - best-for-vi
+      - best-for-zh
+      - general
+      - qwen
+      - qwen-3
+    jsonResponse: true
+    available: true
+    weight: 1
+  - name: qwen3-coder
+    provider: openrouter
+    model: qwen/qwen3-coder:free
+    type: fast
+    contextSize: 262000
+    maxOutputTokens: 262000
+    tags:
+      - agentic
+      - best-for-ar
+      - best-for-en
+      - best-for-hi
+      - best-for-id
+      - best-for-ja
+      - best-for-ko
+      - best-for-ru
+      - best-for-th
+      - best-for-vi
+      - best-for-zh
+      - coding
+      - general
+      - qwen
+      - qwen-3
+    jsonResponse: true
+    available: true
+    weight: 1
+  - name: deepseek-r1t-chimera
+    provider: openrouter
+    model: tngtech/deepseek-r1t-chimera:free
+    type: reasoning
+    contextSize: 163840
+    maxOutputTokens: 4096
+    tags:
+      - agentic
+      - best-for-en
+      - best-for-id
+      - best-for-ja
+      - best-for-ko
+      - best-for-ru
+      - best-for-th
+      - best-for-vi
+      - best-for-zh
+      - deepseek
+      - general
+      - reasoning
+    jsonResponse: true
+    available: true
+    weight: 1
+  - name: deepseek-r1t2-chimera
+    provider: openrouter
+    model: tngtech/deepseek-r1t2-chimera:free
+    type: reasoning
+    contextSize: 163840
+    maxOutputTokens: 4096
+    tags:
+      - agentic
+      - best-for-en
+      - best-for-id
+      - best-for-ja
+      - best-for-ko
+      - best-for-ru
+      - best-for-th
+      - best-for-vi
+      - best-for-zh
+      - deepseek
+      - general
+      - reasoning
+    jsonResponse: true
+    available: true
+    weight: 1
+  - name: tng-r1t-chimera
+    provider: openrouter
+    model: tngtech/tng-r1t-chimera:free
+    type: reasoning
+    contextSize: 163840
+    maxOutputTokens: 163840
+    tags:
+      - general
+      - reasoning
+    jsonResponse: true
+    available: true
+    weight: 1
+  - name: mimo-v2-flash
+    provider: openrouter
+    model: xiaomi/mimo-v2-flash:free
+    type: fast
+    contextSize: 262144
+    maxOutputTokens: 262144
     tags:
       - general
     jsonResponse: true
@@ -141,233 +674,12 @@ models:
     contextSize: 131072
     maxOutputTokens: 131072
     tags:
+      - best-for-ru
+      - best-for-zh
       - general
+      - glm
+      - glm-4
     jsonResponse: true
     available: true
     weight: 1
-  - name: qwen3-coder
-    provider: openrouter
-    model: qwen/qwen3-coder:free
-    type: fast
-    contextSize: 262000
-    maxOutputTokens: 262000
-    tags:
-      - general
-      - code
-    jsonResponse: true
-    available: true
-    weight: 1
-  - name: kimi-k2
-    provider: openrouter
-    model: moonshotai/kimi-k2:free
-    type: fast
-    contextSize: 32768
-    maxOutputTokens: 4096
-    tags:
-      - general
-    jsonResponse: true
-    available: true
-    weight: 1
-  - name: dolphin-mistral-24b-venice-edition
-    provider: openrouter
-    model: cognitivecomputations/dolphin-mistral-24b-venice-edition:free
-    type: fast
-    contextSize: 32768
-    maxOutputTokens: 4096
-    tags:
-      - general
-    jsonResponse: true
-    available: true
-    weight: 1
-  - name: gemma-3n-e2b-it
-    provider: openrouter
-    model: google/gemma-3n-e2b-it:free
-    type: fast
-    contextSize: 8192
-    maxOutputTokens: 2048
-    tags:
-      - general
-    jsonResponse: true
-    available: true
-    weight: 1
-  - name: deepseek-r1t2-chimera
-    provider: openrouter
-    model: tngtech/deepseek-r1t2-chimera:free
-    type: reasoning
-    contextSize: 163840
-    maxOutputTokens: 4096
-    tags:
-      - general
-      - reasoning
-    jsonResponse: true
-    available: true
-    weight: 5
-  - name: gemma-3n-e4b-it
-    provider: openrouter
-    model: google/gemma-3n-e4b-it:free
-    type: fast
-    contextSize: 8192
-    maxOutputTokens: 2048
-    tags:
-      - general
-    jsonResponse: true
-    available: true
-    weight: 1
-  - name: qwen3-4b
-    provider: openrouter
-    model: qwen/qwen3-4b:free
-    type: fast
-    contextSize: 40960
-    maxOutputTokens: 4096
-    tags:
-      - general
-    jsonResponse: true
-    available: true
-    weight: 1
-  - name: llama-guard-4-12b
-    provider: openrouter
-    model: meta-llama/llama-guard-4-12b:free
-    type: fast
-    contextSize: 262144
-    maxOutputTokens: 4096
-    tags:
-      - general
-    jsonResponse: true
-    available: true
-    weight: 1
-  - name: qwen3-235b-a22b
-    provider: openrouter
-    model: qwen/qwen3-235b-a22b:free
-    type: fast
-    contextSize: 131072
-    maxOutputTokens: 4096
-    tags:
-      - general
-    jsonResponse: true
-    available: true
-    weight: 1
-  - name: deepseek-r1t-chimera
-    provider: openrouter
-    model: tngtech/deepseek-r1t-chimera:free
-    type: reasoning
-    contextSize: 163840
-    maxOutputTokens: 4096
-    tags:
-      - general
-      - reasoning
-    jsonResponse: true
-    available: true
-    weight: 5
-  - name: mistral-small-3.1-24b-instruct
-    provider: openrouter
-    model: mistralai/mistral-small-3.1-24b-instruct:free
-    type: fast
-    contextSize: 128000
-    maxOutputTokens: 4096
-    tags:
-      - general
-    jsonResponse: true
-    available: true
-    weight: 1
-  - name: gemma-3-4b-it
-    provider: openrouter
-    model: google/gemma-3-4b-it:free
-    type: fast
-    contextSize: 32768
-    maxOutputTokens: 8192
-    tags:
-      - general
-    jsonResponse: true
-    available: true
-    weight: 1
-  - name: gemma-3-12b-it
-    provider: openrouter
-    model: google/gemma-3-12b-it:free
-    type: fast
-    contextSize: 32768
-    maxOutputTokens: 8192
-    tags:
-      - general
-    jsonResponse: true
-    available: true
-    weight: 1
-  - name: gemma-3-27b-it
-    provider: openrouter
-    model: google/gemma-3-27b-it:free
-    type: fast
-    contextSize: 131072
-    maxOutputTokens: 4096
-    tags:
-      - general
-    jsonResponse: true
-    available: true
-    weight: 1
-  - name: gemini-2.0-flash-exp
-    provider: openrouter
-    model: google/gemini-2.0-flash-exp:free
-    type: fast
-    contextSize: 1048576
-    maxOutputTokens: 8192
-    tags:
-      - general
-      - vision
-    jsonResponse: true
-    available: true
-    weight: 3
-    supportsImage: true
-  - name: llama-3.3-70b-instruct
-    provider: openrouter
-    model: meta-llama/llama-3.3-70b-instruct:free
-    type: fast
-    contextSize: 131072
-    maxOutputTokens: 4096
-    tags:
-      - general
-    jsonResponse: true
-    available: true
-    weight: 10
-  - name: llama-3.2-3b-instruct
-    provider: openrouter
-    model: meta-llama/llama-3.2-3b-instruct:free
-    type: fast
-    contextSize: 131072
-    maxOutputTokens: 4096
-    tags:
-      - general
-    jsonResponse: true
-    available: true
-    weight: 1
-  - name: hermes-3-llama-3.1-405b
-    provider: openrouter
-    model: nousresearch/hermes-3-llama-3.1-405b:free
-    type: fast
-    contextSize: 131072
-    maxOutputTokens: 4096
-    tags:
-      - general
-    jsonResponse: true
-    available: true
-    weight: 1
-  - name: mistral-7b-instruct
-    provider: openrouter
-    model: mistralai/mistral-7b-instruct:free
-    type: fast
-    contextSize: 32768
-    maxOutputTokens: 16384
-    tags:
-      - general
-    jsonResponse: true
-    available: true
-    weight: 1
-  - name: deepseek-chat
-    provider: deepseek
-    model: deepseek-chat
-    type: fast
-    contextSize: 64000
-    maxOutputTokens: 8000
-    tags:
-      - general
-      - code
-      - paid
-    jsonResponse: true
-    available: true
+

@@ -130,7 +130,7 @@ function detectLanguageTags(id: string, modelName: string): string[] {
     }
 
     // Russian - models with good Russian support
-    if (combined.match(/deepseek|qwen|glm|tongyi|yandex|saiga|rugpt|llama-3|gemini/)) {
+    if (combined.match(/deepseek|qwen|glm|tongyi|yandex|saiga|rugpt|llama-3|gemini|gpt-/)) {
         tags.push('best-for-ru');
     }
 
@@ -147,6 +147,21 @@ function detectLanguageTags(id: string, modelName: string): string[] {
     // Korean - multilingual models with Asian language support
     if (combined.match(/llama-3|gemini|gpt-|claude|qwen|deepseek|command/)) {
         tags.push('best-for-ko');
+    }
+
+    // Vietnamese - multilingual models with Asian language support
+    if (combined.match(/llama-3|gemini|gpt-|claude|qwen|deepseek|command/)) {
+        tags.push('best-for-vi');
+    }
+
+    // Thai - multilingual models with Asian language support
+    if (combined.match(/llama-3|gemini|gpt-|claude|qwen|deepseek|command/)) {
+        tags.push('best-for-th');
+    }
+
+    // Indonesian - multilingual models
+    if (combined.match(/llama-3|gemini|gpt-|claude|qwen|deepseek|command/)) {
+        tags.push('best-for-id');
     }
 
     // Arabic - multilingual models
@@ -167,6 +182,26 @@ function detectLanguageTags(id: string, modelName: string): string[] {
     // Polish - European multilingual models
     if (combined.match(/llama-3|gemini|gpt-|claude|mistral|mixtral|command/)) {
         tags.push('best-for-pl');
+    }
+
+    // Ukrainian - European multilingual models
+    if (combined.match(/llama-3|gemini|gpt-|claude|mistral|mixtral|command/)) {
+        tags.push('best-for-uk');
+    }
+
+    // Czech - European multilingual models
+    if (combined.match(/llama-3|gemini|gpt-|claude|mistral|mixtral|command/)) {
+        tags.push('best-for-cs');
+    }
+
+    // Greek - European multilingual models
+    if (combined.match(/llama-3|gemini|gpt-|claude|mistral|mixtral|command/)) {
+        tags.push('best-for-el');
+    }
+
+    // Swedish - European multilingual models
+    if (combined.match(/llama-3|gemini|gpt-|claude|mistral|mixtral|command/)) {
+        tags.push('best-for-sv');
     }
 
     // Dutch - European multilingual models
@@ -262,7 +297,7 @@ async function fetchAndFilterModels() {
 
         const filtered = allModels.filter(model => {
             // Must be free (standard for this project)
-            const isFree = model.pricing.prompt === '0' && model.pricing.completion === '0';
+            const isFree = parseFloat(model.pricing.prompt) === 0 && parseFloat(model.pricing.completion) === 0;
             if (!isFree) return false;
 
             // Output modalities check
