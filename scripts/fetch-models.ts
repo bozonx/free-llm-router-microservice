@@ -30,13 +30,12 @@ interface FilteredModel {
     type: 'fast' | 'reasoning';
     contextSize: number;
     maxOutputTokens: number;
+    speedTier: 'fast' | 'medium' | 'slow';
+    tags: string[];
     jsonResponse: boolean;
     available: boolean;
     weight: number;
-    supportsImage?: boolean;
-    supportsVideo?: boolean;
-    supportsAudio?: boolean;
-    supportsFile?: boolean;
+    supportsVision?: boolean;
 }
 
 /**
@@ -58,6 +57,161 @@ function extractName(id: string): string {
     const parts = id.split('/');
     const main = parts.length > 1 ? parts[1] : parts[0];
     return main.replace(':free', '');
+}
+
+/**
+ * Determine speed tier based on model size and characteristics
+ */
+function determineSpeedTier(id: string, modelName: string, isReasoning: boolean): 'fast' | 'medium' | 'slow' {
+    if (isReasoning) return 'slow';
+
+    const combined = `${id} ${modelName}`.toLowerCase();
+
+    // Fast: < 20B parameters
+    if (combined.match(/\b(3b|4b|7b|9b|12b)\b/)) return 'fast';
+
+    // Slow: > 100B parameters
+    if (combined.match(/\b(120b|235b|405b|670b)\b/)) return 'slow';
+
+    // Medium: 20B-100B parameters
+    if (combined.match(/\b(20b|24b|27b|30b|32b|70b)\b/)) return 'medium';
+
+    // Default to fast for unknown sizes
+    return 'fast';
+}
+
+/**
+ * Detect use case tags based on model characteristics
+ */
+function detectUseCaseTags(id: string, modelName: string): string[] {
+    const tags: string[] = [];
+    const combined = `${id} ${modelName}`.toLowerCase();
+
+    // Coding
+    if (combined.match(/code|coder|codestral|devstral|programming|kat-coder/)) {
+        tags.push('coding');
+    }
+
+    // Creative writing
+    if (combined.match(/creative|story|writer|poet|dolphin|hermes/)) {
+        tags.push('creative');
+    }
+
+    // Analysis & data
+    if (combined.match(/analysis|analyst|research|deepresearch|data/)) {
+        tags.push('analysis');
+    }
+
+    // Chat & assistants
+    if (combined.match(/chat|assistant|instruct|conversational/)) {
+        tags.push('chat');
+    }
+
+    // Agentic capabilities (models good at following complex instructions)
+    if (combined.match(/llama-3\.|gemini|claude|gpt-4|deepseek|qwen|command|agent/)) {
+        tags.push('agentic');
+    }
+
+    return tags;
+}
+
+/**
+ * Detect language support tags
+ * Returns tags like 'best-for-ru', 'best-for-es', 'best-for-eo'
+ */
+function detectLanguageTags(id: string, modelName: string): string[] {
+    const tags: string[] = [];
+    const combined = `${id} ${modelName}`.toLowerCase();
+
+    // Russian language support
+    if (combined.match(/deepseek|qwen|glm|tongyi|yandex|saiga|rugpt/)) {
+        tags.push('best-for-ru');
+    }
+
+    // Spanish language support
+    if (combined.match(/llama-3|gemini|mistral|mixtral|command/)) {
+        tags.push('best-for-es');
+    }
+
+    // Esperanto support (mostly multilingual models)
+    if (combined.match(/llama-3\.[2-9]|gemini-2|qwen|glm/)) {
+        tags.push('best-for-eo');
+    }
+
+    return tags;
+}
+
+/**
+ * Extract model family and version tags
+ */
+function extractFamilyTags(id: string, modelName: string): string[] {
+    const tags: string[] = [];
+    const combined = `${id} ${modelName}`.toLowerCase();
+
+    // Model families
+    const families: Record<string, RegExp> = {
+        'llama': /llama/,
+        'gemini': /gemini/,
+        'gemma': /gemma/,
+        'qwen': /qwen/,
+        'deepseek': /deepseek/,
+        'mistral': /mistral/,
+        'mixtral': /mixtral/,
+        'claude': /claude/,
+        'gpt': /gpt-/,
+        'phi': /phi-/,
+        'command': /command/,
+        'nemotron': /nemotron/,
+        'glm': /glm/,
+        'hermes': /hermes/,
+        'dolphin': /dolphin/,
+        'yi': /\byi-/,
+        'nova': /nova/,
+        'olmo': /olmo/,
+    };
+
+    for (const [family, pattern] of Object.entries(families)) {
+        if (pattern.test(combined)) {
+            tags.push(family);
+
+            // Extract major version
+            const versionMatch = combined.match(new RegExp(`${family}[\\s-]*(\\d+)`));
+            if (versionMatch) {
+                tags.push(`${family}-${versionMatch[1]}`);
+            }
+        }
+    }
+
+    return tags;
+}
+
+/**
+ * Generate all tags for a model
+ */
+function generateTags(id: string, modelName: string, isReasoning: boolean, supportsVision: boolean): string[] {
+    const tags: string[] = ['general'];
+
+    // Add use case tags
+    tags.push(...detectUseCaseTags(id, modelName));
+
+    // Add language tags
+    tags.push(...detectLanguageTags(id, modelName));
+
+    // Add family tags
+    tags.push(...extractFamilyTags(id, modelName));
+
+    // Add reasoning tag if applicable
+    if (isReasoning) {
+        tags.push('reasoning');
+    }
+
+    // Add vision tag if applicable
+    if (supportsVision) {
+        tags.push('vision');
+    }
+
+    // Remove duplicates and sort
+    return [...new Set(tags)].sort();
 }
 
 async function fetchAndFilterModels() {
@@ -130,6 +284,7 @@ async function fetchAndFilterModels() {
 
             const name = extractName(model.id);
             const inputModalities = model.architecture?.input_modalities || ['text'];
+            const supportsVision = inputModalities.includes('image');
 
             const result: FilteredModel = {
                 name: name,
@@ -138,23 +293,16 @@ async function fetchAndFilterModels() {
                 type: isReasoning ? 'reasoning' : 'fast',
                 contextSize: model.context_length || 4096,
                 maxOutputTokens: model.top_provider?.max_completion_tokens || 4096,
+                speedTier: determineSpeedTier(model.id, name, isReasoning),
+                tags: generateTags(model.id, name, isReasoning, supportsVision),
                 jsonResponse: true,
                 available: true,
                 weight: determineWeight(model.id),
             };
 
-            // Set multimodal support flags based on input_modalities
-            if (inputModalities.includes('image')) {
-                result.supportsImage = true;
-            }
-            if (inputModalities.includes('video')) {
-                result.supportsVideo = true;
-            }
-            if (inputModalities.includes('audio')) {
-                result.supportsAudio = true;
-            }
-            if (inputModalities.includes('file')) {
-                result.supportsFile = true;
+            // Set vision support flag
+            if (supportsVision) {
+                result.supportsVision = true;
             }
 
             return result;

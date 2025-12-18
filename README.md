@@ -158,6 +158,68 @@ npm run update-models
 mv models_updated.yaml models.yaml
 ```
 
+#### Система тегов
+
+Скрипт `update-models` автоматически проставляет теги для моделей на основе их характеристик. Это позволяет гибко фильтровать модели под конкретные задачи.
+
+**Категории тегов:**
+
+1. **Use Cases** (сценарии использования):
+   - `coding` — специализированные модели для программирования (содержат 'code', 'coder', 'codestral', 'devstral')
+   - `creative` — модели для творческого письма (содержат 'creative', 'story', 'writer', 'poet', 'dolphin', 'hermes')
+   - `analysis` — модели для анализа данных и исследований (содержат 'analysis', 'analyst', 'research', 'deepresearch')
+   - `chat` — модели, оптимизированные для диалогов (содержат 'chat', 'assistant', 'instruct', 'conversational')
+   - `agentic` — модели, отлично следующие сложным инструкциям (llama-3.x, gemini, claude, gpt-4, deepseek, qwen, command)
+
+2. **Language Support** (языковая поддержка):
+   - `best-for-ru` — отличная поддержка русского языка (deepseek, qwen, glm, tongyi)
+   - `best-for-es` — отличная поддержка испанского языка (llama-3, gemini, mistral, mixtral, command)
+   - `best-for-eo` — отличная поддержка эсперанто (llama-3.2+, gemini-2, qwen, glm)
+
+3. **Model Families** (семейства моделей):
+   - Название семейства: `llama`, `gemini`, `gemma`, `qwen`, `deepseek`, `mistral`, `mixtral`, `claude`, `gpt`, `phi`, `command`, `nemotron`, `glm`, `hermes`, `dolphin`, `yi`, `nova`, `olmo`
+   - Мажорная версия: `llama-3`, `gemini-2`, `qwen-2`, `deepseek-3`, и т.д.
+
+4. **Capabilities** (возможности):
+   - `reasoning` — модели с поддержкой рассуждений (содержат 'reasoning', 'r1', 'think', 'deepresearch')
+   - `vision` — модели с поддержкой изображений (проверяется через `architecture.input_modalities`)
+
+**Примеры использования тегов:**
+
+```bash
+# Найти модель для программирования с поддержкой русского языка
+curl -X POST http://localhost:8080/api/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tags": ["coding", "best-for-ru"],
+    "messages": [{"role": "user", "content": "Напиши функцию на Python"}]
+  }'
+
+# Найти модель семейства Llama 3 для агентских задач
+curl -X POST http://localhost:8080/api/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tags": ["llama-3", "agentic"],
+    "messages": [{"role": "user", "content": "Follow these instructions..."}]
+  }'
+
+# Найти модель для творческого письма на испанском
+curl -X POST http://localhost:8080/api/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tags": ["creative", "best-for-es"],
+    "messages": [{"role": "user", "content": "Escribe un poema sobre..."}]
+  }'
+```
+
+**Примеры тегов для популярных моделей:**
+
+- `llama-3.3-70b-instruct`: `general`, `chat`, `agentic`, `best-for-es`, `llama`, `llama-3`
+- `deepseek-chat`: `general`, `coding`, `chat`, `agentic`, `best-for-ru`, `deepseek`
+- `qwen-2.5-coder`: `general`, `coding`, `chat`, `agentic`, `best-for-ru`, `best-for-eo`, `qwen`, `qwen-2`
+- `gemini-2.0-flash-exp`: `general`, `agentic`, `best-for-es`, `best-for-eo`, `vision`, `gemini`, `gemini-2`
+
+
 
 ## 📡 API Endpoints
 
