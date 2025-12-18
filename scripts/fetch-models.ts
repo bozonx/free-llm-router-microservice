@@ -347,6 +347,8 @@ function detectUseCaseTags(id: string, modelName: string): string[] {
     // Coding
     if (combined.match(USE_CASE_PATTERNS.CODING)) {
         tags.push('coding');
+    } else {
+        tags.push('not-coder');
     }
 
     // Creative writing

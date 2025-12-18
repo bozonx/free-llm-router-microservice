@@ -10,6 +10,7 @@ models:
       - best-for-ru
       - best-for-zh
       - json-mode
+      - not-coder
       - small
       - stable
       - tier-3
@@ -18,8 +19,6 @@ models:
     available: true
     weight: 1
     supportsTools: true
-    inputModalities:
-      - text
   - name: olmo-3-32b-think
     provider: openrouter
     model: allenai/olmo-3-32b-think:free
@@ -28,6 +27,7 @@ models:
     maxOutputTokens: 65536
     tags:
       - json-mode
+      - not-coder
       - olmo
       - olmo-3
       - small
@@ -37,8 +37,6 @@ models:
     available: true
     weight: 1
     supportsTools: false
-    inputModalities:
-      - text
   - name: olmo-3.1-32b-think
     provider: openrouter
     model: allenai/olmo-3.1-32b-think:free
@@ -47,6 +45,7 @@ models:
     maxOutputTokens: 65536
     tags:
       - json-mode
+      - not-coder
       - olmo
       - olmo-3
       - small
@@ -56,8 +55,6 @@ models:
     available: true
     weight: 1
     supportsTools: false
-    inputModalities:
-      - text
   - name: trinity-mini
     provider: openrouter
     model: arcee-ai/trinity-mini:free
@@ -66,6 +63,7 @@ models:
     maxOutputTokens: 4096
     tags:
       - json-mode
+      - not-coder
       - stable
       - tier-3
       - tools
@@ -73,8 +71,6 @@ models:
     available: true
     weight: 1
     supportsTools: true
-    inputModalities:
-      - text
   - name: dolphin-mistral-24b-venice-edition
     provider: openrouter
     model: cognitivecomputations/dolphin-mistral-24b-venice-edition:free
@@ -99,6 +95,7 @@ models:
       - json-mode
       - mistral
       - mistral-24
+      - not-coder
       - small
       - stable
       - tier-3
@@ -108,8 +105,6 @@ models:
     available: true
     weight: 1
     supportsTools: true
-    inputModalities:
-      - text
   - name: deepseek-r1-0528
     provider: openrouter
     model: deepseek/deepseek-r1-0528:free
@@ -129,6 +124,7 @@ models:
       - deepseek
       - finance
       - json-mode
+      - not-coder
       - stable
       - tier-3
       - tools
@@ -136,8 +132,6 @@ models:
     available: true
     weight: 1
     supportsTools: true
-    inputModalities:
-      - text
   - name: gemini-2.0-flash-exp
     provider: openrouter
     model: google/gemini-2.0-flash-exp:free
@@ -172,6 +166,7 @@ models:
       - gemini-2
       - json-mode
       - latest
+      - not-coder
       - tier-3
       - tools
       - vision
@@ -179,9 +174,6 @@ models:
     available: true
     weight: 1
     supportsTools: true
-    inputModalities:
-      - text
-      - image
     supportsImage: true
   - name: gemma-3-12b-it
     provider: openrouter
@@ -193,6 +185,7 @@ models:
       - gemma
       - gemma-3
       - json-mode
+      - not-coder
       - small
       - stable
       - tier-3
@@ -202,9 +195,6 @@ models:
     available: true
     weight: 1
     supportsTools: true
-    inputModalities:
-      - text
-      - image
     supportsImage: true
   - name: gemma-3-27b-it
     provider: openrouter
@@ -216,6 +206,7 @@ models:
       - gemma
       - gemma-3
       - json-mode
+      - not-coder
       - small
       - stable
       - tier-1-2
@@ -226,9 +217,6 @@ models:
     available: true
     weight: 2
     supportsTools: true
-    inputModalities:
-      - text
-      - image
     supportsImage: true
   - name: gemma-3-4b-it
     provider: openrouter
@@ -240,6 +228,7 @@ models:
       - gemma
       - gemma-3
       - json-mode
+      - not-coder
       - small
       - stable
       - tier-3
@@ -249,50 +238,7 @@ models:
     available: true
     weight: 1
     supportsTools: true
-    inputModalities:
-      - text
-      - image
     supportsImage: true
-  - name: gemma-3n-e2b-it
-    provider: openrouter
-    model: google/gemma-3n-e2b-it:free
-    type: fast
-    contextSize: 8192
-    maxOutputTokens: 2048
-    tags:
-      - gemma
-      - gemma-3
-      - json-mode
-      - small
-      - stable
-      - tier-3
-      - tools
-    jsonResponse: true
-    available: true
-    weight: 1
-    supportsTools: true
-    inputModalities:
-      - text
-  - name: gemma-3n-e4b-it
-    provider: openrouter
-    model: google/gemma-3n-e4b-it:free
-    type: fast
-    contextSize: 8192
-    maxOutputTokens: 2048
-    tags:
-      - gemma
-      - gemma-3
-      - json-mode
-      - small
-      - stable
-      - tier-3
-      - tools
-    jsonResponse: true
-    available: true
-    weight: 1
-    supportsTools: true
-    inputModalities:
-      - text
   - name: kat-coder-pro
     provider: openrouter
     model: kwaipilot/kat-coder-pro:free
@@ -309,8 +255,6 @@ models:
     available: true
     weight: 1
     supportsTools: true
-    inputModalities:
-      - text
   - name: llama-3.1-405b-instruct
     provider: openrouter
     model: meta-llama/llama-3.1-405b-instruct:free
@@ -345,6 +289,7 @@ models:
       - json-mode
       - llama
       - llama-3
+      - not-coder
       - not-small
       - powerful
       - small
@@ -356,8 +301,6 @@ models:
     available: true
     weight: 3
     supportsTools: true
-    inputModalities:
-      - text
   - name: llama-3.2-3b-instruct
     provider: openrouter
     model: meta-llama/llama-3.2-3b-instruct:free
@@ -392,6 +335,7 @@ models:
       - json-mode
       - llama
       - llama-3
+      - not-coder
       - small
       - stable
       - tier-1-2
@@ -401,8 +345,6 @@ models:
     available: true
     weight: 2
     supportsTools: true
-    inputModalities:
-      - text
   - name: llama-3.3-70b-instruct
     provider: openrouter
     model: meta-llama/llama-3.3-70b-instruct:free
@@ -440,6 +382,7 @@ models:
       - latest
       - llama
       - llama-3
+      - not-coder
       - not-small
       - powerful
       - tier-1
@@ -449,8 +392,6 @@ models:
     available: true
     weight: 3
     supportsTools: true
-    inputModalities:
-      - text
   - name: devstral-2512
     provider: openrouter
     model: mistralai/devstral-2512:free
@@ -481,8 +422,6 @@ models:
     available: true
     weight: 1
     supportsTools: true
-    inputModalities:
-      - text
   - name: mistral-7b-instruct
     provider: openrouter
     model: mistralai/mistral-7b-instruct:free
@@ -507,6 +446,7 @@ models:
       - json-mode
       - mistral
       - mistral-7
+      - not-coder
       - small
       - stable
       - tier-3
@@ -515,8 +455,6 @@ models:
     available: true
     weight: 1
     supportsTools: true
-    inputModalities:
-      - text
   - name: mistral-small-3.1-24b-instruct
     provider: openrouter
     model: mistralai/mistral-small-3.1-24b-instruct:free
@@ -540,6 +478,7 @@ models:
       - chat
       - json-mode
       - mistral
+      - not-coder
       - small
       - stable
       - tier-3
@@ -549,9 +488,6 @@ models:
     available: true
     weight: 1
     supportsTools: true
-    inputModalities:
-      - text
-      - image
     supportsImage: true
   - name: kimi-k2
     provider: openrouter
@@ -560,14 +496,13 @@ models:
     contextSize: 32768
     maxOutputTokens: 4096
     tags:
+      - not-coder
       - stable
       - tier-3
     jsonResponse: false
     available: true
     weight: 1
     supportsTools: false
-    inputModalities:
-      - text
   - name: deepseek-v3.1-nex-n1
     provider: openrouter
     model: nex-agi/deepseek-v3.1-nex-n1:free
@@ -587,6 +522,7 @@ models:
       - deepseek
       - json-mode
       - latest
+      - not-coder
       - not-small
       - powerful
       - tier-1
@@ -596,8 +532,6 @@ models:
     available: true
     weight: 3
     supportsTools: true
-    inputModalities:
-      - text
   - name: hermes-3-llama-3.1-405b
     provider: openrouter
     model: nousresearch/hermes-3-llama-3.1-405b:free
@@ -634,6 +568,7 @@ models:
       - json-mode
       - llama
       - llama-3
+      - not-coder
       - not-small
       - powerful
       - small
@@ -646,8 +581,6 @@ models:
     available: true
     weight: 3
     supportsTools: true
-    inputModalities:
-      - text
   - name: nemotron-3-nano-30b-a3b
     provider: openrouter
     model: nvidia/nemotron-3-nano-30b-a3b:free
@@ -658,6 +591,7 @@ models:
       - json-mode
       - nemotron
       - nemotron-3
+      - not-coder
       - small
       - stable
       - tier-1-2
@@ -667,8 +601,6 @@ models:
     available: true
     weight: 2
     supportsTools: true
-    inputModalities:
-      - text
   - name: nemotron-nano-12b-v2-vl
     provider: openrouter
     model: nvidia/nemotron-nano-12b-v2-vl:free
@@ -678,6 +610,7 @@ models:
     tags:
       - json-mode
       - nemotron
+      - not-coder
       - small
       - stable
       - tier-1-2
@@ -688,10 +621,6 @@ models:
     available: true
     weight: 2
     supportsTools: true
-    inputModalities:
-      - image
-      - text
-      - video
     supportsImage: true
     supportsVideo: true
   - name: nemotron-nano-9b-v2
@@ -703,6 +632,7 @@ models:
     tags:
       - json-mode
       - nemotron
+      - not-coder
       - small
       - stable
       - tier-1-2
@@ -712,8 +642,6 @@ models:
     available: true
     weight: 2
     supportsTools: true
-    inputModalities:
-      - text
   - name: gpt-oss-120b
     provider: openrouter
     model: openai/gpt-oss-120b:free
@@ -746,6 +674,7 @@ models:
       - gpt
       - json-mode
       - large
+      - not-coder
       - not-small
       - powerful
       - stable
@@ -755,8 +684,6 @@ models:
     available: true
     weight: 1
     supportsTools: true
-    inputModalities:
-      - text
   - name: gpt-oss-20b
     provider: openrouter
     model: openai/gpt-oss-20b:free
@@ -789,6 +716,7 @@ models:
       - gpt
       - json-mode
       - medium
+      - not-coder
       - not-small
       - powerful
       - stable
@@ -798,8 +726,6 @@ models:
     available: true
     weight: 1
     supportsTools: true
-    inputModalities:
-      - text
   - name: qwen-2.5-vl-7b-instruct
     provider: openrouter
     model: qwen/qwen-2.5-vl-7b-instruct:free
@@ -821,6 +747,7 @@ models:
       - chat
       - json-mode
       - latest
+      - not-coder
       - qwen
       - qwen-2
       - small
@@ -831,9 +758,6 @@ models:
     available: true
     weight: 1
     supportsTools: true
-    inputModalities:
-      - text
-      - image
     supportsImage: true
   - name: qwen3-235b-a22b
     provider: openrouter
@@ -854,6 +778,7 @@ models:
       - best-for-vi
       - best-for-zh
       - json-mode
+      - not-coder
       - qwen
       - qwen-3
       - small
@@ -864,8 +789,6 @@ models:
     available: true
     weight: 1
     supportsTools: true
-    inputModalities:
-      - text
   - name: qwen3-4b
     provider: openrouter
     model: qwen/qwen3-4b:free
@@ -885,6 +808,7 @@ models:
       - best-for-vi
       - best-for-zh
       - json-mode
+      - not-coder
       - qwen
       - qwen-3
       - small
@@ -895,8 +819,6 @@ models:
     available: true
     weight: 1
     supportsTools: true
-    inputModalities:
-      - text
   - name: qwen3-coder
     provider: openrouter
     model: qwen/qwen3-coder:free
@@ -926,8 +848,6 @@ models:
     available: true
     weight: 1
     supportsTools: true
-    inputModalities:
-      - text
   - name: deepseek-r1t-chimera
     provider: openrouter
     model: tngtech/deepseek-r1t-chimera:free
@@ -947,6 +867,7 @@ models:
       - deepseek
       - finance
       - json-mode
+      - not-coder
       - stable
       - tier-3
       - tools
@@ -954,8 +875,6 @@ models:
     available: true
     weight: 1
     supportsTools: true
-    inputModalities:
-      - text
   - name: deepseek-r1t2-chimera
     provider: openrouter
     model: tngtech/deepseek-r1t2-chimera:free
@@ -975,6 +894,7 @@ models:
       - deepseek
       - finance
       - json-mode
+      - not-coder
       - stable
       - tier-3
       - tools
@@ -982,8 +902,6 @@ models:
     available: true
     weight: 1
     supportsTools: true
-    inputModalities:
-      - text
   - name: tng-r1t-chimera
     provider: openrouter
     model: tngtech/tng-r1t-chimera:free
@@ -992,6 +910,7 @@ models:
     maxOutputTokens: 163840
     tags:
       - json-mode
+      - not-coder
       - stable
       - tier-3
       - tools
@@ -999,8 +918,6 @@ models:
     available: true
     weight: 1
     supportsTools: true
-    inputModalities:
-      - text
   - name: mimo-v2-flash
     provider: openrouter
     model: xiaomi/mimo-v2-flash:free
@@ -1009,6 +926,7 @@ models:
     maxOutputTokens: 262144
     tags:
       - json-mode
+      - not-coder
       - stable
       - tier-3
       - tools
@@ -1016,8 +934,6 @@ models:
     available: true
     weight: 1
     supportsTools: true
-    inputModalities:
-      - text
   - name: glm-4.5-air
     provider: openrouter
     model: z-ai/glm-4.5-air:free
@@ -1031,6 +947,7 @@ models:
       - glm-4
       - json-mode
       - latest
+      - not-coder
       - tier-1-2
       - tier-2
       - tools
@@ -1038,6 +955,4 @@ models:
     available: true
     weight: 2
     supportsTools: true
-    inputModalities:
-      - text
 
