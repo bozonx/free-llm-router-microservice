@@ -37,10 +37,19 @@ async function bootstrap() {
   );
 
   // Configure global API prefix from configuration
-  // Exclude DashboardController from the prefix so it can serve at root /
-  const globalPrefix = `${appConfig.apiBasePath}/v1`;
+  // Exclude DashboardController from the prefix so it can serve at root / (or BASE_PATH)
+  const basePath = appConfig.basePath;
+  const globalPrefix = [basePath, 'api', 'v1'].filter(Boolean).join('/');
+
+  // Dashboard routes to exclude from global prefix (which is for API)
+  // We need to exclude the paths that DashboardController handles
+  const dashboardPrefix = basePath ? `/${basePath}` : '';
+  const excludePaths = ['/', '/styles.css', '/app.js', '/:filename'].map(path =>
+    (dashboardPrefix + path).replace('//', '/')
+  );
+
   app.setGlobalPrefix(globalPrefix, {
-    exclude: ['/', '/styles.css', '/app.js'],
+    exclude: excludePaths,
   });
 
   // Enable graceful shutdown

@@ -1,5 +1,5 @@
 services:
-  free-llm-router-microservice:
+  microservice:
     image: ghcr.io/bozonx/free-llm-router-microservice:latest
     container_name: free-llm-router-microservice
     hostname: free-llm-router-microservice
@@ -9,7 +9,7 @@ services:
       - '8080:8080'
     environment:
       - TZ=UTC
-      - API_BASE_PATH=api
+      - BASE_PATH=
       - LOG_LEVEL=warn
       # Configuration file path inside container (optional, defaults to ./config.yaml)
       # - ROUTER_CONFIG_PATH=/app/config.yaml

@@ -10,7 +10,7 @@ import type { AppConfig } from '../../config/app.config.js';
  * Controller for serving static UI dashboard files
  * Serves the monitoring dashboard from the /public directory
  */
-@Controller()
+@Controller(process.env.BASE_PATH ?? '')
 export class DashboardController {
   private readonly publicPath: string;
   private readonly apiBasePath: string;
@@ -40,7 +40,8 @@ export class DashboardController {
 
     // Get API base path from config
     const appConfig = this.configService.get<AppConfig>('app');
-    this.apiBasePath = `/${appConfig?.apiBasePath ?? 'api'}/v1`;
+    const basePath = appConfig?.basePath ?? '';
+    this.apiBasePath = `/${[basePath, 'api', 'v1'].filter(Boolean).join('/')}`;
   }
 
   /**

@@ -156,7 +156,7 @@ interface ModelsResponse {
 NODE_ENV=production
 LISTEN_HOST=0.0.0.0
 LISTEN_PORT=8080
-API_BASE_PATH=api
+BASE_PATH=
 LOG_LEVEL=warn
 
 # Новые

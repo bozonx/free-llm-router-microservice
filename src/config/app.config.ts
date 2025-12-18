@@ -12,7 +12,7 @@ export class AppConfig {
   public host!: string;
 
   @IsString()
-  public apiBasePath!: string;
+  public basePath!: string;
 
   @IsIn(['development', 'production', 'test'])
   public nodeEnv!: string;
@@ -26,7 +26,7 @@ export default registerAs('app', (): AppConfig => {
   const config = plainToClass(AppConfig, {
     port: parseInt(process.env.LISTEN_PORT ?? '8080', 10),
     host: process.env.LISTEN_HOST ?? '0.0.0.0',
-    apiBasePath: (process.env.API_BASE_PATH ?? 'api').replace(/^\/+|\/+$/g, ''),
+    basePath: (process.env.BASE_PATH ?? '').replace(/^\/+|\/+$/g, ''),
     nodeEnv: process.env.NODE_ENV ?? 'production',
     logLevel: process.env.LOG_LEVEL ?? 'warn',
   });
