@@ -168,6 +168,7 @@ mv models_updated.yaml models.yaml
    - `small` — маленькие модели (1B-14B), например Llama 3 8B
    - `medium` — средние модели (15B-69B), например Qwen 2.5 32B
    - `large` — большие модели (70B+), например Llama 3.3 70B
+   - `not-small` — средние и большие модели (все, кроме `small`)
    - `powerful` — мощные модели (все `medium` и `large`, а также флагманские `tier-1` модели)
 
 2. **Quality Tiers** (категории качества):

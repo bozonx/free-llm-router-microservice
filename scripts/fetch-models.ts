@@ -565,8 +565,10 @@ function detectSizeTags(id: string, modelName: string): string[] {
         tags.push('small');
     } else if (combined.match(SIZE_PATTERNS.LARGE)) {
         tags.push('large');
+        tags.push('not-small');
     } else if (combined.match(SIZE_PATTERNS.MEDIUM)) {
         tags.push('medium');
+        tags.push('not-small');
     }
 
     return tags;
@@ -607,9 +609,10 @@ function generateTags(
     const sizeTags = detectSizeTags(id, modelName);
     tags.push(...sizeTags);
 
-    // Add "powerful" tag for models that are definitely not small
+    // Add "powerful" and "not-small" tags for models that are definitely not small
     if (sizeTags.includes('medium') || sizeTags.includes('large') || weight === TIER_1_WEIGHT) {
         tags.push('powerful');
+        tags.push('not-small');
     }
 
     // Add vision tag if applicable

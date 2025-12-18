@@ -11,6 +11,7 @@ models:
       - best-for-zh
       - small
       - stable
+      - tier-3
     jsonResponse: true
     available: true
     weight: 1
@@ -32,6 +33,9 @@ models:
       - best-for-zh
       - deepseek
       - latest
+      - not-small
+      - powerful
+      - tier-1
     jsonResponse: true
     available: true
     weight: 3
@@ -45,6 +49,7 @@ models:
       - nemotron
       - small
       - stable
+      - tier-2
       - vision
     jsonResponse: true
     available: true
@@ -82,7 +87,10 @@ models:
       - best-for-zh
       - gpt
       - medium
+      - not-small
+      - powerful
       - stable
+      - tier-3
     jsonResponse: true
     available: true
     weight: 1
@@ -108,6 +116,7 @@ models:
       - qwen
       - qwen-3
       - stable
+      - tier-3
     jsonResponse: true
     available: true
     weight: 1
@@ -119,6 +128,7 @@ models:
     maxOutputTokens: 163840
     tags:
       - stable
+      - tier-3
     jsonResponse: true
     available: true
     weight: 1
@@ -130,6 +140,7 @@ models:
     maxOutputTokens: 262144
     tags:
       - stable
+      - tier-3
     jsonResponse: true
     available: true
     weight: 1
@@ -145,6 +156,7 @@ models:
       - glm
       - glm-4
       - latest
+      - tier-2
     jsonResponse: true
     available: true
     weight: 2
