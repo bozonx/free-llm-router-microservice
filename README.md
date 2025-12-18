@@ -271,7 +271,14 @@ curl -X POST http://localhost:8080/api/v1/chat/completions \
 - `gemini-2.0-flash-exp` (рекомендуется, 1M tokens context)
 - `nemotron-nano-12b-v2-vl` (128K tokens context)
 
-Вы можете фильтровать vision-capable модели по тегу `vision` или использовать параметр `supports_vision: true`.
+Вы можете фильтровать модели по поддержке различных типов входных данных:
+- `supports_image: true` — модели с поддержкой изображений
+- `supports_video: true` — модели с поддержкой видео
+- `supports_audio: true` — модели с поддержкой аудио
+- `supports_file: true` — модели с поддержкой файлов/документов
+- `supports_vision: true` — (устаревший) алиас для `supports_image`
+
+Также можно использовать тег `vision` для фильтрации моделей с поддержкой изображений.
 
 **Vision-Capable модели:**
 
@@ -291,11 +298,11 @@ curl -X POST http://localhost:8080/api/v1/chat/completions \
     "messages": [...]
   }'
 
-# Явное требование vision поддержки
+# Явное требование поддержки изображений
 curl -X POST http://localhost:8080/api/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "supports_vision": true,
+    "supports_image": true,
     "messages": [...]
   }'
 ```
@@ -543,7 +550,7 @@ curl -X POST http://localhost:8080/api/v1/chat/completions \
   - `nemotron-nano-12b-v2-vl` (128K tokens context)
 - Поддерживает HTTP/HTTPS URLs и data URIs (base64)
 - Параметр `detail`: `"auto"`, `"high"`, `"low"` — контролирует детализацию анализа
-- Фильтрация: используйте тег `vision` или параметр `supports_vision: true`
+- Фильтрация: используйте тег `vision` или параметр `supports_image: true`
 
 
 

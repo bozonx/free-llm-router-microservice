@@ -33,7 +33,10 @@ interface FilteredModel {
     jsonResponse: boolean;
     available: boolean;
     weight: number;
-    supportsVision?: boolean;
+    supportsImage?: boolean;
+    supportsVideo?: boolean;
+    supportsAudio?: boolean;
+    supportsFile?: boolean;
 }
 
 /**
@@ -126,6 +129,7 @@ async function fetchAndFilterModels() {
                 model.id.toLowerCase().includes('think');
 
             const name = extractName(model.id);
+            const inputModalities = model.architecture?.input_modalities || ['text'];
 
             const result: FilteredModel = {
                 name: name,
@@ -137,8 +141,21 @@ async function fetchAndFilterModels() {
                 jsonResponse: true,
                 available: true,
                 weight: determineWeight(model.id),
-                supportsVision: true, // All models in our filtered list support vision
             };
+
+            // Set multimodal support flags based on input_modalities
+            if (inputModalities.includes('image')) {
+                result.supportsImage = true;
+            }
+            if (inputModalities.includes('video')) {
+                result.supportsVideo = true;
+            }
+            if (inputModalities.includes('audio')) {
+                result.supportsAudio = true;
+            }
+            if (inputModalities.includes('file')) {
+                result.supportsFile = true;
+            }
 
             return result;
         });

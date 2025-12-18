@@ -29,7 +29,7 @@ export class RouterController {
   constructor(
     private readonly routerService: RouterService,
     private readonly modelsService: ModelsService,
-  ) {}
+  ) { }
 
   /**
    * Chat completion endpoint (OpenAI compatible)
@@ -158,7 +158,12 @@ export class RouterController {
         available: model.available,
         weight: model.weight,
 
+        // Multimodal support fields
         supportsVision: model.supportsVision,
+        supportsImage: model.supportsImage,
+        supportsVideo: model.supportsVideo,
+        supportsAudio: model.supportsAudio,
+        supportsFile: model.supportsFile,
       })),
     };
   }

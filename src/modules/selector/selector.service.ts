@@ -17,7 +17,7 @@ export class SelectorService {
     private readonly modelsService: ModelsService,
     private readonly smartStrategy: SmartStrategy,
     private readonly circuitBreaker: CircuitBreakerService,
-  ) {}
+  ) { }
 
   /**
    * Select a model based on criteria
@@ -81,6 +81,10 @@ export class SelectorService {
       minContextSize: criteria.minContextSize,
       jsonResponse: criteria.jsonResponse,
       supportsVision: criteria.supportsVision,
+      supportsImage: criteria.supportsImage,
+      supportsVideo: criteria.supportsVideo,
+      supportsAudio: criteria.supportsAudio,
+      supportsFile: criteria.supportsFile,
     });
 
     if (filteredModels.length === 0) {

@@ -145,8 +145,29 @@ export interface ModelOverrideConfig {
 
   /**
    * Override vision support
+   * @deprecated Use supportsImage instead
    */
   supportsVision?: boolean;
+
+  /**
+   * Override image input support
+   */
+  supportsImage?: boolean;
+
+  /**
+   * Override video input support
+   */
+  supportsVideo?: boolean;
+
+  /**
+   * Override audio input support
+   */
+  supportsAudio?: boolean;
+
+  /**
+   * Override file/document input support
+   */
+  supportsFile?: boolean;
 }
 
 /**

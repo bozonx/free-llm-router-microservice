@@ -230,10 +230,43 @@ export class ChatCompletionRequestDto {
   /**
    * Vision support required (multimodal - text + images)
    * If true, only select models that support image_url content
+   * @deprecated Use supports_image instead
    */
   @IsOptional()
   @IsBoolean()
   public supports_vision?: boolean;
+
+  /**
+   * Image input support required
+   * If true, only select models that support image_url content
+   */
+  @IsOptional()
+  @IsBoolean()
+  public supports_image?: boolean;
+
+  /**
+   * Video input support required
+   * If true, only select models that support video content
+   */
+  @IsOptional()
+  @IsBoolean()
+  public supports_video?: boolean;
+
+  /**
+   * Audio input support required
+   * If true, only select models that support audio content
+   */
+  @IsOptional()
+  @IsBoolean()
+  public supports_audio?: boolean;
+
+  /**
+   * File/document input support required
+   * If true, only select models that support file/document content
+   */
+  @IsOptional()
+  @IsBoolean()
+  public supports_file?: boolean;
 
   // Routing behavior overrides (per-request)
   /**

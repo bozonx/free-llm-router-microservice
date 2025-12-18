@@ -34,8 +34,29 @@ export interface FilterCriteria {
 
   /**
    * Vision support required (multimodal - text + images)
+   * @deprecated Use supportsImage instead
    */
   supportsVision?: boolean;
+
+  /**
+   * Image input support required
+   */
+  supportsImage?: boolean;
+
+  /**
+   * Video input support required
+   */
+  supportsVideo?: boolean;
+
+  /**
+   * Audio input support required
+   */
+  supportsAudio?: boolean;
+
+  /**
+   * File/document input support required
+   */
+  supportsFile?: boolean;
 
   /**
    * Provider filter
@@ -51,7 +72,7 @@ export class ModelsService implements OnModuleInit {
   private readonly logger = new Logger(ModelsService.name);
   private models: ModelDefinition[] = [];
 
-  constructor(@Inject(ROUTER_CONFIG) private readonly config: RouterConfig) {}
+  constructor(@Inject(ROUTER_CONFIG) private readonly config: RouterConfig) { }
 
   public async onModuleInit(): Promise<void> {
     const modelsSource = this.config.modelsFile;
@@ -220,6 +241,10 @@ export class ModelsService implements OnModuleInit {
     if (override.available !== undefined) model.available = override.available;
     if (override.jsonResponse !== undefined) model.jsonResponse = override.jsonResponse;
     if (override.supportsVision !== undefined) model.supportsVision = override.supportsVision;
+    if (override.supportsImage !== undefined) model.supportsImage = override.supportsImage;
+    if (override.supportsVideo !== undefined) model.supportsVideo = override.supportsVideo;
+    if (override.supportsAudio !== undefined) model.supportsAudio = override.supportsAudio;
+    if (override.supportsFile !== undefined) model.supportsFile = override.supportsFile;
   }
 
   private convertModel(model: Record<string, unknown>): ModelDefinition {
@@ -253,6 +278,18 @@ export class ModelsService implements OnModuleInit {
     }
     if (model.supportsVision !== undefined) {
       result.supportsVision = model.supportsVision as boolean;
+    }
+    if (model.supportsImage !== undefined) {
+      result.supportsImage = model.supportsImage as boolean;
+    }
+    if (model.supportsVideo !== undefined) {
+      result.supportsVideo = model.supportsVideo as boolean;
+    }
+    if (model.supportsAudio !== undefined) {
+      result.supportsAudio = model.supportsAudio as boolean;
+    }
+    if (model.supportsFile !== undefined) {
+      result.supportsFile = model.supportsFile as boolean;
     }
   }
 
@@ -336,6 +373,22 @@ export class ModelsService implements OnModuleInit {
     }
 
     if (criteria.supportsVision && !model.supportsVision) {
+      return false;
+    }
+
+    if (criteria.supportsImage && !model.supportsImage) {
+      return false;
+    }
+
+    if (criteria.supportsVideo && !model.supportsVideo) {
+      return false;
+    }
+
+    if (criteria.supportsAudio && !model.supportsAudio) {
+      return false;
+    }
+
+    if (criteria.supportsFile && !model.supportsFile) {
       return false;
     }
 

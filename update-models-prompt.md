@@ -31,7 +31,7 @@ Generate tags based on model characteristics:
 **2. Capability Tags**:
 - `code`: If model ID contains 'code', 'coder', 'codestral', 'devstral'
 - `reasoning`: If model ID contains 'reasoning', 'r1', 'think', 'deepresearch'
-- `vision`: If model has `supportsVision: true` (which should be true for all models in the script output)
+- `vision`: If model has `supportsImage: true` (image input support)
 - `paid`: If the model is not free (the script currently filters for free models, but if any paid models appear, add this tag)
 
 **3. Family/Version Tags**:
@@ -47,6 +47,16 @@ Generate tags based on model characteristics:
 **4. Additional Logic**:
 - Assign `weight` (priority) if it seems wrong (1-10 range). Premium models like Llama 3.3 70B or Claude 3.5 should have higher weights (e.g., 10).
 - Ensure `available: true` and `jsonResponse: true`.
+
+## Multimodal Support Fields
+
+Models may have the following optional fields indicating input modality support:
+- `supportsImage: true` — model supports image input (vision)
+- `supportsVideo: true` — model supports video input
+- `supportsAudio: true` — model supports audio input
+- `supportsFile: true` — model supports file/document input
+
+These fields are automatically detected by the script based on OpenRouter API's `input_modalities` field.
 
 ## Requirements
 
@@ -74,7 +84,7 @@ Generate tags based on model characteristics:
   jsonResponse: true
   available: true
   weight: 10
-  supportsVision: true
+  supportsImage: true
 ```
 
 ## Output Format

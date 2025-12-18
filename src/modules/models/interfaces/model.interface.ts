@@ -62,9 +62,38 @@ export interface ModelDefinition {
   /**
    * Vision support (multimodal - text + images)
    * If true, model can process image_url content parts
+   * @deprecated Use supportsImage instead
    * Default: false
    */
   supportsVision?: boolean;
+
+  /**
+   * Image input support
+   * If true, model can process image_url content parts
+   * Default: false
+   */
+  supportsImage?: boolean;
+
+  /**
+   * Video input support
+   * If true, model can process video content
+   * Default: false
+   */
+  supportsVideo?: boolean;
+
+  /**
+   * Audio input support
+   * If true, model can process audio content
+   * Default: false
+   */
+  supportsAudio?: boolean;
+
+  /**
+   * File/document input support
+   * If true, model can process file/document content
+   * Default: false
+   */
+  supportsFile?: boolean;
 }
 
 /**

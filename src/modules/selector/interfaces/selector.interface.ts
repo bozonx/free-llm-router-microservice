@@ -56,8 +56,33 @@ export interface SelectionCriteria {
   /**
    * Vision support required (multimodal - text + images)
    * If true, only select models that support image_url content
+   * @deprecated Use supportsImage instead
    */
   supportsVision?: boolean;
+
+  /**
+   * Image input support required
+   * If true, only select models that support image_url content
+   */
+  supportsImage?: boolean;
+
+  /**
+   * Video input support required
+   * If true, only select models that support video content
+   */
+  supportsVideo?: boolean;
+
+  /**
+   * Audio input support required
+   * If true, only select models that support audio content
+   */
+  supportsAudio?: boolean;
+
+  /**
+   * File/document input support required
+   * If true, only select models that support file/document content
+   */
+  supportsFile?: boolean;
 }
 
 /**
