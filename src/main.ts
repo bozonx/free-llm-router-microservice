@@ -45,7 +45,7 @@ async function bootstrap() {
   // We need to exclude the paths that DashboardController handles
   const dashboardPrefix = basePath ? `/${basePath}` : '';
   const excludePaths = ['/', '/styles.css', '/app.js', '/:filename'].map(path =>
-    (dashboardPrefix + path).replace('//', '/')
+    (dashboardPrefix + path).replace('//', '/'),
   );
 
   app.setGlobalPrefix(globalPrefix, {

@@ -72,7 +72,7 @@ export class ModelsService implements OnModuleInit {
   private readonly logger = new Logger(ModelsService.name);
   private models: ModelDefinition[] = [];
 
-  constructor(@Inject(ROUTER_CONFIG) private readonly config: RouterConfig) { }
+  constructor(@Inject(ROUTER_CONFIG) private readonly config: RouterConfig) {}
 
   public async onModuleInit(): Promise<void> {
     const modelsSource = this.config.modelsFile;

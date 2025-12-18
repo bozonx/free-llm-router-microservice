@@ -136,7 +136,6 @@ function updateMetrics(metrics) {
     document.getElementById('failed-requests').textContent = formatNumber(metrics.failedRequests || 0);
     document.getElementById('avg-latency').innerHTML = `${formatNumber(metrics.avgLatency || 0)}<span class="unit">ms</span>`;
     document.getElementById('fallbacks-used').textContent = formatNumber(metrics.fallbacksUsed || 0);
-    document.getElementById('active-connections').textContent = formatNumber(metrics.activeConnections || 0);
 
     // Update models status
     document.getElementById('models-available').textContent = formatNumber(metrics.modelsAvailable || 0);
@@ -203,7 +202,7 @@ function displayModels(models) {
           
           <div class="capabilities-list">
              <span class="capability-badge supported" title="Text Generation">📝</span>
-             <span class="capability-badge ${model.supportsImage || model.supportsVision ? 'supported' : ''}" title="Image Input">🖼️</span>
+             <span class="capability-badge ${model.supportsImage ? 'supported' : ''}" title="Image Input">🖼️</span>
              <span class="capability-badge ${model.supportsVideo ? 'supported' : ''}" title="Video Input">🎥</span>
              <span class="capability-badge ${model.supportsAudio ? 'supported' : ''}" title="Audio Input">🎤</span>
              <span class="capability-badge ${model.supportsFile ? 'supported' : ''}" title="File Input">📄</span>
@@ -313,55 +312,31 @@ function displayRateLimits(data) {
 
     if (!container) return;
 
-    const globalLimits = data.globalLimits || {};
-    const providerLimits = data.providerLimits || {};
+    if (!data.enabled) {
+        container.innerHTML = `
+        <div class="empty-state">
+            <span class="empty-icon">⚡</span>
+            <p>Rate limiting is currently disabled.</p>
+        </div>
+        `;
+        return;
+    }
 
-    let html = '';
-
-    // Global limits
-    html += `
+    container.innerHTML = `
     <div class="rate-limit-card">
       <div class="rate-limit-header">
-        <h3>🌐 Global Limits</h3>
+        <h3>🌐 Global Configuration</h3>
       </div>
       <div class="rate-limit-stats">
         <div class="stat-item">
-          <div class="stat-item-label">Requests (Minute)</div>
-          <div class="stat-item-value">${formatNumber(globalLimits.requestsPerMinute || 0)} / ${formatNumber(globalLimits.maxRequestsPerMinute || 0)}</div>
+          <div class="stat-item-label">Limit (Minute)</div>
+          <div class="stat-item-value">${formatNumber(data.requestsPerMinute || 0)} req/min</div>
         </div>
         <div class="stat-item">
-          <div class="stat-item-label">Requests (Hour)</div>
-          <div class="stat-item-value">${formatNumber(globalLimits.requestsPerHour || 0)} / ${formatNumber(globalLimits.maxRequestsPerHour || 0)}</div>
+          <div class="stat-item-label">Active Model Buckets</div>
+          <div class="stat-item-value">${formatNumber(data.activeBuckets?.models || 0)}</div>
         </div>
       </div>
-    </div>
-  `;
-
-    // Provider limits
-    Object.entries(providerLimits).forEach(([provider, limits]) => {
-        html += `
-      <div class="rate-limit-card">
-        <div class="rate-limit-header">
-          <h3>🔌 ${escapeHtml(provider)}</h3>
-        </div>
-        <div class="rate-limit-stats">
-          <div class="stat-item">
-            <div class="stat-item-label">Requests (Minute)</div>
-            <div class="stat-item-value">${formatNumber(limits.requestsPerMinute || 0)} / ${formatNumber(limits.maxRequestsPerMinute || 0)}</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-item-label">Requests (Hour)</div>
-            <div class="stat-item-value">${formatNumber(limits.requestsPerHour || 0)} / ${formatNumber(limits.maxRequestsPerHour || 0)}</div>
-          </div>
-        </div>
-      </div>
-    `;
-    });
-
-    container.innerHTML = html || `
-    <div class="empty-state">
-      <span class="empty-icon">📭</span>
-      <p>No rate limit data available.</p>
     </div>
   `;
 }

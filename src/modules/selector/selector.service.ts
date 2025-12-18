@@ -17,7 +17,7 @@ export class SelectorService {
     private readonly modelsService: ModelsService,
     private readonly smartStrategy: SmartStrategy,
     private readonly circuitBreaker: CircuitBreakerService,
-  ) { }
+  ) {}
 
   /**
    * Select a model based on criteria

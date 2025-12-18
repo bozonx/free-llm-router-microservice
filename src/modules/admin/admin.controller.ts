@@ -13,7 +13,7 @@ export class AdminController {
     private readonly stateService: StateService,
     private readonly rateLimiterService: RateLimiterService,
     private readonly modelsService: ModelsService,
-  ) { }
+  ) {}
 
   /**
    * Get current state of all models.

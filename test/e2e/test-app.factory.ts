@@ -27,7 +27,7 @@ export async function createTestApp(): Promise<NestFastifyApplication> {
   // Exclude dashboard, consistent with main.ts
   const dashboardPrefix = basePath ? `/${basePath}` : '';
   const excludePaths = ['/', '/styles.css', '/app.js', '/:filename'].map(path =>
-    (dashboardPrefix + path).replace('//', '/')
+    (dashboardPrefix + path).replace('//', '/'),
   );
 
   app.setGlobalPrefix(globalPrefix, {

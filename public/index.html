@@ -110,18 +110,7 @@
                         </div>
                     </div>
 
-                    <div class="metric-card">
-                        <div class="metric-header">
-                            <span class="metric-icon">🔌</span>
-                            <h3>Active Connections</h3>
-                        </div>
-                        <div class="metric-value" id="active-connections">0</div>
-                        <div class="metric-details">
-                            <span class="metric-detail">
-                                Current ongoing requests
-                            </span>
-                        </div>
-                    </div>
+
 
                     <div class="metric-card wide">
                         <div class="metric-header">
@@ -181,7 +170,7 @@
                         <!-- Multimodal Support -->
                         <div class="form-group">
                             <label>Multimodal Input (Optional)</label>
-                            
+
                             <!-- Image -->
                             <div class="multimodal-input-group" style="margin-bottom: 0.5rem;">
                                 <input type="text" id="test-image-url" placeholder="Image URL (e.g. .jpg, .png)">
@@ -197,13 +186,13 @@
                                 <input type="text" id="test-video-url" placeholder="Video URL (e.g. .mp4)">
                             </div>
 
-                             <!-- Audio -->
-                             <div class="multimodal-input-group" style="margin-bottom: 0.5rem;">
+                            <!-- Audio -->
+                            <div class="multimodal-input-group" style="margin-bottom: 0.5rem;">
                                 <input type="text" id="test-audio-url" placeholder="Audio URL (e.g. .mp3, .wav)">
                             </div>
-                            
-                             <!-- File -->
-                             <div class="multimodal-input-group">
+
+                            <!-- File -->
+                            <div class="multimodal-input-group">
                                 <input type="text" id="test-file-url" placeholder="File/PDF URL">
                             </div>
 
@@ -222,7 +211,8 @@
                         <!-- Tools Support -->
                         <div class="form-group">
                             <label for="test-tools">Tools (Function Calling)</label>
-                            <textarea id="test-tools" rows="6" placeholder='[{"type":"function","function":{"name":"get_weather","description":"Get weather","parameters":{"type":"object","properties":{"location":{"type":"string"}}}}}]'></textarea>
+                            <textarea id="test-tools" rows="6"
+                                placeholder='[{"type":"function","function":{"name":"get_weather","description":"Get weather","parameters":{"type":"object","properties":{"location":{"type":"string"}}}}}]'></textarea>
                             <span class="form-hint">Optional: JSON array of tools for function calling</span>
                         </div>
 
