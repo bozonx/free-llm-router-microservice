@@ -79,10 +79,7 @@ routing:
 # rateLimiting:
 #   enabled: false            # Enable rate limiting
 #   
-#   # Global limit (all clients combined)
-#   global:
-#     requestsPerMinute: 100  # Max requests per minute for all clients
-#     
+
 #   # Per-client limit (by X-Client-ID header or IP)
 #   perClient:
 #     enabled: true

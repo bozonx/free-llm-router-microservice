@@ -23,7 +23,7 @@ export class RateLimiterService implements OnModuleDestroy {
   private readonly config: RateLimitingConfig;
 
   // Token buckets for different limiter types
-  private readonly globalBucket: TokenBucket;
+
   private readonly clientBuckets: Map<string, TokenBucket> = new Map();
   private readonly modelBuckets: Map<string, TokenBucket> = new Map();
 
@@ -37,12 +37,10 @@ export class RateLimiterService implements OnModuleDestroy {
     };
 
     // Initialize global bucket
-    const globalRpm = this.config.global?.requestsPerMinute ?? 100;
-    this.globalBucket = this.createBucket(globalRpm, globalRpm);
+
 
     if (this.config.enabled) {
       this.logger.log('Rate limiting enabled');
-      this.logger.debug(`Global: ${globalRpm} req/min`);
       if (this.config.perClient?.enabled) {
         this.logger.debug(`Per-client: ${this.config.perClient.requestsPerMinute} req/min`);
       }
@@ -75,14 +73,7 @@ export class RateLimiterService implements OnModuleDestroy {
     return this.config.enabled;
   }
 
-  /**
-   * Check global rate limit
-   * @returns true if allowed, false if rate limited
-   */
-  public checkGlobal(): boolean {
-    if (!this.config.enabled) return true;
-    return this.tryConsume(this.globalBucket);
-  }
+
 
   /**
    * Check per-client rate limit
@@ -136,9 +127,7 @@ export class RateLimiterService implements OnModuleDestroy {
       return { allowed: true };
     }
 
-    if (!this.checkGlobal()) {
-      return { allowed: false, limitType: 'global' };
-    }
+
 
     if (clientId && !this.checkClient(clientId)) {
       return { allowed: false, limitType: 'client' };
@@ -153,18 +142,26 @@ export class RateLimiterService implements OnModuleDestroy {
 
   /**
    * Get rate limit info for response headers
-   * Prioritizes client bucket if available, otherwise global
+   * Prioritizes client bucket if available
    */
-  public getRateLimitInfo(clientId?: string): RateLimitInfo {
-    let bucket: TokenBucket;
+  public getRateLimitInfo(clientId?: string): RateLimitInfo | undefined {
+    let bucket: TokenBucket | undefined;
     let limit: number;
 
     if (clientId && this.config.perClient?.enabled) {
-      bucket = this.clientBuckets.get(clientId) ?? this.globalBucket;
+      bucket = this.clientBuckets.get(clientId);
       limit = this.config.perClient.requestsPerMinute;
+
+      // Create bucket if it doesn't exist (simulating checkClient logic for info)
+      if (!bucket) {
+        const rpm = this.config.perClient.requestsPerMinute;
+        const burst = this.config.perClient.burstSize ?? 0;
+        bucket = this.createBucket(rpm, rpm + burst);
+        this.clientBuckets.set(clientId, bucket);
+      }
     } else {
-      bucket = this.globalBucket;
-      limit = this.config.global?.requestsPerMinute ?? 100;
+      // No applicable rate limit
+      return undefined;
     }
 
     // Refill before getting info
@@ -198,7 +195,7 @@ export class RateLimiterService implements OnModuleDestroy {
       enabled: this.config.enabled,
       config: this.config,
       activeBuckets: {
-        global: true, // Always initialized
+
         clients: this.clientBuckets.size,
         models: this.modelBuckets.size,
       },

@@ -17,7 +17,7 @@ import type { FastifyRequest, FastifyReply } from 'fastify';
 export class RateLimiterGuard implements CanActivate {
   private readonly logger = new Logger(RateLimiterGuard.name);
 
-  constructor(private readonly rateLimiterService: RateLimiterService) {}
+  constructor(private readonly rateLimiterService: RateLimiterService) { }
 
   public canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest<FastifyRequest>();
@@ -37,18 +37,21 @@ export class RateLimiterGuard implements CanActivate {
     // Get rate limit info for headers
     const rateLimitInfo = this.rateLimiterService.getRateLimitInfo(clientId);
 
-    // Add headers to response
-    void response.header('X-RateLimit-Limit', String(rateLimitInfo.limit));
-    void response.header('X-RateLimit-Remaining', String(rateLimitInfo.remaining));
-    void response.header('X-RateLimit-Reset', String(rateLimitInfo.reset));
+    if (rateLimitInfo) {
+      // Add headers to response
+      void response.header('X-RateLimit-Limit', String(rateLimitInfo.limit));
+      void response.header('X-RateLimit-Remaining', String(rateLimitInfo.remaining));
+      void response.header('X-RateLimit-Reset', String(rateLimitInfo.reset));
+    }
 
     if (!result.allowed) {
-      if (rateLimitInfo.retryAfter) {
-        void response.header('Retry-After', String(rateLimitInfo.retryAfter));
+      const retryAfter = rateLimitInfo?.retryAfter;
+      if (retryAfter) {
+        void response.header('Retry-After', String(retryAfter));
       }
 
       this.logger.warn(
-        `Rate limit exceeded for ${result.limitType} (client: ${clientId ?? 'unknown'}, retry after: ${rateLimitInfo.retryAfter ?? 'N/A'}s)`,
+        `Rate limit exceeded for ${result.limitType} (client: ${clientId ?? 'unknown'}, retry after: ${retryAfter ?? 'N/A'}s)`,
       );
 
       throw new HttpException(
@@ -64,7 +67,7 @@ export class RateLimiterGuard implements CanActivate {
     }
 
     this.logger.debug(
-      `Rate limit check passed (client: ${clientId ?? 'unknown'}, remaining: ${rateLimitInfo.remaining}/${rateLimitInfo.limit})`,
+      `Rate limit check passed (client: ${clientId ?? 'unknown'}, remaining: ${rateLimitInfo?.remaining ?? 'N/A'}/${rateLimitInfo?.limit ?? 'N/A'})`,
     );
 
     return true;

@@ -15,9 +15,7 @@ export class RateLimitingValidator extends BaseValidator<RouterConfig['rateLimit
       this.assertBoolean(rl.enabled, `${path}.enabled`);
     }
 
-    if (rl.global !== undefined) {
-      this.validateGlobal(rl.global, `${path}.global`);
-    }
+
 
     if (rl.perClient !== undefined) {
       this.validatePerClient(rl.perClient, `${path}.perClient`);
@@ -28,11 +26,7 @@ export class RateLimitingValidator extends BaseValidator<RouterConfig['rateLimit
     }
   }
 
-  private validateGlobal(value: unknown, path: string): void {
-    this.assertType(value, 'object', path);
-    const global = value;
-    this.assertNumber(global.requestsPerMinute, `${path}.requestsPerMinute`, 0);
-  }
+
 
   private validatePerClient(value: unknown, path: string): void {
     this.assertType(value, 'object', path);

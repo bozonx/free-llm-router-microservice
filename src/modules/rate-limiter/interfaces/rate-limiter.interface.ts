@@ -7,10 +7,7 @@ export interface RateLimitingConfig {
    */
   enabled: boolean;
 
-  /**
-   * Global rate limit (all clients combined)
-   */
-  global?: GlobalRateLimitConfig;
+
 
   /**
    * Per-client rate limit (by X-Client-ID header or IP address)
@@ -23,15 +20,7 @@ export interface RateLimitingConfig {
   perModel?: PerModelRateLimitConfig;
 }
 
-/**
- * Global rate limit configuration
- */
-export interface GlobalRateLimitConfig {
-  /**
-   * Maximum requests per minute
-   */
-  requestsPerMinute: number;
-}
+
 
 /**
  * Per-client rate limit configuration
@@ -125,7 +114,7 @@ export interface RateLimitStatus {
   enabled: boolean;
   config: RateLimitingConfig;
   activeBuckets: {
-    global: boolean;
+
     clients: number;
     models: number;
   };
@@ -136,9 +125,7 @@ export interface RateLimitStatus {
  */
 export const DEFAULT_RATE_LIMITING_CONFIG: RateLimitingConfig = {
   enabled: false,
-  global: {
-    requestsPerMinute: 100,
-  },
+
   perClient: {
     enabled: true,
     requestsPerMinute: 20,

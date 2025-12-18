@@ -23,7 +23,7 @@ describe('RateLimiterService', () => {
     },
     rateLimiting: {
       enabled: true,
-      global: { requestsPerMinute: 10 },
+
       perClient: { enabled: true, requestsPerMinute: 5, burstSize: 2 },
       perModel: { enabled: true, requestsPerMinute: 8 },
       ...overrides,
@@ -54,7 +54,6 @@ describe('RateLimiterService', () => {
     });
 
     it('should always allow requests', () => {
-      expect(service.checkGlobal()).toBe(true);
       expect(service.checkClient('client-1')).toBe(true);
       expect(service.checkModel('model-1')).toBe(true);
     });
@@ -73,23 +72,7 @@ describe('RateLimiterService', () => {
       expect(service.isEnabled()).toBe(true);
     });
 
-    describe('global rate limit', () => {
-      it('should allow requests within limit', () => {
-        for (let i = 0; i < 10; i++) {
-          expect(service.checkGlobal()).toBe(true);
-        }
-      });
 
-      it('should block requests when limit exceeded', () => {
-        // Consume all tokens
-        for (let i = 0; i < 10; i++) {
-          service.checkGlobal();
-        }
-
-        // Next request should be blocked
-        expect(service.checkGlobal()).toBe(false);
-      });
-    });
 
     describe('per-client rate limit', () => {
       it('should track clients separately', () => {
@@ -158,6 +141,8 @@ describe('RateLimiterService', () => {
         service.checkClient('client-5');
 
         const info = service.getRateLimitInfo('client-5');
+        expect(info).toBeDefined();
+        if (!info) return;
 
         expect(info.limit).toBe(5);
         expect(info.remaining).toBe(5); // 7 - 2 = 5
@@ -171,15 +156,17 @@ describe('RateLimiterService', () => {
         }
 
         const info = service.getRateLimitInfo('client-6');
+        expect(info).toBeDefined();
+        if (!info) return;
 
         expect(info.remaining).toBe(0);
         expect(info.retryAfter).toBeGreaterThan(0);
       });
 
-      it('should use global info when no client specified', () => {
+      it('should return undefined when no client specified', () => {
         const info = service.getRateLimitInfo();
 
-        expect(info.limit).toBe(10); // global limit
+        expect(info).toBeUndefined();
       });
     });
 
@@ -188,7 +175,7 @@ describe('RateLimiterService', () => {
         const config = service.getConfig();
 
         expect(config.enabled).toBe(true);
-        expect(config.global?.requestsPerMinute).toBe(10);
+
         expect(config.perClient?.requestsPerMinute).toBe(5);
         expect(config.perModel?.requestsPerMinute).toBe(8);
       });
@@ -205,7 +192,7 @@ describe('RateLimiterService', () => {
             useValue: createMockConfig({
               enabled: true,
               // High rate to make refill fast for testing
-              global: { requestsPerMinute: 60000 }, // 1000 tokens per second
+
               perClient: { enabled: true, requestsPerMinute: 60000 },
             }),
           },
@@ -218,14 +205,14 @@ describe('RateLimiterService', () => {
     it('should refill tokens over time', async () => {
       // Consume some tokens
       for (let i = 0; i < 1000; i++) {
-        service.checkGlobal();
+        service.checkClient('refill-client');
       }
 
       // Wait a bit for tokens to refill (at 1000/sec, 10ms = 10 tokens)
       await new Promise(resolve => setTimeout(resolve, 20));
 
       // Should have some tokens now
-      expect(service.checkGlobal()).toBe(true);
+      expect(service.checkClient('refill-client')).toBe(true);
     });
   });
 });
