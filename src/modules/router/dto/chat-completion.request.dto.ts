@@ -142,7 +142,7 @@ export class ChatCompletionRequestDto {
   @IsOptional()
   @IsNumber()
   @Min(1)
-  @Max(128000)
+  @Max(10000000)
   public max_tokens?: number;
 
   @IsOptional()
@@ -253,7 +253,7 @@ export class ChatCompletionRequestDto {
   @IsOptional()
   @IsNumber()
   @Min(0)
-  @Max(5)
+  @Max(10)
   public max_same_model_retries?: number;
 
   /**

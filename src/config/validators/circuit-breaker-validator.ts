@@ -16,7 +16,7 @@ export class CircuitBreakerValidator extends BaseValidator<RouterConfig['circuit
     }
 
     if (cb.cooldownPeriodMins !== undefined) {
-      this.assertNumber(cb.cooldownPeriodMins, `${path}.cooldownPeriodMins`, 0, 1440);
+      this.assertNumber(cb.cooldownPeriodMins, `${path}.cooldownPeriodMins`, 0, 10080);
     }
 
     if (cb.successThreshold !== undefined) {

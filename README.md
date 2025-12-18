@@ -97,7 +97,7 @@ routing:
   maxModelSwitches: 3        # Максимум переключений между моделями
   maxSameModelRetries: 2     # Максимум ретраев на одной модели (429, сетевые ошибки)
   retryDelay: 3000           # Задержка между повторами (429 и сетевые ошибки) (мс)
-  timeoutSecs: 30            # Таймаут запроса к провайдеру (в секундах)
+  timeoutSecs: 60            # Таймаут запроса к провайдеру (в секундах)
   
   # Fallback на платную модель
   fallback:
@@ -113,8 +113,8 @@ routing:
 #   statsWindowSizeMins: 10   # Окно статистики, мин (default: 10)
 
 # Global model rate limit (protection against skew)
-# Max requests per minute per model. Default: 100.
-modelRequestsPerMinute: 100
+# Max requests per minute per model. Default: 200.
+modelRequestsPerMinute: 200
 ```
 
 ### Список моделей

@@ -126,7 +126,7 @@ export class FreeLlmRouter implements INodeType {
                         type: 'number',
                         typeOptions: {
                             minValue: 1,
-                            maxValue: 128000,
+                            maxValue: 10000000,
                         },
                         default: 1000,
                         description: 'Maximum number of tokens to generate in the response',
@@ -230,7 +230,7 @@ export class FreeLlmRouter implements INodeType {
                         type: 'number',
                         typeOptions: {
                             minValue: 0,
-                            maxValue: 5,
+                            maxValue: 10,
                         },
                         default: undefined,
                         placeholder: '2',
