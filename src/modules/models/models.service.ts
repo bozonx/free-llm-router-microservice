@@ -400,6 +400,13 @@ export class ModelsService implements OnModuleInit {
   }
 
   private hasAllTags(model: ModelDefinition, requiredTags: string[]): boolean {
-    return requiredTags.every(tag => model.tags.includes(tag));
+    return requiredTags.every(tag => {
+      // Support OR logic within a single tag string using '|' (e.g., "medium|large")
+      if (tag.includes('|')) {
+        const orTags = tag.split('|').map(t => t.trim());
+        return orTags.some(orTag => model.tags.includes(orTag));
+      }
+      return model.tags.includes(tag);
+    });
   }
 }

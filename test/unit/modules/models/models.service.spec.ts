@@ -160,6 +160,19 @@ models:
       const models = service.filter({ tags: ['nonexistent'] });
       expect(models).toHaveLength(0);
     });
+
+    it('should filter using OR logic with | separator', () => {
+      // Should match model with either 'code' OR 'reasoning' tag
+      const modelsOr = service.filter({ tags: ['code|reasoning'] });
+      expect(modelsOr).toHaveLength(2);
+      expect(modelsOr.map(m => m.name)).toContain('test-fast-model');
+      expect(modelsOr.map(m => m.name)).toContain('test-reasoning-model');
+
+      // Should match models that have 'math' tag AND (either 'code' OR 'reasoning')
+      const modelsAndOr = service.filter({ tags: ['code|reasoning', 'math'] });
+      expect(modelsAndOr).toHaveLength(1);
+      expect(modelsAndOr[0]?.name).toBe('test-reasoning-model');
+    });
   });
 
   describe('overrides', () => {

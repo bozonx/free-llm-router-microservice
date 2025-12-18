@@ -594,11 +594,23 @@ function generateTags(
     // Add family tags
     tags.push(...extractFamilyTags(id, modelName));
 
+    // Add tier tags based on weight
+    const weight = determineWeight(id);
+    if (weight === TIER_1_WEIGHT) tags.push('tier-1');
+    else if (weight === TIER_2_WEIGHT) tags.push('tier-2');
+    else tags.push('tier-3');
+
     // Add status tags
     tags.push(...detectStatusTags(id, modelName));
 
     // Add size tags
-    tags.push(...detectSizeTags(id, modelName));
+    const sizeTags = detectSizeTags(id, modelName);
+    tags.push(...sizeTags);
+
+    // Add "powerful" tag for models that are definitely not small
+    if (sizeTags.includes('medium') || sizeTags.includes('large') || weight === TIER_1_WEIGHT) {
+        tags.push('powerful');
+    }
 
     // Add vision tag if applicable
     if (supportsImage) {

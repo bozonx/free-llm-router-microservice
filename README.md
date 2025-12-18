@@ -160,29 +160,64 @@ mv models_updated.yaml models.yaml
 
 #### Система тегов
 
-Скрипт `update-models` автоматически проставляет теги для моделей на основе их характеристик. Это позволяет гибко фильтровать модели под конкретные задачи.
+Скрипт `update-models` автоматически проставляет теги для моделей на основе их характеристик. Это позволяет гибко фильтровать модели под конкретные задачи. Система фильтрации также поддерживает логику **OR** (ИЛИ) внутри тега с помощью символа `|`.
 
 **Категории тегов:**
 
-1. **Use Cases** (сценарии использования):
-   - `coding` — специализированные модели для программирования (содержат 'code', 'coder', 'codestral', 'devstral')
-   - `creative` — модели для творческого письма (содержат 'creative', 'story', 'writer', 'poet', 'dolphin', 'hermes')
-   - `analysis` — модели для анализа данных и исследований (содержат 'analysis', 'analyst', 'research', 'deepresearch')
-   - `chat` — модели, оптимизированные для диалогов (содержат 'chat', 'assistant', 'instruct', 'conversational')
-   - `agentic` — модели, отлично следующие сложным инструкциям (llama-3.x, gemini, claude, gpt-4, deepseek, qwen, command)
+1. **Size** (размер модели по количеству параметров):
+   - `small` — маленькие модели (1B-14B), например Llama 3 8B
+   - `medium` — средние модели (15B-69B), например Qwen 2.5 32B
+   - `large` — большие модели (70B+), например Llama 3.3 70B
+   - `powerful` — мощные модели (все `medium` и `large`, а также флагманские `tier-1` модели)
 
-2. **Language Support** (языковая поддержка):
-   - `best-for-ru` — отличная поддержка русского языка (deepseek, qwen, glm, tongyi)
-   - `best-for-es` — отличная поддержка испанского языка (llama-3, gemini, mistral, mixtral, command)
-   - `best-for-eo` — отличная поддержка эсперанто (llama-3.2+, gemini-2, qwen, glm)
+2. **Quality Tiers** (категории качества):
+   - `tier-1` — флагманские топовые модели (GPT-4o, Claude 3.5 Sonnet, Gemini 1.5 Pro, Llama 3.3 70B+)
+   - `tier-2` — сильные модели среднего уровня (Llama 3 8B, Mistral Nemo, Qwen 2.5 32B+, Mixtral)
+   - `tier-3` — остальные модели
 
-3. **Model Families** (семейства моделей):
-   - Название семейства: `llama`, `gemini`, `gemma`, `qwen`, `deepseek`, `mistral`, `mixtral`, `claude`, `gpt`, `phi`, `command`, `nemotron`, `glm`, `hermes`, `dolphin`, `yi`, `nova`, `olmo`
-   - Мажорная версия: `llama-3`, `gemini-2`, `qwen-2`, `deepseek-3`, и т.д.
+3. **Use Cases** (сценарии использования):
+   - `coding` — специализированные модели для программирования
+   - `creative` — модели для творческого письма
+   - `analysis` — модели для анализа данных и исследований
+   - `chat` — модели, оптимизированные для диалогов
+   - `agentic` — модели, отлично следующие сложным инструкциям
 
-4. **Capabilities** (возможности):
-   - `reasoning` — модели с поддержкой рассуждений (содержат 'reasoning', 'r1', 'think', 'deepresearch')
-   - `vision` — модели с поддержкой изображений (проверяется через `architecture.input_modalities`)
+4. **Language Support** (языковая поддержка):
+   - `best-for-ru`, `best-for-en`, `best-for-zh`, `best-for-es` и др. (всего более 20 языков)
+
+5. **Model Families** (семейства моделей):
+   - Название семейства: `llama`, `gemini`, `qwen`, `deepseek`, `mistral` и др.
+   - Мажорная версия: `llama-3`, `gemini-2`, `qwen-2.5`, и т.д.
+
+6. **Capabilities** (возможности):
+   - `reasoning` — модели с глубоким рассуждением (R1, o1-style)
+   - `vision` — модели с поддержкой анализа изображений
+   - `long-context` — модели с поддержкой длинного контекста (от 512к токенов)
+
+**Логика фильтрации:**
+
+- Теги в массиве объединяются по логике **AND** (И).
+- Можно использовать **OR** внутри одного элемента массива через `|`: `"tags": ["medium|large"]`.
+
+**Примеры использования:**
+
+```bash
+# Найти либо среднюю, либо большую модель для программирования
+curl -X POST http://localhost:8080/api/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tags": ["medium|large", "coding"],
+    "messages": [{"role": "user", "content": "Write a complex algorithm"}]
+  }'
+
+# Использовать только топовые модели (Tier 1)
+curl -X POST http://localhost:8080/api/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tags": ["tier-1"],
+    "messages": [{"role": "user", "content": "Help me with strategy"}]
+  }'
+```
 
 **Примеры использования тегов:**
 
