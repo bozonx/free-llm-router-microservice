@@ -48,6 +48,8 @@ interface OpenRouterResponse {
       role: string;
       content: string | null;
       tool_calls?: ToolCall[];
+      // Reasoning models may put response in reasoning field instead of content
+      reasoning?: string;
     };
     finish_reason: string;
   }>;
@@ -237,16 +239,23 @@ export class OpenRouterProvider extends BaseProvider {
       throw new Error('No choices in OpenRouter response');
     }
 
-    // Debug logging
-    if (!choice.message.content && !choice.message.tool_calls) {
-      console.warn('OpenRouter Warning: Empty content and no tool calls', JSON.stringify(choice, null, 2));
+    // Some reasoning models (e.g., gpt-oss-20b) put response in reasoning field instead of content
+    // Use reasoning as fallback when content is empty
+    let messageContent = choice.message.content;
+    if (!messageContent && choice.message.reasoning) {
+      this.logger.debug('Using reasoning field as content fallback');
+      messageContent = choice.message.reasoning;
     }
 
+    // Debug logging for truly empty responses
+    if (!messageContent && !choice.message.tool_calls) {
+      console.warn('OpenRouter Warning: Empty content and no tool calls', JSON.stringify(choice, null, 2));
+    }
 
     const result: ChatCompletionResult = {
       id: response.id,
       model: response.model,
-      content: this.handleContentWithToolCalls(choice.message.content, choice.message.tool_calls),
+      content: this.handleContentWithToolCalls(messageContent, choice.message.tool_calls),
       toolCalls: choice.message.tool_calls,
       finishReason: this.mapFinishReason(choice.finish_reason),
       usage: {
@@ -256,8 +265,6 @@ export class OpenRouterProvider extends BaseProvider {
       },
     };
 
-    // LOG THE RESULT CONTENT
-    console.log('Mapped Response Content:', JSON.stringify(result.content));
     return result;
   }
 }

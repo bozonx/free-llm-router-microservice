@@ -43,7 +43,6 @@ export class RouterController {
         @Req() req: FastifyRequest,
         @Res() res: FastifyReply,
     ): Promise<ChatCompletionResponseDto | void> {
-        console.log(`[API] Incoming Request Body: ${JSON.stringify(request, null, 2)}`);
 
         const abortController = new AbortController();
         const signal = abortController.signal;
