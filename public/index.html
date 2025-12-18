@@ -178,21 +178,36 @@
                                 placeholder="Enter your test message">Hello! How are you?</textarea>
                         </div>
 
-                        <!-- Vision Support -->
+                        <!-- Multimodal Support -->
                         <div class="form-group">
-                            <label for="test-image-url">Image URL (Vision)</label>
-                            <input type="text" id="test-image-url" placeholder="https://example.com/image.jpg">
-                            <span class="form-hint">Optional: Add an image URL for vision-capable models</span>
-                        </div>
+                            <label>Multimodal Input (Optional)</label>
+                            
+                            <!-- Image -->
+                            <div class="multimodal-input-group" style="margin-bottom: 0.5rem;">
+                                <input type="text" id="test-image-url" placeholder="Image URL (e.g. .jpg, .png)">
+                                <select id="test-image-detail" style="width: auto; min-width: 80px;">
+                                    <option value="auto">Auto</option>
+                                    <option value="low">Low</option>
+                                    <option value="high">High</option>
+                                </select>
+                            </div>
 
-                        <div class="form-group">
-                            <label for="test-image-detail">Image Detail</label>
-                            <select id="test-image-detail">
-                                <option value="auto">Auto</option>
-                                <option value="low">Low</option>
-                                <option value="high">High</option>
-                            </select>
-                            <span class="form-hint">Detail level for image processing</span>
+                            <!-- Video -->
+                            <div class="multimodal-input-group" style="margin-bottom: 0.5rem;">
+                                <input type="text" id="test-video-url" placeholder="Video URL (e.g. .mp4)">
+                            </div>
+
+                             <!-- Audio -->
+                             <div class="multimodal-input-group" style="margin-bottom: 0.5rem;">
+                                <input type="text" id="test-audio-url" placeholder="Audio URL (e.g. .mp3, .wav)">
+                            </div>
+                            
+                             <!-- File -->
+                             <div class="multimodal-input-group">
+                                <input type="text" id="test-file-url" placeholder="File/PDF URL">
+                            </div>
+
+                            <span class="form-hint">Ensure the selected model supports the specific modality</span>
                         </div>
 
                         <!-- Streaming Support -->

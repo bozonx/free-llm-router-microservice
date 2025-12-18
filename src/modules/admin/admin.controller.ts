@@ -13,7 +13,7 @@ export class AdminController {
     private readonly stateService: StateService,
     private readonly rateLimiterService: RateLimiterService,
     private readonly modelsService: ModelsService,
-  ) {}
+  ) { }
 
   /**
    * Get current state of all models.
@@ -33,6 +33,19 @@ export class AdminController {
         ...state,
         modelName: state.name,
         providerName: provider,
+        // Include static model definition properties
+        tags: modelDef?.tags || [],
+        type: modelDef?.type || 'fast',
+        contextSize: modelDef?.contextSize || 0,
+        weight: modelDef?.weight || 1,
+        supportsImage: modelDef?.supportsImage || modelDef?.supportsVision || false, // Fallback for backward compatibility
+        supportsVideo: modelDef?.supportsVideo || false,
+        supportsAudio: modelDef?.supportsAudio || false,
+        supportsFile: modelDef?.supportsFile || false,
+        jsonResponse: modelDef?.jsonResponse || false,
+        // Also include raw model ID for reference
+        model: modelDef?.model || '',
+        provider: modelDef?.provider || '',
       };
     });
 

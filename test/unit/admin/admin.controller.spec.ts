@@ -60,6 +60,17 @@ describe('AdminController', () => {
           name: 'model1',
           modelName: 'model1',
           providerName: 'Unknown',
+          tags: [],
+          type: 'fast',
+          contextSize: 0,
+          weight: 1,
+          supportsImage: false,
+          supportsVideo: false,
+          supportsAudio: false,
+          supportsFile: false,
+          jsonResponse: false,
+          model: '',
+          provider: '',
         },
       ]);
       expect(result.timestamp).toBeDefined();

@@ -195,8 +195,22 @@ function displayModels(models) {
     <div class="model-card">
       <div class="model-header">
         <div class="model-info">
-          <h3>${escapeHtml(model.modelName)}</h3>
-          <div class="model-provider">${escapeHtml(model.providerName || 'Unknown Provider')}</div>
+          <div class="model-title-row">
+            <h3>${escapeHtml(model.name)}</h3>
+            <div class="model-type-badge ${model.type === 'reasoning' ? 'reasoning' : ''}">${model.type || 'fast'}</div>
+          </div>
+          <div class="model-provider">${escapeHtml(model.provider || 'Unknown')} / ${escapeHtml(model.model)}</div>
+          
+          <div class="capabilities-list">
+             <span class="capability-badge supported" title="Text Generation">📝</span>
+             <span class="capability-badge ${model.supportsImage || model.supportsVision ? 'supported' : ''}" title="Image Input">🖼️</span>
+             <span class="capability-badge ${model.supportsVideo ? 'supported' : ''}" title="Video Input">🎥</span>
+             <span class="capability-badge ${model.supportsAudio ? 'supported' : ''}" title="Audio Input">🎤</span>
+             <span class="capability-badge ${model.supportsFile ? 'supported' : ''}" title="File Input">📄</span>
+             <span class="capability-badge ${model.jsonResponse ? 'supported' : ''}" title="JSON Mode">{}</span>
+          </div>
+
+          ${renderTags(model.tags)}
         </div>
         <div class="circuit-badge ${getCircuitClass(model.circuitState)}">
           ${getCircuitIcon(model.circuitState)} ${escapeHtml(model.circuitState || 'UNKNOWN')}
@@ -204,32 +218,40 @@ function displayModels(models) {
       </div>
       <div class="model-stats">
         <div class="stat-item">
-          <div class="stat-item-label">Total Requests</div>
-          <div class="stat-item-value">${formatNumber(model.stats?.totalRequests || 0)}</div>
+          <div class="stat-item-label">Weight</div>
+          <div class="stat-item-value">${model.weight || 1}</div>
         </div>
         <div class="stat-item">
-          <div class="stat-item-label">Success</div>
-          <div class="stat-item-value">${formatNumber(model.stats?.successCount || 0)}</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-item-label">Errors</div>
-          <div class="stat-item-value">${formatNumber(model.stats?.errorCount || 0)}</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-item-label">Avg Latency</div>
-          <div class="stat-item-value">${formatNumber(model.stats?.avgLatency || 0)} ms</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-item-label">Active Requests</div>
-          <div class="stat-item-value">${formatNumber(model.activeRequests || 0)}</div>
+            <div class="stat-item-label">Context</div>
+            <div class="stat-item-value">${formatBytes(model.contextSize)}</div>
         </div>
         <div class="stat-item">
           <div class="stat-item-label">Success Rate</div>
           <div class="stat-item-value">${calculateSuccessRate(model.stats)}%</div>
         </div>
+        <div class="stat-item">
+          <div class="stat-item-label">Avg Latency</div>
+          <div class="stat-item-value">${formatNumber(model.stats?.avgLatency || 0)} ms</div>
+        </div>
       </div>
     </div>
   `).join('');
+}
+
+function renderTags(tags) {
+    if (!tags || !tags.length) return '';
+    return `
+        <div class="tags-list">
+            ${tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join('')}
+        </div>
+    `;
+}
+
+function formatBytes(tokens) {
+    if (!tokens) return '0';
+    if (tokens >= 1000000) return (tokens / 1000000).toFixed(1) + 'M';
+    if (tokens >= 1000) return (tokens / 1000).toFixed(0) + 'k';
+    return tokens;
 }
 
 function getCircuitClass(state) {
@@ -373,6 +395,10 @@ async function sendTestRequest() {
     const maxTokens = parseInt(document.getElementById('test-max-tokens')?.value || '150', 10);
     const imageUrl = document.getElementById('test-image-url')?.value?.trim();
     const imageDetail = document.getElementById('test-image-detail')?.value || 'auto';
+    const videoUrl = document.getElementById('test-video-url')?.value?.trim();
+    const audioUrl = document.getElementById('test-audio-url')?.value?.trim();
+    const fileUrl = document.getElementById('test-file-url')?.value?.trim();
+
     const streaming = document.getElementById('test-streaming')?.checked || false;
     const toolsInput = document.getElementById('test-tools')?.value?.trim();
 
@@ -383,16 +409,25 @@ async function sendTestRequest() {
     // Show loading state
     responseContainer.innerHTML = '<div class="loading-state">Sending request...</div>';
 
-    // Build message content (support multimodal for vision)
-    let messageContent;
+    // Build message content
+    let messageContent = [];
+    let textPart = message;
+
+    // Append other URLs to text for now as DTO strict validation might reject custom types
+    // Accessing models that support these modalities typically implies they might parse URLs or we need to update DTO
+    if (videoUrl) textPart += `\n\n[VIDEO: ${videoUrl}]`;
+    if (audioUrl) textPart += `\n\n[AUDIO: ${audioUrl}]`;
+    if (fileUrl) textPart += `\n\n[FILE: ${fileUrl}]`;
+
     if (imageUrl) {
         messageContent = [
-            { type: 'text', text: message },
+            { type: 'text', text: textPart },
             { type: 'image_url', image_url: { url: imageUrl, detail: imageDetail } }
         ];
     } else {
-        messageContent = message;
+        messageContent = textPart; // Simple string if no capability requiring complex structure is used
     }
+    // Note: If we wanted to strictly test 'supports_video' routing, passing the flag is key.
 
     const requestBody = {
         model,
@@ -402,7 +437,12 @@ async function sendTestRequest() {
         }],
         temperature,
         max_tokens: maxTokens,
-        stream: streaming
+        stream: streaming,
+        // Set flags based on inputs
+        supports_image: !!imageUrl,
+        supports_video: !!videoUrl,
+        supports_audio: !!audioUrl,
+        supports_file: !!fileUrl
     };
 
     // Add tools if provided
