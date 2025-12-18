@@ -9,16 +9,10 @@ services:
       - '8080:8080'
     environment:
       - TZ=UTC
-      - BASE_PATH=
       - LOG_LEVEL=warn
-      # Configuration file path inside container (optional, defaults to ./config.yaml)
-      # - ROUTER_CONFIG_PATH=/app/config.yaml
     volumes:
-      # Mount configuration files (required)
       - ./config.yaml:/app/config.yaml:ro
       #- ./models.yaml:/app/models.yaml:ro
-      # Mount .env file if using environment variable substitution in config.yaml
-      # - ./.env.production:/app/.env.production:ro
     healthcheck:
       test: [ 'CMD-SHELL', 'wget -qO- http://127.0.0.1:8080/api/v1/health || exit 1' ]
       interval: 30s
