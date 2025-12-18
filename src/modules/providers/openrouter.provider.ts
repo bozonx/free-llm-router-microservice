@@ -18,9 +18,9 @@ interface OpenRouterRequest {
   messages: Array<{
     role: string;
     content:
-      | string
-      | Array<{ type: string; text?: string; image_url?: { url: string; detail?: string } }>
-      | null;
+    | string
+    | Array<{ type: string; text?: string; image_url?: { url: string; detail?: string } }>
+    | null;
     name?: string;
     tool_calls?: ToolCall[];
     tool_call_id?: string;
@@ -233,10 +233,17 @@ export class OpenRouterProvider extends BaseProvider {
   private mapResponse(response: OpenRouterResponse): ChatCompletionResult {
     const choice = response.choices[0];
     if (!choice) {
+      console.error('OpenRouter Response Error: No choices', JSON.stringify(response, null, 2));
       throw new Error('No choices in OpenRouter response');
     }
 
-    return {
+    // Debug logging
+    if (!choice.message.content && !choice.message.tool_calls) {
+      console.warn('OpenRouter Warning: Empty content and no tool calls', JSON.stringify(choice, null, 2));
+    }
+
+
+    const result: ChatCompletionResult = {
       id: response.id,
       model: response.model,
       content: this.handleContentWithToolCalls(choice.message.content, choice.message.tool_calls),
@@ -248,5 +255,9 @@ export class OpenRouterProvider extends BaseProvider {
         totalTokens: response.usage.total_tokens,
       },
     };
+
+    // LOG THE RESULT CONTENT
+    console.log('Mapped Response Content:', JSON.stringify(result.content));
+    return result;
   }
 }

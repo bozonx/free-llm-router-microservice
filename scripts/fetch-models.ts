@@ -180,8 +180,8 @@ const SIZE_PATTERNS = {
 const LONG_CONTEXT_THRESHOLD = 500000;
 
 // Minimum Token Requirements
-const MIN_CONTEXT_SIZE = 80000;
-const MIN_MAX_OUTPUT_TOKENS = 80000;
+const MIN_CONTEXT_SIZE = 8000;
+const MIN_MAX_OUTPUT_TOKENS = 4000;
 
 // ============================================================================
 // STATIC CONFIGURATION CONSTANTS
@@ -294,10 +294,12 @@ interface FilteredModel {
     jsonResponse: boolean;
     available: boolean;
     weight: number;
-    supportsImage?: boolean;
-    supportsVideo?: boolean;
-    supportsAudio?: boolean;
-    supportsFile?: boolean;
+    supportsImage?: boolean; // deprecated, use input modalities
+    supportsVideo?: boolean; // deprecated, use input modalities
+    supportsAudio?: boolean; // deprecated, use input modalities
+    supportsFile?: boolean; // deprecated, use input modalities
+    inputModalities?: string[];
+    supportsTools?: boolean;
 }
 
 /**
@@ -591,7 +593,9 @@ function generateTags(
     isReasoning: boolean,
     supportsImage: boolean,
     contextSize: number,
-    maxOutputTokens: number
+    maxOutputTokens: number,
+    supportsTools: boolean,
+    supportsJson: boolean
 ): string[] {
     const tags: string[] = [];
 
@@ -639,6 +643,22 @@ function generateTags(
         tags.push('long-context');
     }
 
+    // Add capabilities tags
+    if (supportsTools) {
+        tags.push('tools');
+    }
+    if (supportsJson) {
+        tags.push('json-mode');
+    }
+
+    // Add capabilities tags
+    if (supportsTools) {
+        tags.push('tools');
+    }
+    if (supportsJson) {
+        tags.push('json-mode');
+    }
+
     // Remove duplicates and sort
     return [...new Set(tags)].sort();
 }
@@ -665,27 +685,8 @@ async function fetchAndFilterModels() {
             // Output must be text only as requested
             if (!outputModalities.includes(REQUIRED_OUTPUT_MODALITY)) return false;
 
-            // Capability check - filter only by json output and tools support
-            const supportsToolsHeuristic = (id: string) => {
-                const lowerId = id.toLowerCase();
-                return TOOLS_SUPPORT_PATTERNS.some(pattern => lowerId.includes(pattern));
-            };
-
-            const supportsJsonHeuristic = (id: string) => {
-                const lowerId = id.toLowerCase();
-                return supportsToolsHeuristic(id) ||
-                    JSON_SUPPORT_ADDITIONAL_PATTERNS.some(pattern => lowerId.includes(pattern));
-            };
-
-            const supportsTools = model.supported_parameters?.includes(SUPPORTED_PARAMS.TOOLS) ||
-                model.supported_parameters?.includes(SUPPORTED_PARAMS.TOOL_CHOICE) ||
-                supportsToolsHeuristic(model.id);
-            const supportsJson = model.supported_parameters?.includes(SUPPORTED_PARAMS.RESPONSE_FORMAT) ||
-                model.supported_parameters?.includes(SUPPORTED_PARAMS.STRUCTURED_OUTPUTS) ||
-                supportsJsonHeuristic(model.id);
-
-            // Filter only by json output and tools support
-            if (!supportsTools || !supportsJson) return false;
+            // Filter only by minimum token requirements (if strictly needed, but we relaxed them)
+            // We moved tools/json checks to tagging instead of filtering
 
             // Filter by minimum token requirements
             const contextSize = model.context_length || DEFAULT_CONTEXT_SIZE;
@@ -706,6 +707,26 @@ async function fetchAndFilterModels() {
             const inputModalities = model.architecture?.input_modalities || [INPUT_MODALITIES.TEXT];
             const supportsImage = inputModalities.includes(INPUT_MODALITIES.IMAGE);
 
+            // Re-eval capabilities for tagging
+            const supportsToolsHeuristic = (id: string) => {
+                const lowerId = id.toLowerCase();
+                return TOOLS_SUPPORT_PATTERNS.some(pattern => lowerId.includes(pattern));
+            };
+
+            const supportsJsonHeuristic = (id: string) => {
+                const lowerId = id.toLowerCase();
+                return supportsToolsHeuristic(id) ||
+                    JSON_SUPPORT_ADDITIONAL_PATTERNS.some(pattern => lowerId.includes(pattern));
+            };
+
+            const supportsTools = model.supported_parameters?.includes(SUPPORTED_PARAMS.TOOLS) ||
+                model.supported_parameters?.includes(SUPPORTED_PARAMS.TOOL_CHOICE) ||
+                supportsToolsHeuristic(model.id);
+
+            const supportsJson = model.supported_parameters?.includes(SUPPORTED_PARAMS.RESPONSE_FORMAT) ||
+                model.supported_parameters?.includes(SUPPORTED_PARAMS.STRUCTURED_OUTPUTS) ||
+                supportsJsonHeuristic(model.id);
+
             const result: FilteredModel = {
                 name: name,
                 provider: DEFAULT_PROVIDER,
@@ -713,10 +734,21 @@ async function fetchAndFilterModels() {
                 type: isReasoning ? 'reasoning' : 'fast',
                 contextSize: model.context_length || DEFAULT_CONTEXT_SIZE,
                 maxOutputTokens: model.top_provider?.max_completion_tokens || DEFAULT_MAX_OUTPUT_TOKENS,
-                tags: generateTags(model.id, name, isReasoning, supportsImage, model.context_length || DEFAULT_CONTEXT_SIZE, model.top_provider?.max_completion_tokens || DEFAULT_MAX_OUTPUT_TOKENS),
-                jsonResponse: true,
+                tags: generateTags(
+                    model.id,
+                    name,
+                    isReasoning,
+                    supportsImage,
+                    model.context_length || DEFAULT_CONTEXT_SIZE,
+                    model.top_provider?.max_completion_tokens || DEFAULT_MAX_OUTPUT_TOKENS,
+                    supportsTools,
+                    supportsJson
+                ),
+                jsonResponse: supportsJson,
                 available: true,
                 weight: determineWeight(model.id),
+                supportsTools: supportsTools,
+                inputModalities: inputModalities,
             };
 
             // Set multimodal support flags based on input_modalities
