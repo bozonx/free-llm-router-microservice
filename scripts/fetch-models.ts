@@ -12,10 +12,13 @@ import yaml from 'js-yaml';
 // Tag Patterns - Use Cases
 const USE_CASE_PATTERNS = {
     CODING: /code|coder|codestral|devstral|programming|kat-coder/,
-    CREATIVE: /creative|story|writer|poet|dolphin|hermes/,
+    CREATIVE: /creative|story|writer|poet/,
     ANALYSIS: /analysis|analyst|research|deepresearch|data/,
     CHAT: /chat|assistant|instruct|conversational/,
     AGENTIC: /llama-3\.|gemini|claude|gpt-4|deepseek|qwen|command|agent/,
+    ROLEPLAY: /roleplay|rp|character|storytelling/,
+    UNCENSORED: /dolphin|hermes|uncensored|noufani|unholy|wizard/,
+    TRANSLATION: /translate|translation|multilingual/,
 } as const;
 
 // Tag Patterns - Language Support
@@ -137,6 +140,42 @@ const TIER_2_PATTERNS = [
     // Nemotron (all variants)
     /nemotron/,
 ] as const;
+
+// Model Status Patterns
+const LATEST_MODEL_PATTERNS = [
+    // Latest versions as of December 2024
+    /llama-3\.3/,
+    /gemini-2\.0/,
+    /gpt-4o/,
+    /claude-3\.7/,
+    /deepseek-v3/,
+    /qwen-2\.5/,
+    /gemma-2/,
+    /phi-4/,
+    /glm-4/,
+] as const;
+
+const PREVIEW_PATTERNS = [
+    /preview/,
+    /experimental/,
+    /beta/,
+    /alpha/,
+] as const;
+
+const STABLE_PATTERNS = [
+    // Exclude preview/experimental models from stable
+    // Stable = not preview AND has been released for some time
+] as const;
+
+// Model Size Patterns (based on parameter count)
+const SIZE_PATTERNS = {
+    SMALL: /([1-9]b|1[0-4]b)(?!\d)/,  // 1B-14B
+    MEDIUM: /(1[5-9]b|[2-6]\db)(?!\d)/,  // 15B-69B
+    LARGE: /(7\db|[8-9]\db|[1-9]\d{2}b)/,  // 70B+
+} as const;
+
+// Context Size Thresholds
+const LONG_CONTEXT_THRESHOLD = 128000;
 
 // Minimum Token Requirements
 const MIN_CONTEXT_SIZE = 80000;
@@ -327,6 +366,21 @@ function detectUseCaseTags(id: string, modelName: string): string[] {
         tags.push('agentic');
     }
 
+    // Roleplay
+    if (combined.match(USE_CASE_PATTERNS.ROLEPLAY)) {
+        tags.push('roleplay');
+    }
+
+    // Uncensored
+    if (combined.match(USE_CASE_PATTERNS.UNCENSORED)) {
+        tags.push('uncensored');
+    }
+
+    // Translation
+    if (combined.match(USE_CASE_PATTERNS.TRANSLATION)) {
+        tags.push('translation');
+    }
+
     return tags;
 }
 
@@ -474,9 +528,60 @@ function extractFamilyTags(id: string, modelName: string): string[] {
 }
 
 /**
+ * Detect model status tags (latest, stable, preview)
+ */
+function detectStatusTags(id: string, modelName: string): string[] {
+    const tags: string[] = [];
+    const combined = `${id} ${modelName}`.toLowerCase();
+
+    // Preview/Experimental
+    if (PREVIEW_PATTERNS.some(pattern => combined.match(pattern))) {
+        tags.push('preview');
+        return tags; // Preview models are not stable
+    }
+
+    // Latest
+    if (LATEST_MODEL_PATTERNS.some(pattern => combined.match(pattern))) {
+        tags.push('latest');
+    }
+
+    // Stable (not preview and not latest)
+    if (!tags.includes('latest')) {
+        tags.push('stable');
+    }
+
+    return tags;
+}
+
+/**
+ * Detect model size tags based on parameter count
+ */
+function detectSizeTags(id: string, modelName: string): string[] {
+    const tags: string[] = [];
+    const combined = `${id} ${modelName}`.toLowerCase();
+
+    // Check for size patterns
+    if (combined.match(SIZE_PATTERNS.SMALL)) {
+        tags.push('small');
+    } else if (combined.match(SIZE_PATTERNS.LARGE)) {
+        tags.push('large');
+    } else if (combined.match(SIZE_PATTERNS.MEDIUM)) {
+        tags.push('medium');
+    }
+
+    return tags;
+}
+
+/**
  * Generate all tags for a model
  */
-function generateTags(id: string, modelName: string, isReasoning: boolean, supportsImage: boolean): string[] {
+function generateTags(
+    id: string,
+    modelName: string,
+    isReasoning: boolean,
+    supportsImage: boolean,
+    contextSize: number
+): string[] {
     const tags: string[] = [];
 
     // Add use case tags
@@ -488,9 +593,20 @@ function generateTags(id: string, modelName: string, isReasoning: boolean, suppo
     // Add family tags
     tags.push(...extractFamilyTags(id, modelName));
 
+    // Add status tags
+    tags.push(...detectStatusTags(id, modelName));
+
+    // Add size tags
+    tags.push(...detectSizeTags(id, modelName));
+
     // Add vision tag if applicable
     if (supportsImage) {
         tags.push(SPECIAL_TAGS.VISION);
+    }
+
+    // Add long-context tag if applicable
+    if (contextSize >= LONG_CONTEXT_THRESHOLD) {
+        tags.push('long-context');
     }
 
     // Remove duplicates and sort
@@ -567,7 +683,7 @@ async function fetchAndFilterModels() {
                 type: isReasoning ? 'reasoning' : 'fast',
                 contextSize: model.context_length || DEFAULT_CONTEXT_SIZE,
                 maxOutputTokens: model.top_provider?.max_completion_tokens || DEFAULT_MAX_OUTPUT_TOKENS,
-                tags: generateTags(model.id, name, isReasoning, supportsImage),
+                tags: generateTags(model.id, name, isReasoning, supportsImage, model.context_length || DEFAULT_CONTEXT_SIZE),
                 jsonResponse: true,
                 available: true,
                 weight: determineWeight(model.id),
