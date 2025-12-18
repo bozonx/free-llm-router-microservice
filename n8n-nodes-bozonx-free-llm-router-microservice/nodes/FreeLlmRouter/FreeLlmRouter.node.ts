@@ -200,14 +200,18 @@ export class FreeLlmRouter implements INodeType {
                             'Penalizes new tokens based on their presence. Positive values encourage new topics',
                     },
                     {
-                        displayName: 'Timeout',
+                        displayName: 'Routing: Provider Timeout (seconds)',
                         name: 'timeout',
                         type: 'number',
-                        default: 60000,
-                        description: 'Maximum time to wait for a response in milliseconds',
+                        typeOptions: {
+                            minValue: 1,
+                        },
+                        default: undefined,
+                        placeholder: '30',
+                        description: 'Maximum time in seconds to wait for a response from a provider for a single attempt. Overrides microservice config value if set.',
                     },
                     {
-                        displayName: 'Max Model Switches',
+                        displayName: 'Routing: Max Model Switches',
                         name: 'maxModelSwitches',
                         type: 'number',
                         typeOptions: {
@@ -218,7 +222,7 @@ export class FreeLlmRouter implements INodeType {
                         description: 'Maximum number of model switches (trying different models) for this request. Overrides microservice config value if set.',
                     },
                     {
-                        displayName: 'Max Same Model Retries',
+                        displayName: 'Routing: Max Same Model Retries',
                         name: 'maxSameModelRetries',
                         type: 'number',
                         typeOptions: {
@@ -229,7 +233,7 @@ export class FreeLlmRouter implements INodeType {
                         description: 'Maximum retries on the same model for temporary errors (429, network errors) for this request. Overrides microservice config value if set.',
                     },
                     {
-                        displayName: 'Retry Delay (ms)',
+                        displayName: 'Routing: Retry Delay (ms)',
                         name: 'retryDelay',
                         type: 'number',
                         typeOptions: {
@@ -322,6 +326,10 @@ export class FreeLlmRouter implements INodeType {
             modelKwargs.retry_delay = options.retryDelay;
         }
 
+        if (options.timeout !== undefined && options.timeout > 0) {
+            modelKwargs.timeout_secs = options.timeout;
+        }
+
         // Create model instance
         const llm = new FreeLlmRouterChatModel({
             baseUrl: credentials.baseUrl as string,
@@ -332,7 +340,9 @@ export class FreeLlmRouter implements INodeType {
             topP: options.topP,
             frequencyPenalty: options.frequencyPenalty,
             presencePenalty: options.presencePenalty,
-            timeout: options.timeout,
+            // Set client-side timeout to 10 minutes to avoid premature abortion
+            // since the user stated "node timeout is not needed" and we handle timeouts on the server
+            timeout: 600000,
             modelKwargs: Object.keys(modelKwargs).length > 0 ? modelKwargs : undefined,
         });
 

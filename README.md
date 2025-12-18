@@ -225,6 +225,7 @@ OpenAI-совместимый endpoint для chat completions.
   "max_model_switches": 5,      // Override config.routing.maxModelSwitches for this request only
   "max_same_model_retries": 3,  // Override config.routing.maxSameModelRetries for this request only
   "retry_delay": 500,           // Override config.routing.retryDelay (ms) for this request only
+  "timeout_secs": 60,           // Override config.routing.timeoutSecs and provider timeout for this request only
   
   // Streaming
   "stream": false               // Enable Server-Sent Events streaming (default: false)

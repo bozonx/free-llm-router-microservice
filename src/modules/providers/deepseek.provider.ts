@@ -110,7 +110,7 @@ export class DeepSeekProvider extends BaseProvider {
       const response = await firstValueFrom(
         this.httpService.post<DeepSeekResponse>('/chat/completions', request, {
           baseURL: this.config.baseUrl,
-          timeout: this.config.timeoutSecs * 1000,
+          timeout: (params.timeoutSecs || this.config.timeoutSecs) * 1000,
           headers: {
             Authorization: `Bearer ${this.config.apiKey}`,
             'Content-Type': 'application/json',
@@ -157,7 +157,7 @@ export class DeepSeekProvider extends BaseProvider {
       const response = await firstValueFrom(
         this.httpService.post('/chat/completions', request, {
           baseURL: this.config.baseUrl,
-          timeout: this.config.timeoutSecs * 1000,
+          timeout: (params.timeoutSecs || this.config.timeoutSecs) * 1000,
           headers: {
             Authorization: `Bearer ${this.config.apiKey}`,
             'Content-Type': 'application/json',

@@ -110,7 +110,7 @@ export class OpenRouterProvider extends BaseProvider {
       const response = await firstValueFrom(
         this.httpService.post<OpenRouterResponse>('/chat/completions', request, {
           baseURL: this.config.baseUrl,
-          timeout: this.config.timeoutSecs * 1000,
+          timeout: (params.timeoutSecs || this.config.timeoutSecs) * 1000,
           headers: {
             Authorization: `Bearer ${this.config.apiKey}`,
             'HTTP-Referer': 'https://github.com/free-llm-router',
@@ -158,7 +158,7 @@ export class OpenRouterProvider extends BaseProvider {
       const response = await firstValueFrom(
         this.httpService.post('/chat/completions', request, {
           baseURL: this.config.baseUrl,
-          timeout: this.config.timeoutSecs * 1000,
+          timeout: (params.timeoutSecs || this.config.timeoutSecs) * 1000,
           headers: {
             Authorization: `Bearer ${this.config.apiKey}`,
             'HTTP-Referer': 'https://github.com/free-llm-router',

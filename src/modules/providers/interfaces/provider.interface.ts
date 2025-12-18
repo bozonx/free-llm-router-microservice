@@ -99,6 +99,11 @@ export interface ChatCompletionParams {
    * Enable streaming mode (Server-Sent Events)
    */
   stream?: boolean;
+
+  /**
+   * Request timeout in seconds (overrides provider default)
+   */
+  timeoutSecs?: number;
 }
 
 /**

@@ -112,7 +112,9 @@ describe('RouterService - Routing Overrides', () => {
                 {
                     provide: RequestBuilderService,
                     useValue: {
-                        buildChatCompletionParams: jest.fn().mockReturnValue({}),
+                        buildChatCompletionParams: jest.fn().mockImplementation((req: any) => ({
+                            timeoutSecs: req.timeout_secs,
+                        })),
                         hasImageContent: jest.fn().mockReturnValue(false),
                     },
                 },
@@ -267,6 +269,30 @@ describe('RouterService - Routing Overrides', () => {
             expect(executeWithRetrySpy).toHaveBeenCalledWith(
                 expect.objectContaining({
                     maxRetries: 0,
+                }),
+            );
+        });
+
+        it('should pass timeout_secs from request to provider params', async () => {
+            const request: ChatCompletionRequestDto = {
+                messages: [{ role: 'user', content: 'test' }],
+                timeout_secs: 120, // Override config value
+            };
+
+            selectorService.selectNextModel.mockReturnValue(mockModel);
+            mockProvider.chatCompletion.mockResolvedValue({
+                id: 'test',
+                model: 'test-model',
+                content: 'response',
+                finishReason: 'stop',
+                usage: { promptTokens: 10, completionTokens: 20, totalTokens: 30 },
+            });
+
+            await service.chatCompletion(request);
+
+            expect(mockProvider.chatCompletion).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    timeoutSecs: 120, // Should be passed to provider
                 }),
             );
         });

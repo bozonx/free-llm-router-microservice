@@ -261,4 +261,13 @@ export class ChatCompletionRequestDto {
   @IsNumber()
   @Min(0)
   public retry_delay?: number;
+
+  /**
+   * Request timeout in seconds for this request
+   * Overrides config.routing.timeoutSecs and provider configuration
+   */
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  public timeout_secs?: number;
 }

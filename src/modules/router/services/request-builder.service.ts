@@ -38,6 +38,7 @@ export class RequestBuilderService {
       presencePenalty: request.presence_penalty,
       stop: request.stop,
       jsonMode: request.json_response,
+      timeoutSecs: request.timeout_secs,
       abortSignal,
     };
   }
