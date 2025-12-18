@@ -32,7 +32,7 @@ describe('Smart Routing (e2e)', () => {
   });
 
   describe('Circuit Breaker', () => {
-    const targetModel = 'mistral-7b-instruct'; // Priority 1
+    const targetModel = 'gpt-oss-20b'; // Priority 1
 
     it('should open circuit after failures and skip model', async () => {
       // Setup:
@@ -110,7 +110,7 @@ describe('Smart Routing (e2e)', () => {
     });
 
     it('should mark model as PERMANENTLY_UNAVAILABLE on 404', async () => {
-      const model404 = 'qwen3-4b';
+      const model404 = 'nemotron-nano-12b-v2-vl';
 
       nock('https://openrouter.ai')
         .post('/api/v1/chat/completions', () => true)
@@ -181,7 +181,7 @@ describe('Smart Routing (e2e)', () => {
     });
 
     it('should select faster model when prefer_fast is true', async () => {
-      // 1. Train Llama 70B (Slow)
+      // 1. Train gpt-oss-20b (Slow)
       nock('https://openrouter.ai')
         .post('/api/v1/chat/completions', () => true)
         .delay(200)
@@ -194,12 +194,12 @@ describe('Smart Routing (e2e)', () => {
         method: 'POST',
         url: '/api/v1/chat/completions',
         payload: {
-          model: 'llama-3.3-70b-instruct',
+          model: 'gpt-oss-20b',
           messages: [{ role: 'user', content: 'train' }],
         },
       });
 
-      // 2. Train DeepSeek (Fast)
+      // 2. Train mimo-v2-flash (Fast)
       nock('https://openrouter.ai')
         .post('/api/v1/chat/completions', () => true)
         .delay(10)
@@ -212,7 +212,7 @@ describe('Smart Routing (e2e)', () => {
         method: 'POST',
         url: '/api/v1/chat/completions',
         payload: {
-          model: 'deepseek-r1t2-chimera',
+          model: 'mimo-v2-flash',
           messages: [{ role: 'user', content: 'train' }],
         },
       });
@@ -239,7 +239,7 @@ describe('Smart Routing (e2e)', () => {
       });
 
       const body = JSON.parse(response.body);
-      expect(body._router.model_name).not.toBe('llama-3.3-70b-instruct');
+      expect(body._router.model_name).not.toBe('gpt-oss-20b');
     });
   });
 
