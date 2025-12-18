@@ -18,9 +18,9 @@ interface OpenRouterRequest {
   messages: Array<{
     role: string;
     content:
-    | string
-    | Array<{ type: string; text?: string; image_url?: { url: string; detail?: string } }>
-    | null;
+      | string
+      | Array<{ type: string; text?: string; image_url?: { url: string; detail?: string } }>
+      | null;
     name?: string;
     tool_calls?: ToolCall[];
     tool_call_id?: string;
@@ -249,7 +249,10 @@ export class OpenRouterProvider extends BaseProvider {
 
     // Debug logging for truly empty responses
     if (!messageContent && !choice.message.tool_calls) {
-      console.warn('OpenRouter Warning: Empty content and no tool calls', JSON.stringify(choice, null, 2));
+      console.warn(
+        'OpenRouter Warning: Empty content and no tool calls',
+        JSON.stringify(choice, null, 2),
+      );
     }
 
     const result: ChatCompletionResult = {

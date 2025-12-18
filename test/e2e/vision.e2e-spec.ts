@@ -30,12 +30,7 @@ describe('Vision Support (e2e)', () => {
         },
       });
 
-      if (response.statusCode === 400) {
-        const body = JSON.parse(response.body);
-        if (Array.isArray(body.message)) {
-          throw new Error(`Validation failed for string content: ${JSON.stringify(body.message)}`);
-        }
-      }
+      expect(response.statusCode).not.toBe(400);
     });
 
     it('accepts image_url content block in messages', async () => {
@@ -65,13 +60,7 @@ describe('Vision Support (e2e)', () => {
       });
 
       // We mainly care that validation doesn't fail.
-      if (response.statusCode === 400) {
-        const body = JSON.parse(response.body);
-        // Throw if it's a validation error about the content structure
-        if (Array.isArray(body.message)) {
-          throw new Error(`Validation failed: ${JSON.stringify(body.message)}`);
-        }
-      }
+      expect(response.statusCode).not.toBe(400);
     });
 
     it('accepts image_url with detail parameter', async () => {
@@ -97,12 +86,7 @@ describe('Vision Support (e2e)', () => {
         },
       });
 
-      if (response.statusCode === 400) {
-        const body = JSON.parse(response.body);
-        if (Array.isArray(body.message)) {
-          throw new Error(`Validation failed: ${JSON.stringify(body.message)}`);
-        }
-      }
+      expect(response.statusCode).not.toBe(400);
     });
   });
 });

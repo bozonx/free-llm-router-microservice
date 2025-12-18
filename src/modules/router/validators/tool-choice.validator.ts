@@ -3,7 +3,7 @@ import {
   type ValidationOptions,
   type ValidationArguments,
 } from 'class-validator';
-import type { ToolChoice } from '../../providers/interfaces/tools.interface.js';
+
 
 /**
  * Custom validator for tool_choice field
@@ -17,7 +17,7 @@ export function IsValidToolChoice(validationOptions?: ValidationOptions) {
       propertyName: propertyName,
       options: validationOptions,
       validator: {
-        validate(value: any): boolean {
+        validate(value: unknown): boolean {
           if (value === undefined || value === null) {
             return true; // Optional field
           }
@@ -29,12 +29,13 @@ export function IsValidToolChoice(validationOptions?: ValidationOptions) {
 
           // Object value: { type: 'function', function: { name: string } }
           if (typeof value === 'object' && value !== null) {
+            const obj = value as Record<string, any>;
             return (
-              value.type === 'function' &&
-              typeof value.function === 'object' &&
-              value.function !== null &&
-              typeof value.function.name === 'string' &&
-              value.function.name.length > 0
+              obj.type === 'function' &&
+              typeof obj.function === 'object' &&
+              obj.function !== null &&
+              typeof obj.function.name === 'string' &&
+              obj.function.name.length > 0
             );
           }
 

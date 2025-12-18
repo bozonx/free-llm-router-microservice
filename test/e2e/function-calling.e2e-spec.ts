@@ -54,12 +54,7 @@ describe('Function Calling (e2e)', () => {
       // However, since we added them to the DTO, they should be accepted.
 
       // If we get 400, checks if it is related to tools
-      if (response.statusCode === 400) {
-        const body = JSON.parse(response.body);
-        if (body.message.includes('tools') || body.message.includes('tool_choice')) {
-          throw new Error(`Validation failed for tools: ${body.message}`);
-        }
-      }
+      expect(response.statusCode).not.toBe(400);
 
       // In a real e2e with mocks, we would assert 200 and the response content.
       // Here we just verify we didn't get a validation error for 'tools'.
@@ -98,12 +93,7 @@ describe('Function Calling (e2e)', () => {
         },
       });
 
-      if (response.statusCode === 400) {
-        const body = JSON.parse(response.body);
-        if (body.message.includes('role')) {
-          throw new Error(`Validation failed for tool role: ${body.message}`);
-        }
-      }
+      expect(response.statusCode).not.toBe(400);
     });
   });
 });

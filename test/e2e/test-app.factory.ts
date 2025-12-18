@@ -21,12 +21,12 @@ export async function createTestApp(): Promise<NestFastifyApplication> {
     new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
   );
 
-  const basePath = (process.env.BASE_PATH || '').replace(/^\/+|\/+$/g, '');
+  const basePath = (process.env.BASE_PATH ?? '').replace(/^\/+|\/+$/g, '');
   const globalPrefix = [basePath, 'api', 'v1'].filter(Boolean).join('/');
 
   // Exclude dashboard, consistent with main.ts
   const dashboardPrefix = basePath ? `/${basePath}` : '';
-  const excludePaths = ['/', '/styles.css', '/app.js', '/:filename'].map(path =>
+  const excludePaths = ['/', '/styles.css', '/app.js'].map(path =>
     (dashboardPrefix + path).replace('//', '/'),
   );
 
