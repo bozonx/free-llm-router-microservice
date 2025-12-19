@@ -1,6 +1,6 @@
 {
     "name": "n8n-nodes-bozonx-free-llm-router-microservice",
-    "version": "1.4.0",
+    "version": "1.5.0",
     "description": "n8n node for Free LLM Router Microservice",
     "keywords": [
         "n8n-community-node-package",
