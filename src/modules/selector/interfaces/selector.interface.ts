@@ -1,6 +1,8 @@
 import type { ModelDefinition } from '../../models/interfaces/model.interface.js';
 import type { ModelReference } from '../utils/model-parser.js';
 
+export type SelectionMode = 'weighted_random' | 'best' | 'top_n_random';
+
 /**
  * Selection criteria for model choosing
  */
@@ -47,6 +49,11 @@ export interface SelectionCriteria {
    * Prefer models with lowest latency
    */
   preferFast?: boolean;
+
+  /**
+   * Selection mode for smart strategy
+   */
+  selectionMode?: SelectionMode;
 
   /**
    * Minimum success rate for model selection (0-1)

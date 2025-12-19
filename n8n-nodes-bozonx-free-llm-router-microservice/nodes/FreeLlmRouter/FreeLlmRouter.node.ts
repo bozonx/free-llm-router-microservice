@@ -60,6 +60,30 @@ export class FreeLlmRouter implements INodeType {
                     '• <b>Specific model</b> - Enter model name (e.g., llama-3.3-70b or openrouter/deepseek-r1)<br>' +
                     '• <b>Priority list</b> - Comma-separated models in priority order (e.g., "openrouter/deepseek-r1, llama-3.3-70b, auto")',
             },
+            {
+                displayName: 'Selection Mode',
+                name: 'selectionMode',
+                type: 'options',
+                options: [
+                    {
+                        name: 'Weighted Random (Default)',
+                        value: 'weighted_random',
+                        description: 'Selects randomly based on weight (quality/speed score)',
+                    },
+                    {
+                        name: 'Best',
+                        value: 'best',
+                        description: 'Always selects the model with the highest score',
+                    },
+                    {
+                        name: 'Top N Random',
+                        value: 'top_n_random',
+                        description: 'Selects randomly among the top 3 best models',
+                    },
+                ],
+                default: 'weighted_random',
+                description: 'How to select the model from the filtered candidates',
+            },
 
             // Model filtering
             {
@@ -338,6 +362,7 @@ export class FreeLlmRouter implements INodeType {
         // Get main-level filter parameters
         const tags = this.getNodeParameter('tags', itemIndex, '') as string;
         const type = this.getNodeParameter('type', itemIndex, '') as string;
+        const selectionMode = this.getNodeParameter('selectionMode', itemIndex, 'weighted_random') as string;
         const jsonResponse = this.getNodeParameter('jsonResponse', itemIndex, false) as boolean;
 
         // Build headers for authentication
@@ -357,6 +382,9 @@ export class FreeLlmRouter implements INodeType {
         }
         if (type) {
             modelKwargs.type = type;
+        }
+        if (selectionMode && selectionMode !== 'weighted_random') {
+            modelKwargs.selection_mode = selectionMode;
         }
         if (jsonResponse) {
             modelKwargs.json_response = jsonResponse;

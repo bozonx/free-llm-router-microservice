@@ -302,6 +302,7 @@ OpenAI-совместимый endpoint для chat completions.
   // Smart Strategy поля
   "prefer_fast": true,         // Предпочитать модели с наименьшей latency
   "min_success_rate": 0.8,     // Минимальный success rate модели (0-1)
+  "selection_mode": "weighted_random", // "weighted_random", "best", "top_n_random"
   
   // Function Calling (OpenAI-совместимый)
   "tools": [                   // Список инструментов
@@ -670,6 +671,10 @@ curl -X POST http://localhost:8080/api/v1/chat/completions \
    - Исключаем модели, превысившие `maxConcurrent` лимит
    - Если указан `min_success_rate` — исключаем модели с низким success rate
    - Если `prefer_fast: true` — выбираем модель с наименьшей latency
+   - Если `selection_mode`:
+     - `"best"` — выбираем модель с наивысшим весом (качество/скорость)
+     - `"top_n_random"` — случайный выбор среди топ-3 моделей по весу
+     - `"weighted_random"` (default) — взвешенное случайное распределение
    - Иначе выполняем weighted random selection по `weight` × `successRate` × `latencyFactor`
 
 

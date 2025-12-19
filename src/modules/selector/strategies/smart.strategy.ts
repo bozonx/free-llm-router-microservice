@@ -29,7 +29,7 @@ export class SmartStrategy implements SelectionStrategy {
     private readonly stateService: StateService,
     private readonly circuitBreaker: CircuitBreakerService,
     @Inject(ROUTER_CONFIG) private readonly config: RouterConfig,
-  ) {}
+  ) { }
 
   public select(models: ModelDefinition[], criteria: SelectionCriteria): ModelDefinition | null {
     if (models.length === 0) {
@@ -49,9 +49,17 @@ export class SmartStrategy implements SelectionStrategy {
 
     let selected: ModelDefinition | null;
 
+    const mode = criteria.selectionMode || 'weighted_random';
+
     if (criteria.preferFast) {
       selected = this.selectFastest(candidates);
       this.logger.debug(`Selected fastest model: ${selected?.name ?? 'none'}`);
+    } else if (mode === 'best') {
+      selected = this.selectBest(candidates);
+      this.logger.debug(`Selected best model: ${selected?.name ?? 'none'}`);
+    } else if (mode === 'top_n_random') {
+      selected = this.selectTopNRandom(candidates, 3);
+      this.logger.debug(`Selected from top 3: ${selected?.name ?? 'none'}`);
     } else {
       selected = this.weightedRandomSelect(candidates);
       this.logger.debug(`Selected by weight: ${selected?.name ?? 'none'}`);
@@ -179,5 +187,37 @@ export class SmartStrategy implements SelectionStrategy {
     const normalizedLatency = Math.max(avgLatency, MIN_LATENCY_MS_FOR_CALCULATION);
     // Inverse relationship: lower latency -> higher factor
     return LATENCY_NORMALIZATION_FACTOR / normalizedLatency;
+  }
+
+  private selectBest(models: ModelDefinition[]): ModelDefinition {
+    if (models.length === 0) throw new Error('No models to select from');
+    if (models.length === 1) return models[0];
+
+    const weightedModels = this.calculateWeights(models);
+    // Sort by weight descending
+    weightedModels.sort((a, b) => b.weight - a.weight);
+
+    return weightedModels[0].model;
+  }
+
+  private selectTopNRandom(models: ModelDefinition[], n: number): ModelDefinition {
+    if (models.length === 0) throw new Error('No models to select from');
+    if (models.length <= n) {
+      // If we have fewer models than N, just do weighted random on all of them
+      return this.weightedRandomSelect(models)!;
+    }
+
+    const weightedModels = this.calculateWeights(models);
+    // Sort by weight descending
+    weightedModels.sort((a, b) => b.weight - a.weight);
+
+    // Take top N
+    const topN = weightedModels.slice(0, n);
+
+    // Weighted random selection among top N
+    return this.selectRandomWeighted(
+      topN,
+      topN.map(x => x.model),
+    );
   }
 }

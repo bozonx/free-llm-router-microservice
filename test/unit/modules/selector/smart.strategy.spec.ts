@@ -233,7 +233,33 @@ describe('SmartStrategy', () => {
       }
 
       // model-low-weight with weight 99 should be selected much more often
+      // model-low-weight with weight 99 should be selected much more often
       expect(selections['model-low-weight']).toBeGreaterThan(80);
+    });
+
+    it('should select best model when selectionMode is "best"', () => {
+      // models[0] has weight 10, models[1] has weight 5, models[2] has weight 1
+      // Assuming equal stats, effective weight follows static weight
+      const result = strategy.select(mockModels, { selectionMode: 'best' });
+
+      expect(result?.name).toBe('model-high-weight');
+    });
+
+    it('should select from top models when selectionMode is "top_n_random"', () => {
+      const modelsWithWeights: ModelDefinition[] = [
+        { ...mockModels[0], name: 'model-100', weight: 100 },
+        { ...mockModels[0], name: 'model-90', weight: 90 },
+        { ...mockModels[0], name: 'model-80', weight: 80 },
+        { ...mockModels[0], name: 'model-1', weight: 1 }, // Should not be selected
+      ];
+
+      // Run multiple times
+      for (let i = 0; i < 20; i++) {
+        const result = strategy.select(modelsWithWeights, { selectionMode: 'top_n_random' });
+        expect(result).not.toBeNull();
+        expect(result?.name).not.toBe('model-1');
+        expect(['model-100', 'model-90', 'model-80']).toContain(result?.name);
+      }
     });
   });
 });

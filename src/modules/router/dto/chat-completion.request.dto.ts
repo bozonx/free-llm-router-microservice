@@ -220,6 +220,17 @@ export class ChatCompletionRequestDto {
   public min_success_rate?: number;
 
   /**
+   * Selection mode for smart strategy
+   * - weighted_random: Select randomly based on weight (default)
+   * - best: Select model with highest weight
+   * - top_n_random: Select randomly from top N (3) best models
+   */
+  @IsOptional()
+  @IsString()
+  @IsIn(['weighted_random', 'best', 'top_n_random'])
+  public selection_mode?: 'weighted_random' | 'best' | 'top_n_random';
+
+  /**
    * Enable streaming mode (Server-Sent Events)
    * If true, response will be streamed incrementally
    */
