@@ -28,6 +28,11 @@ export interface RouterMetadata {
    * Errors from previous attempts (if any)
    */
   errors?: RouterErrorInfo[];
+
+  /**
+   * Parsed JSON data (only present when json_response is enabled and content is valid JSON)
+   */
+  data?: unknown;
 }
 
 /**

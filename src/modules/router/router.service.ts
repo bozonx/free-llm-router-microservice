@@ -422,6 +422,17 @@ export class RouterService {
   }): ChatCompletionResponseDto {
     const { result, model, attemptCount, errors, fallbackUsed } = params;
 
+    // Parse JSON if json_response is enabled and content is present
+    let parsedData: unknown | undefined;
+    if (result.content) {
+      try {
+        parsedData = JSON.parse(result.content);
+      } catch {
+        // Ignore parse errors - content might not be valid JSON
+        // or json_response might not have been requested
+      }
+    }
+
     return {
       id: result.id,
       object: 'chat.completion',
@@ -449,6 +460,7 @@ export class RouterService {
         attempts: attemptCount,
         fallback_used: fallbackUsed,
         errors: errors.length > 0 ? errors : undefined,
+        data: parsedData,
       },
     };
   }

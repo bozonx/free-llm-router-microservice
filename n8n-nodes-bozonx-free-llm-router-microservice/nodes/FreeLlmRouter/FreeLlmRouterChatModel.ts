@@ -223,7 +223,14 @@ export class FreeLlmRouterChatModel extends BaseChatModel {
                     completion_tokens?: number;
                     total_tokens?: number;
                 };
-                _router?: unknown;
+                _router?: {
+                    provider?: string;
+                    model_name?: string;
+                    attempts?: number;
+                    fallback_used?: boolean;
+                    errors?: any[];
+                    data?: unknown;
+                };
             };
 
             // Extract response
@@ -236,12 +243,16 @@ export class FreeLlmRouterChatModel extends BaseChatModel {
                 additional_kwargs: toolCalls ? { tool_calls: toolCalls } : {},
             });
 
+            // Use parsed JSON from _router.data if available
+            const parsedJson = data._router?.data;
+
             const generation: ChatGeneration = {
                 text: messageContent,
                 message: aiMessage,
                 generationInfo: {
                     finishReason: data.choices?.[0]?.finish_reason,
                     _router: data._router,
+                    ...(parsedJson ? { data: parsedJson } : {}),
                 },
             };
 
@@ -254,6 +265,7 @@ export class FreeLlmRouterChatModel extends BaseChatModel {
                         totalTokens: data.usage?.total_tokens,
                     },
                     _router: data._router,
+                    ...(parsedJson ? { data: parsedJson } : {}),
                 },
             };
         } catch (error) {

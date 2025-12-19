@@ -451,9 +451,22 @@ curl -X POST http://localhost:8080/api/v1/chat/completions \
     "model_name": "llama-3.3-70b",
     "attempts": 1,
     "fallback_used": false, // Использовалась ли платная модель (fallback)
-    "errors": []  // Ошибки предыдущих попыток (если были)
+    "errors": [],  // Ошибки предыдущих попыток (если были)
+    "data": {...}  // Распарсенный JSON (только если json_response: true и ответ валидный JSON)
   }
 }
+```
+
+**Примечание о поле `data`:**
+Когда в запросе указан `json_response: true` и модель возвращает валидный JSON, сервер автоматически парсит содержимое поля `content` и добавляет результат в `_router.data`. Это упрощает работу с JSON-ответами в клиентских приложениях:
+
+```javascript
+// Вместо ручного парсинга:
+const content = response.choices[0].message.content;
+const data = JSON.parse(content);
+
+// Можно использовать готовый объект:
+const data = response._router.data;
 ```
 
 ### GET `/api/v1/models`
