@@ -129,6 +129,12 @@ models:
       expect(models[0]?.name).toBe('test-reasoning-model');
     });
 
+    it('should filter by minimum max output tokens', () => {
+      const models = service.filter({ minMaxOutputTokens: 5000 });
+      expect(models).toHaveLength(1);
+      expect(models[0]?.name).toBe('test-reasoning-model');
+    });
+
     it('should filter by JSON response support', () => {
       const models = service.filter({ jsonResponse: true });
       expect(models).toHaveLength(2);

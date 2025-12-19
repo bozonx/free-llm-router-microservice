@@ -28,6 +28,11 @@ export interface FilterCriteria {
   minContextSize?: number;
 
   /**
+   * Minimum max output tokens
+   */
+  minMaxOutputTokens?: number;
+
+  /**
    * JSON response support required
    */
   jsonResponse?: boolean;
@@ -374,6 +379,10 @@ export class ModelsService implements OnModuleInit {
     }
 
     if (criteria.minContextSize && model.contextSize < criteria.minContextSize) {
+      return false;
+    }
+
+    if (criteria.minMaxOutputTokens && model.maxOutputTokens < criteria.minMaxOutputTokens) {
       return false;
     }
 

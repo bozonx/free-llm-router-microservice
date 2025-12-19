@@ -297,6 +297,7 @@ OpenAI-совместимый endpoint для chat completions.
   "tags": ["code"],            // Фильтр по тегам
   "type": "fast",              // Фильтр по типу: "fast" | "reasoning"
   "min_context_size": 32000,   // Минимальный размер контекста
+  "min_max_output_tokens": 4000, // Минимальное количество выходных токенов
   "json_response": true,       // Требуется JSON ответ
   
   // Smart Strategy поля
@@ -520,6 +521,21 @@ curl -X POST http://localhost:8080/api/v1/chat/completions \
   }'
 ```
 
+### Фильтрация по выходным токенам
+
+```bash
+# Выбрать модель с поддержкой минимум 4000 выходных токенов
+curl -X POST http://localhost:8080/api/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [
+      {"role": "user", "content": "Generate a detailed analysis"}
+    ],
+    "min_max_output_tokens": 4000,
+    "temperature": 0.7
+  }'
+```
+
 ### Выбор конкретной модели
 
 ```bash
@@ -679,7 +695,7 @@ curl -X POST http://localhost:8080/api/v1/chat/completions \
    - Без провайдера — ротация по всем провайдерам модели
 2. **Конкретная модель** — если указана строка `model`, используем её
 3. **Smart Strategy** — если `model: "auto"` или не указан:
-   - Фильтруем по критериям (`tags`, `type`, `min_context_size`, `json_response`)
+   - Фильтруем по критериям (`tags`, `type`, `min_context_size`, `min_max_output_tokens`, `json_response`)
    - Исключаем модели с открытым Circuit Breaker (OPEN, PERMANENTLY_UNAVAILABLE)
    - Исключаем модели, превысившие `maxConcurrent` лимит
    - Если указан `min_success_rate` — исключаем модели с низким success rate

@@ -205,6 +205,13 @@ export class FreeLlmRouter implements INodeType {
                         description: 'Minimum context window size required for model filtering',
                     },
                     {
+                        displayName: 'Filter: Minimum Max Output Tokens',
+                        name: 'filterMinMaxOutputTokens',
+                        type: 'number',
+                        default: 0,
+                        description: 'Minimum maximum output tokens required for model filtering',
+                    },
+                    {
                         displayName: 'Filter: Prefer Lowest Latency',
                         name: 'filterPreferLowestLatency',
                         type: 'boolean',
@@ -331,6 +338,7 @@ export class FreeLlmRouter implements INodeType {
             temperature?: number;
             maxTokens?: number;
             filterMinContextSize?: number;
+            filterMinMaxOutputTokens?: number;
             filterPreferLowestLatency?: boolean;
             filterMinSuccessRate?: number;
             filterSupportsImage?: boolean;
@@ -391,6 +399,9 @@ export class FreeLlmRouter implements INodeType {
         }
         if (options.filterMinContextSize !== undefined && options.filterMinContextSize > 0) {
             modelKwargs.min_context_size = options.filterMinContextSize;
+        }
+        if (options.filterMinMaxOutputTokens !== undefined && options.filterMinMaxOutputTokens > 0) {
+            modelKwargs.min_max_output_tokens = options.filterMinMaxOutputTokens;
         }
         if (options.filterPreferLowestLatency) {
             modelKwargs.prefer_fast = options.filterPreferLowestLatency;

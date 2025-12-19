@@ -79,6 +79,7 @@ export class SelectorService {
       tags: criteria.tags,
       type: criteria.type,
       minContextSize: criteria.minContextSize,
+      minMaxOutputTokens: criteria.minMaxOutputTokens,
       jsonResponse: criteria.jsonResponse,
       supportsVision: criteria.supportsVision,
       supportsImage: criteria.supportsImage,

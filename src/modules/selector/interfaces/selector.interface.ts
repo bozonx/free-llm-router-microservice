@@ -36,6 +36,11 @@ export interface SelectionCriteria {
   minContextSize?: number;
 
   /**
+   * Minimum max output tokens required
+   */
+  minMaxOutputTokens?: number;
+
+  /**
    * JSON response support required
    */
   jsonResponse?: boolean;

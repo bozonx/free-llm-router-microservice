@@ -4,7 +4,6 @@ import {
   type ValidationArguments,
 } from 'class-validator';
 
-
 /**
  * Custom validator for tool_choice field
  * Validates that tool_choice is either 'auto', 'none', or a valid function selection object

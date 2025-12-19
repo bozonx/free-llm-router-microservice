@@ -18,7 +18,7 @@ import {
  * - Circuit Breaker state
  * - Model weights (for weighted random selection)
  * - Statistics (latency, success rate)
- * - Request filters (tags, type, min_context_size, prefer_fast, min_success_rate)
+ * - Request filters (tags, type, min_context_size, min_max_output_tokens, prefer_fast, min_success_rate)
 
  */
 @Injectable()
@@ -29,7 +29,7 @@ export class SmartStrategy implements SelectionStrategy {
     private readonly stateService: StateService,
     private readonly circuitBreaker: CircuitBreakerService,
     @Inject(ROUTER_CONFIG) private readonly config: RouterConfig,
-  ) { }
+  ) {}
 
   public select(models: ModelDefinition[], criteria: SelectionCriteria): ModelDefinition | null {
     if (models.length === 0) {

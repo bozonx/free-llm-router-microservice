@@ -197,6 +197,11 @@ export class ChatCompletionRequestDto {
   public min_context_size?: number;
 
   @IsOptional()
+  @IsNumber()
+  @Min(1)
+  public min_max_output_tokens?: number;
+
+  @IsOptional()
   @IsBoolean()
   public json_response?: boolean;
 
