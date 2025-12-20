@@ -56,7 +56,7 @@ docker compose -f docker/docker-compose.yml up -d
 1. In n8n, go to **Credentials** → **New**
 2. Search for "Free LLM Router API"
 3. Configure:
-   - **Base URL**: Your microservice URL (e.g., `http://free-llm-router-microservice:8080/api/v1`)
+   - **Base URL**: Your microservice URL (e.g., `http://free-llm-router-microservice:8080`)
    - **Authentication**: Choose None, Basic Auth, or Bearer Token
    - Add credentials if using authentication
 
