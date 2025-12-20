@@ -3,6 +3,7 @@ import { Test, type TestingModule } from '@nestjs/testing';
 import { RouterController } from '../../../../src/modules/router/router.controller.js';
 import { RouterService } from '../../../../src/modules/router/router.service.js';
 import { ModelsService } from '../../../../src/modules/models/models.service.js';
+import { ROUTER_CONFIG } from '../../../../src/config/router-config.provider.js';
 import type { ChatCompletionRequestDto } from '../../../../src/modules/router/dto/chat-completion.request.dto.js';
 import type { ChatCompletionResponseDto } from '../../../../src/modules/router/dto/chat-completion.response.dto.js';
 import type { ModelDefinition } from '../../../../src/modules/models/interfaces/model.interface.js';
@@ -91,6 +92,14 @@ describe('RouterController', () => {
           provide: ModelsService,
           useValue: modelsService,
         },
+        {
+          provide: ROUTER_CONFIG,
+          useValue: {
+            routing: {
+              timeoutSecs: 60,
+            },
+          },
+        },
       ],
     }).compile();
 
@@ -116,7 +125,10 @@ describe('RouterController', () => {
 
       const mockRes = {
         send: jest.fn(),
-        raw: {},
+        raw: {
+          on: jest.fn(),
+          off: jest.fn(),
+        },
       } as any;
 
       // Act
@@ -146,7 +158,10 @@ describe('RouterController', () => {
 
       const mockRes = {
         send: jest.fn(),
-        raw: {},
+        raw: {
+          on: jest.fn(),
+          off: jest.fn(),
+        },
       } as any;
 
       // Act & Assert
@@ -190,7 +205,10 @@ describe('RouterController', () => {
 
       const mockRes = {
         send: jest.fn(),
-        raw: {},
+        raw: {
+          on: jest.fn(),
+          off: jest.fn(),
+        },
       } as any;
 
       // Act
@@ -201,6 +219,71 @@ describe('RouterController', () => {
       expect(mockRes.send).toHaveBeenCalledWith(mockResponse);
       expect(routerService.chatCompletion).toHaveBeenCalledWith(
         fullRequest,
+        expect.any(AbortSignal),
+      );
+    });
+
+    it('should configure SSE headers and timeouts in streaming mode', async () => {
+      // Arrange
+      const streamRequest: ChatCompletionRequestDto = {
+        messages: [{ role: 'user', content: 'Hello' }],
+        stream: true,
+      };
+
+      async function* gen() {
+        yield {
+          id: 'chunk-1',
+          model: 'test/model',
+          delta: { content: 'Hi' },
+        } as any;
+      }
+
+      routerService.chatCompletionStream = jest.fn().mockReturnValue(gen()) as any;
+
+      const mockReq = {
+        raw: {
+          on: jest.fn(),
+          off: jest.fn(),
+          complete: false,
+        },
+      } as any;
+
+      const mockSocket = {
+        setTimeout: jest.fn(),
+      };
+
+      const mockRaw = {
+        on: jest.fn(),
+        off: jest.fn(),
+        once: jest.fn(),
+        setHeader: jest.fn(),
+        setTimeout: jest.fn(),
+        write: jest.fn().mockReturnValue(true),
+        end: jest.fn(),
+        socket: mockSocket,
+        destroyed: false,
+        writableEnded: false,
+      };
+
+      const mockRes = {
+        send: jest.fn(),
+        raw: mockRaw,
+      } as any;
+
+      // Act
+      await controller.chatCompletion(streamRequest, mockReq, mockRes);
+
+      // Assert
+      expect(mockRaw.setHeader).toHaveBeenCalledWith('Content-Type', 'text/event-stream');
+      expect(mockRaw.setHeader).toHaveBeenCalledWith('Cache-Control', 'no-cache');
+      expect(mockRaw.setHeader).toHaveBeenCalledWith('Connection', 'keep-alive');
+
+      expect(mockRaw.setTimeout).toHaveBeenCalledWith(60_000, expect.any(Function));
+      expect(mockSocket.setTimeout).toHaveBeenCalledWith(60_000, expect.any(Function));
+
+      expect(mockRaw.end).toHaveBeenCalledTimes(1);
+      expect(routerService.chatCompletionStream).toHaveBeenCalledWith(
+        streamRequest,
         expect.any(AbortSignal),
       );
     });
