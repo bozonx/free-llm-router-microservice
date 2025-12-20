@@ -357,6 +357,7 @@ export class RouterService {
       operation: async () => this.executeSingleRequest(model, request, abortSignal),
       maxRetries: effectiveMaxRetries,
       retryDelay: effectiveRetryDelay,
+      abortSignal,
       shouldRetry: error => {
         const errorInfo = ErrorExtractor.extractErrorInfo(error, model);
         // Retry on rate limit (429) or retryable network errors (ENETUNREACH, ECONNRESET)

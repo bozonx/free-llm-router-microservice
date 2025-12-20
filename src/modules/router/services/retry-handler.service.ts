@@ -15,9 +15,28 @@ export class RetryHandlerService {
     return Math.max(0, Math.round(baseDelay + jitter));
   }
 
-  public async sleep(ms: number): Promise<void> {
-    return new Promise<void>(resolve => {
-      setTimeout(resolve, ms);
+  public async sleep(ms: number, abortSignal?: AbortSignal): Promise<void> {
+    if (abortSignal?.aborted) {
+      throw this.createAbortError();
+    }
+
+    return new Promise<void>((resolve, reject) => {
+      const timeoutId = setTimeout(() => {
+        abortSignal?.removeEventListener('abort', onAbort);
+        resolve();
+      }, ms);
+
+      const onAbort = () => {
+        clearTimeout(timeoutId);
+        abortSignal?.removeEventListener('abort', onAbort);
+        reject(this.createAbortError());
+      };
+
+      if (abortSignal) {
+        abortSignal.addEventListener('abort', onAbort, { once: true });
+      }
+
+      timeoutId.unref?.();
     });
   }
 
@@ -27,13 +46,20 @@ export class RetryHandlerService {
     retryDelay: number;
     shouldRetry: (error: unknown) => boolean;
     onRetry?: (attempt: number, error: unknown) => void;
+    abortSignal?: AbortSignal;
   }): Promise<T> {
-    const { operation, maxRetries, retryDelay, shouldRetry, onRetry } = params;
+    const { operation, maxRetries, retryDelay, shouldRetry, onRetry, abortSignal } = params;
 
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
+        if (abortSignal?.aborted) {
+          throw this.createAbortError();
+        }
         return await operation();
       } catch (error) {
+        if (abortSignal?.aborted) {
+          throw this.createAbortError();
+        }
         if (attempt === maxRetries || !shouldRetry(error)) {
           throw error;
         }
@@ -41,10 +67,20 @@ export class RetryHandlerService {
         const delay = this.calculateRetryDelay(retryDelay);
         onRetry?.(attempt + 1, error);
 
-        await this.sleep(delay);
+        await this.sleep(delay, abortSignal);
       }
     }
 
     throw new Error('Retry logic failed unexpectedly');
+  }
+
+  private createAbortError(): Error {
+    try {
+      return new DOMException('The operation was aborted', 'AbortError');
+    } catch {
+      const error = new Error('The operation was aborted');
+      error.name = 'AbortError';
+      return error;
+    }
   }
 }

@@ -235,7 +235,7 @@ export class OpenRouterProvider extends BaseProvider {
   private mapResponse(response: OpenRouterResponse): ChatCompletionResult {
     const choice = response.choices[0];
     if (!choice) {
-      console.error('OpenRouter Response Error: No choices', JSON.stringify(response, null, 2));
+      this.logger.error({ response }, 'OpenRouter response error: no choices');
       throw new Error('No choices in OpenRouter response');
     }
 
@@ -249,10 +249,7 @@ export class OpenRouterProvider extends BaseProvider {
 
     // Debug logging for truly empty responses
     if (!messageContent && !choice.message.tool_calls) {
-      console.warn(
-        'OpenRouter Warning: Empty content and no tool calls',
-        JSON.stringify(choice, null, 2),
-      );
+      this.logger.warn({ choice }, 'OpenRouter warning: empty content and no tool calls');
     }
 
     const result: ChatCompletionResult = {

@@ -37,10 +37,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     // Log error for internal tracking
     if (status >= 500) {
-      this.logger.error(
-        `${request.method} ${request.url} - ${status} - ${message}`,
-        exception instanceof Error ? exception.stack : undefined,
-      );
+      const err = exception instanceof Error ? exception : new Error(String(exception));
+      this.logger.error({ err }, `${request.method} ${request.url} - ${status} - ${message}`);
     } else {
       this.logger.warn(`${request.method} ${request.url} - ${status} - ${message}`);
     }

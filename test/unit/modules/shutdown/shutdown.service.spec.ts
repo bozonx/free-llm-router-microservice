@@ -106,6 +106,27 @@ describe('ShutdownService', () => {
       service.unregisterRequest();
       await expect(shutdownPromise).resolves.toBeUndefined();
     });
+
+    it('should clear shutdown timeout when requests complete before timeout', async () => {
+      jest.useFakeTimers();
+
+      service.registerRequest();
+
+      const shutdownPromise = service.onApplicationShutdown('SIGTERM');
+
+      // Ensure timeout has been scheduled
+      expect(jest.getTimerCount()).toBeGreaterThan(0);
+
+      // Complete the request before SHUTDOWN_TIMEOUT_MS
+      service.unregisterRequest();
+      await expect(shutdownPromise).resolves.toBeUndefined();
+
+      // Run any pending timers; they should have been cleared by the service
+      jest.runOnlyPendingTimers();
+      expect(jest.getTimerCount()).toBe(0);
+
+      jest.useRealTimers();
+    });
   });
 
   describe('shutdown timeout constant', () => {

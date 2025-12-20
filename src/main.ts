@@ -25,6 +25,34 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
   const logger = app.get(Logger);
 
+  let fatalErrorHandled = false;
+  const handleFatalError = async (label: string, error: unknown) => {
+    if (fatalErrorHandled) {
+      return;
+    }
+    fatalErrorHandled = true;
+
+    const err = error instanceof Error ? error : new Error(String(error));
+    logger.error(`${label}: ${err.message}`, err.stack, 'Process');
+
+    try {
+      await app.close();
+    } catch (closeError) {
+      const closeErr = closeError instanceof Error ? closeError : new Error(String(closeError));
+      logger.error(`Failed to close application: ${closeErr.message}`, closeErr.stack, 'Process');
+    } finally {
+      process.exit(1);
+    }
+  };
+
+  process.once('unhandledRejection', reason => {
+    void handleFatalError('UnhandledRejection', reason);
+  });
+
+  process.once('uncaughtException', err => {
+    void handleFatalError('UncaughtException', err);
+  });
+
   const appConfig = configService.get<AppConfig>('app');
 
   // Ensure app config is available

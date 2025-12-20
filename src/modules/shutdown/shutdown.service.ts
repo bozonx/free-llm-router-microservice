@@ -16,6 +16,7 @@ export class ShutdownService implements OnApplicationShutdown {
   private isShuttingDown = false;
   private activeRequests = 0;
   private shutdownResolve: (() => void) | null = null;
+  private shutdownTimeoutId: ReturnType<typeof setTimeout> | null = null;
   private readonly normalOperationController = new AbortController();
 
   /**
@@ -52,6 +53,7 @@ export class ShutdownService implements OnApplicationShutdown {
     this.activeRequests = Math.max(0, this.activeRequests - 1);
     if (this.activeRequests === 0 && this.shutdownResolve) {
       this.shutdownResolve();
+      this.shutdownResolve = null;
     }
   }
 
@@ -84,7 +86,9 @@ export class ShutdownService implements OnApplicationShutdown {
     );
 
     // Create AbortController for cancelling requests after timeout
-    this.abortController = new AbortController();
+    if (!this.abortController) {
+      this.abortController = new AbortController();
+    }
 
     // Create a promise that resolves when all requests complete
     const allRequestsComplete = new Promise<void>(resolve => {
@@ -93,19 +97,31 @@ export class ShutdownService implements OnApplicationShutdown {
 
     // Create timeout promise
     const timeout = new Promise<void>(resolve => {
-      setTimeout(() => {
+      this.shutdownTimeoutId = setTimeout(() => {
         if (this.activeRequests > 0) {
           this.logger.warn(
             `Shutdown timeout reached, aborting ${this.activeRequests} active request(s)`,
           );
-          this.abortController?.abort();
+
+          if (this.abortController && !this.abortController.signal.aborted) {
+            this.abortController.abort();
+          }
         }
         resolve();
       }, SHUTDOWN_TIMEOUT_MS);
+
+      this.shutdownTimeoutId.unref?.();
     });
 
     // Wait for either all requests to complete or timeout
     await Promise.race([allRequestsComplete, timeout]);
+
+    if (this.shutdownTimeoutId) {
+      clearTimeout(this.shutdownTimeoutId);
+      this.shutdownTimeoutId = null;
+    }
+
+    this.shutdownResolve = null;
 
     this.logger.log('Graceful shutdown complete');
   }
