@@ -8,7 +8,9 @@ ENV LISTEN_HOST=0.0.0.0
 ENV LISTEN_PORT=8080
 ENV TZ=UTC
 ENV LOG_LEVEL=warn
-ENV ROUTER_CONFIG_PATH=/app/config.yaml
+
+# Install tini for better signal handling
+RUN apk add --no-cache tini
 
 # Install pnpm
 RUN corepack enable
@@ -19,9 +21,8 @@ RUN pnpm install --prod --frozen-lockfile --prefer-offline || pnpm install --pro
 
 # Copy pre-built application
 COPY dist ./dist
-COPY public ./public
-COPY models.yaml ./
 
 EXPOSE 8080
 
+ENTRYPOINT ["/sbin/tini", "--"]
 CMD ["node", "dist/src/main.js"]
