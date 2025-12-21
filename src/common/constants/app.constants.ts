@@ -6,7 +6,7 @@
  * Graceful shutdown timeout in milliseconds.
  * Requests will be cancelled after this duration during shutdown.
  */
-export const SHUTDOWN_TIMEOUT_MS = 10_000;
+export const SHUTDOWN_TIMEOUT_MS = 25_000;
 
 /**
  * Stale bucket cleanup threshold in milliseconds (10 minutes).
