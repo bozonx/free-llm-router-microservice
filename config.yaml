@@ -3,7 +3,7 @@
 #   modelsFile: ./models.yaml
 #   modelsFile: https://example.com/models.yaml
 # When using URL, the file is fetched at startup (not saved to disk)
-modelsFile: ./models.yaml
+#modelsFile: ./models.yaml
 
 # Provider settings
 # Note: Use ${ENV_VAR_NAME} to reference any environment variable from .env file

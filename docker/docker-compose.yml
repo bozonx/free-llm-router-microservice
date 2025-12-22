@@ -13,9 +13,9 @@ services:
       - LOG_LEVEL=warn
     volumes:
       - ../config.yaml:/app/config.yaml:ro
-      #- ../models.yaml:/app/models.yaml:ro
+      - ../models.yaml:/app/models.yaml:ro
     healthcheck:
-      test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:8080/api/v1/health || exit 1']
+      test: [ 'CMD-SHELL', 'wget -qO- http://127.0.0.1:8080/api/v1/health || exit 1' ]
       interval: 30s
       timeout: 3s
       retries: 3
