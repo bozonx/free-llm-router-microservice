@@ -27,6 +27,7 @@ describe('RateLimiterService', () => {
       service.onModuleDestroy();
     }
     jest.clearAllMocks();
+    jest.useRealTimers();
   });
 
   describe('when rate limiting is disabled (no limit configured)', () => {
@@ -109,13 +110,14 @@ describe('RateLimiterService', () => {
     });
 
     it('should refill tokens over time', async () => {
+      jest.useFakeTimers();
       // Consume some tokens
       for (let i = 0; i < 1000; i++) {
         service.checkModel('refill-model');
       }
 
       // Wait a bit for tokens to refill (at 1000/sec, 20ms = 20 tokens)
-      await new Promise(resolve => setTimeout(resolve, 20));
+      jest.advanceTimersByTime(20);
 
       // Should have some tokens now
       expect(service.checkModel('refill-model')).toBe(true);

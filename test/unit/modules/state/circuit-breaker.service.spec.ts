@@ -55,6 +55,7 @@ describe('CircuitBreakerService', () => {
 
   afterEach(() => {
     stateService.onModuleDestroy();
+    jest.useRealTimers();
   });
 
   describe('onSuccess', () => {
@@ -118,10 +119,11 @@ describe('CircuitBreakerService', () => {
     });
 
     it('should transition OPEN to HALF_OPEN after cooldown', async () => {
+      jest.useFakeTimers();
       stateService.setCircuitState('test-model', 'OPEN');
 
-      // Wait for cooldown (1000ms in test config)
-      await new Promise(resolve => setTimeout(resolve, 1100));
+      // Cooldown is ~1 second (0.0167 min)
+      jest.advanceTimersByTime(1100);
 
       expect(service.canRequest('test-model')).toBe(true);
       expect(stateService.getState('test-model').circuitState).toBe('HALF_OPEN');

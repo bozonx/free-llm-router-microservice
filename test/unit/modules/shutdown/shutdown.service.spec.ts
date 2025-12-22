@@ -12,6 +12,7 @@ describe('ShutdownService', () => {
 
   afterEach(() => {
     jest.clearAllMocks();
+    jest.useRealTimers();
   });
 
   describe('initial state', () => {
@@ -79,17 +80,18 @@ describe('ShutdownService', () => {
     });
 
     it('should wait for active requests to complete', async () => {
+      jest.useFakeTimers();
       // Register a request
       service.registerRequest();
 
       const shutdownPromise = service.onApplicationShutdown('SIGTERM');
 
       // Simulate request completing after small delay
-      setTimeout(() => {
-        service.unregisterRequest();
-      }, 50);
+      jest.advanceTimersByTime(50);
+      service.unregisterRequest();
 
       await expect(shutdownPromise).resolves.toBeUndefined();
+      jest.useRealTimers();
     });
 
     it('should create abort controller when shutdown starts with active requests', async () => {
