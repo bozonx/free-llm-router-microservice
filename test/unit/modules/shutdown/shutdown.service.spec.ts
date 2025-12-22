@@ -130,8 +130,8 @@ describe('ShutdownService', () => {
   });
 
   describe('shutdown timeout constant', () => {
-    it('should be 10 seconds', () => {
-      expect(SHUTDOWN_TIMEOUT_MS).toBe(10_000);
+    it('should be 25 seconds', () => {
+      expect(SHUTDOWN_TIMEOUT_MS).toBe(25_000);
     });
   });
 });
