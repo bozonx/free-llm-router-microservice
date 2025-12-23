@@ -115,6 +115,14 @@ export class FreeLlmRouter implements INodeType {
                 default: '',
                 description: 'Filter models by type',
             },
+            {
+                displayName: 'JSON Response',
+                name: 'jsonResponse',
+                type: 'boolean',
+                default: false,
+                description:
+                    'Whether to request structured JSON output from the model. Filters for models that support JSON response format.',
+            },
 
             // Advanced options
             {
@@ -261,14 +269,6 @@ export class FreeLlmRouter implements INodeType {
                         description: 'Whether to require models that support function calling and tool use',
                     },
                     {
-                        displayName: 'JSON Response',
-                        name: 'jsonResponse',
-                        type: 'boolean',
-                        default: false,
-                        description:
-                            'Whether to request structured JSON output from the model. Filters for models that support JSON response format.',
-                    },
-                    {
                         displayName: 'Routing: Provider Timeout (seconds)',
                         name: 'timeout',
                         type: 'number',
@@ -353,7 +353,6 @@ export class FreeLlmRouter implements INodeType {
             filterSupportsAudio?: boolean;
             filterSupportsFile?: boolean;
             filterSupportsTools?: boolean;
-            jsonResponse?: boolean;
             maxModelSwitches?: number;
             maxSameModelRetries?: number;
             retryDelay?: number;
@@ -366,6 +365,7 @@ export class FreeLlmRouter implements INodeType {
         // Get main-level filter parameters
         const tags = this.getNodeParameter('tags', itemIndex, '') as string;
         const type = this.getNodeParameter('type', itemIndex, '') as string;
+        const jsonResponse = this.getNodeParameter('jsonResponse', itemIndex, false) as boolean;
         const selectionMode = this.getNodeParameter(
             'selectionMode',
             itemIndex,
@@ -412,7 +412,7 @@ export class FreeLlmRouter implements INodeType {
         if (options.filterSupportsTools) {
             modelKwargs.supports_tools = true;
         }
-        if (options.jsonResponse) {
+        if (jsonResponse) {
             modelKwargs.json_response = true;
         }
         if (options.maxModelSwitches !== undefined && options.maxModelSwitches > 0) {
