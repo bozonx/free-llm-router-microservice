@@ -24,6 +24,7 @@ import {
   RequestCancelledError,
 } from '../../common/errors/router.errors.js';
 import { RateLimiterService } from '../rate-limiter/rate-limiter.service.js';
+import { JsonParser } from '../../common/utils/json-parser.util.js';
 import { HttpException, HttpStatus } from '@nestjs/common';
 
 /**
@@ -424,14 +425,10 @@ export class RouterService {
     const { result, model, attemptCount, errors, fallbackUsed } = params;
 
     // Parse JSON if json_response is enabled and content is present
+    // Uses JsonParser to handle markdown code blocks that LLMs often wrap JSON in
     let parsedData: unknown | undefined;
     if (result.content) {
-      try {
-        parsedData = JSON.parse(result.content);
-      } catch {
-        // Ignore parse errors - content might not be valid JSON
-        // or json_response might not have been requested
-      }
+      parsedData = JsonParser.safeParse(result.content);
     }
 
     return {
