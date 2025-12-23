@@ -35,7 +35,7 @@ export class RequestBuilderService {
       frequencyPenalty: request.frequency_penalty,
       presencePenalty: request.presence_penalty,
       stop: request.stop,
-      jsonMode: request.json_response,
+      responseFormat: request.response_format,
       timeoutSecs: request.timeout_secs,
       abortSignal,
     };

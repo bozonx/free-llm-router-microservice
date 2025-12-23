@@ -81,7 +81,6 @@ export class SelectorService {
       minContextSize: criteria.minContextSize,
       minMaxOutputTokens: criteria.minMaxOutputTokens,
       jsonResponse: criteria.jsonResponse,
-      supportsVision: criteria.supportsVision,
       supportsImage: criteria.supportsImage,
       supportsVideo: criteria.supportsVideo,
       supportsAudio: criteria.supportsAudio,

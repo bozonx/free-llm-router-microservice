@@ -66,7 +66,7 @@ describe('RouterService - JSON Response', () => {
         {
           provide: RequestBuilderService,
           useValue: {
-            buildChatCompletionParams: jest.fn((req, model) => ({
+            buildChatCompletionParams: jest.fn((req: any, model: string) => ({
               messages: req.messages,
               model,
             })),
@@ -120,7 +120,7 @@ describe('RouterService - JSON Response', () => {
 
     const request: ChatCompletionRequestDto = {
       messages: [{ role: 'user', content: 'Test' }],
-      json_response: true,
+      response_format: { type: 'json_object' },
     };
 
     const response = await service.chatCompletion(request);

@@ -38,12 +38,6 @@ export interface FilterCriteria {
   jsonResponse?: boolean;
 
   /**
-   * Vision support required (multimodal - text + images)
-   * @deprecated Use supportsImage instead
-   */
-  supportsVision?: boolean;
-
-  /**
    * Image input support required
    */
   supportsImage?: boolean;
@@ -250,7 +244,6 @@ export class ModelsService implements OnModuleInit {
     if (override.maxOutputTokens !== undefined) model.maxOutputTokens = override.maxOutputTokens;
     if (override.available !== undefined) model.available = override.available;
     if (override.jsonResponse !== undefined) model.jsonResponse = override.jsonResponse;
-    if (override.supportsVision !== undefined) model.supportsVision = override.supportsVision;
     if (override.supportsImage !== undefined) model.supportsImage = override.supportsImage;
     if (override.supportsVideo !== undefined) model.supportsVideo = override.supportsVideo;
     if (override.supportsAudio !== undefined) model.supportsAudio = override.supportsAudio;
@@ -273,22 +266,18 @@ export class ModelsService implements OnModuleInit {
       type: model.type as 'fast' | 'reasoning',
       contextSize: model.contextSize as number,
       maxOutputTokens: model.maxOutputTokens as number,
-      tags: (model.tags as unknown[]).map(String),
+      tags: model.tags as string[],
       jsonResponse: model.jsonResponse as boolean,
       available: model.available as boolean,
     };
 
     this.addOptionalFields(result, model);
-
     return result;
   }
 
   private addOptionalFields(result: ModelDefinition, model: Record<string, unknown>): void {
     if (model.weight !== undefined) {
       result.weight = model.weight as number;
-    }
-    if (model.supportsVision !== undefined) {
-      result.supportsVision = model.supportsVision as boolean;
     }
     if (model.supportsImage !== undefined) {
       result.supportsImage = model.supportsImage as boolean;
@@ -387,10 +376,6 @@ export class ModelsService implements OnModuleInit {
     }
 
     if (criteria.jsonResponse && !model.jsonResponse) {
-      return false;
-    }
-
-    if (criteria.supportsVision && !model.supportsVision) {
       return false;
     }
 

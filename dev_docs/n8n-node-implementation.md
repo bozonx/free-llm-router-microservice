@@ -76,7 +76,7 @@ n8n UI parameters → Router API format:
   tags: string[]
   type: 'fast' | 'reasoning'
   min_context_size: number
-  json_response: boolean
+  response_format: { type: 'json_object' }
   prefer_fast: boolean
   min_success_rate: number
 }

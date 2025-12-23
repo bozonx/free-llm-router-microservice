@@ -60,14 +60,6 @@ export interface ModelDefinition {
   weight?: number;
 
   /**
-   * Vision support (multimodal - text + images)
-   * If true, model can process image_url content parts
-   * @deprecated Use supportsImage instead
-   * Default: false
-   */
-  supportsVision?: boolean;
-
-  /**
    * Image input support
    * If true, model can process image_url content parts
    * Default: false

@@ -112,7 +112,10 @@ describe('DeepSeekProvider', () => {
     it('should handle JSON mode', async () => {
       jest.spyOn(httpService, 'post').mockReturnValue(of(mockResponse));
 
-      await provider.chatCompletion({ ...mockRequest, jsonMode: true });
+      await provider.chatCompletion({
+        ...mockRequest,
+        responseFormat: { type: 'json_object' },
+      });
 
       expect(httpService.post).toHaveBeenCalledWith(
         '/chat/completions',

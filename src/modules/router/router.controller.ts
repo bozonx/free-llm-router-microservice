@@ -226,7 +226,6 @@ export class RouterController {
         weight: model.weight,
 
         // Multimodal support fields
-        supportsVision: model.supportsVision,
         supportsImage: model.supportsImage,
         supportsVideo: model.supportsVideo,
         supportsAudio: model.supportsAudio,

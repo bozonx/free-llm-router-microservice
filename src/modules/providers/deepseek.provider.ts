@@ -31,7 +31,10 @@ interface DeepSeekRequest {
   frequency_penalty?: number;
   presence_penalty?: number;
   stop?: string | string[];
-  response_format?: { type: 'json_object' };
+  response_format?: {
+    type: 'text' | 'json_object' | 'json_schema';
+    json_schema?: Record<string, any>;
+  };
   tools?: Tool[];
   tool_choice?: ToolChoice;
   stream?: boolean;
@@ -104,9 +107,8 @@ export class DeepSeekProvider extends BaseProvider {
       tool_choice: params.toolChoice,
     };
 
-    // Add JSON mode if requested
-    if (params.jsonMode) {
-      request.response_format = { type: 'json_object' };
+    if (params.responseFormat) {
+      request.response_format = params.responseFormat;
     }
 
     try {
@@ -151,9 +153,8 @@ export class DeepSeekProvider extends BaseProvider {
       stream: true,
     };
 
-    // Add JSON mode if requested
-    if (params.jsonMode) {
-      request.response_format = { type: 'json_object' };
+    if (params.responseFormat) {
+      request.response_format = params.responseFormat;
     }
 
     try {

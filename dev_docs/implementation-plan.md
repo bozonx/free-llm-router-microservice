@@ -207,7 +207,7 @@ export interface ChatCompletionParams {
   frequencyPenalty?: number;
   presencePenalty?: number;
   stop?: string | string[];
-  jsonMode?: boolean;
+  responseFormat?: { type: 'text' | 'json_object' | 'json_schema'; json_schema?: unknown };
 }
 
 export interface ChatCompletionResult {

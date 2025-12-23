@@ -191,7 +191,7 @@ describe('RouterController', () => {
         tags: ['code'],
         type: 'reasoning',
         min_context_size: 8192,
-        json_response: true,
+        response_format: { type: 'json_object' },
       };
 
       routerService.chatCompletion.mockResolvedValue(mockResponse);

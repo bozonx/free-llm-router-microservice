@@ -44,7 +44,7 @@ export class RouterService {
     @Inject(PROVIDERS_MAP) private readonly providersMap: ProvidersMap,
     @Inject(ROUTER_CONFIG) private readonly config: RouterConfig,
     private readonly rateLimiterService: RateLimiterService,
-  ) { }
+  ) {}
 
   /**
    * Handle chat completion request with retry and fallback logic
@@ -72,6 +72,13 @@ export class RouterService {
       // Always unregister request when done
       this.shutdownService.unregisterRequest();
     }
+  }
+
+  private shouldRequestJsonResponse(request: ChatCompletionRequestDto): boolean {
+    return (
+      request.response_format?.type === 'json_object' ||
+      request.response_format?.type === 'json_schema'
+    );
   }
 
   /**
@@ -307,6 +314,7 @@ export class RouterService {
           attemptCount,
           errors,
           fallbackUsed: false,
+          parseJson: this.shouldRequestJsonResponse(request),
         });
       } catch (error) {
         if (abortSignal.aborted) {
@@ -421,13 +429,14 @@ export class RouterService {
     attemptCount: number;
     errors: ErrorInfo[];
     fallbackUsed: boolean;
+    parseJson: boolean;
   }): ChatCompletionResponseDto {
-    const { result, model, attemptCount, errors, fallbackUsed } = params;
+    const { result, model, attemptCount, errors, fallbackUsed, parseJson } = params;
 
-    // Parse JSON if json_response is enabled and content is present
+    // Parse JSON only when JSON response format is requested and content is present
     // Uses JsonParser to handle markdown code blocks that LLMs often wrap JSON in
     let parsedData: unknown | undefined;
-    if (result.content) {
+    if (parseJson && result.content) {
       parsedData = JsonParser.safeParse(result.content);
     }
 
@@ -485,31 +494,28 @@ export class RouterService {
         type: request.type,
         minContextSize: request.min_context_size,
         minMaxOutputTokens: request.min_max_output_tokens,
-        jsonResponse: request.json_response,
+        jsonResponse: this.shouldRequestJsonResponse(request) ? true : undefined,
         preferFast: request.prefer_fast,
         minSuccessRate: request.min_success_rate,
         selectionMode: request.selection_mode,
-        // Support both new and deprecated fields
-        supportsImage:
-          needsVision || request.supports_image || request.supports_vision ? true : undefined,
+        supportsImage: needsVision || request.supports_image ? true : undefined,
         supportsVideo: request.supports_video ? true : undefined,
         supportsAudio: request.supports_audio ? true : undefined,
         supportsFile: request.supports_file ? true : undefined,
         supportsTools: request.supports_tools ? true : undefined,
-        // Keep deprecated field for backward compatibility
-        supportsVision: needsVision || request.supports_vision ? true : undefined,
       },
       excludedModels,
     );
 
     // Validate vision capability if request contains images
-    // Check both new and deprecated fields for backward compatibility
-    if (needsVision && model && !model.supportsImage && !model.supportsVision) {
-      this.logger.warn(`Model ${model.name} does not support vision, but request contains images`);
+    if (needsVision && model && !model.supportsImage) {
+      this.logger.warn(
+        `Model ${model.name} does not support image input, but request contains images`,
+      );
       throw new Error(
         `Selected model '${model.name}' does not support image analysis. ` +
-        `Please use a vision-capable model (e.g., gemini-2.0-flash-exp, nemotron-nano-12b-v2-vl) ` +
-        `or filter by tag 'vision'`,
+          `Please use a vision-capable model (e.g., gemini-2.0-flash-exp, nemotron-nano-12b-v2-vl) ` +
+          `or filter by tag 'vision'`,
       );
     }
 
@@ -601,6 +607,7 @@ export class RouterService {
         attemptCount: attemptCount + 1,
         errors,
         fallbackUsed: true,
+        parseJson: this.shouldRequestJsonResponse(request),
       });
     } catch (error) {
       const fallbackProviderName =
@@ -609,8 +616,8 @@ export class RouterService {
       const fallbackError = ErrorExtractor.extractErrorInfo(error, {
         name: fallbackModelName,
         provider: fallbackProviderName,
-      });
-      errors.push(fallbackError);
+      } as ModelDefinition);
+
       this.logger.error(`Fallback model failed: ${fallbackError.error}`);
       return null;
     }

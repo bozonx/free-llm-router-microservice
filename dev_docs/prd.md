@@ -85,7 +85,7 @@ interface ChatCompletionRequest {
   tags?: string[];             // Фильтр по тегам
   type?: 'fast' | 'reasoning'; // Фильтр по типу
   min_context_size?: number;   // Минимальный размер контекста
-  json_response?: boolean;     // Требуется JSON ответ
+  response_format?: { type: 'text' | 'json_object' | 'json_schema'; json_schema?: unknown }; // Требуется JSON ответ
 }
 ```
 

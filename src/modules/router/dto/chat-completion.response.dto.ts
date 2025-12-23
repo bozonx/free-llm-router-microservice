@@ -30,7 +30,7 @@ export interface RouterMetadata {
   errors?: RouterErrorInfo[];
 
   /**
-   * Parsed JSON data (only present when json_response is enabled and content is valid JSON)
+   * Parsed JSON data (only present when response_format requests JSON and content is valid JSON)
    */
   data?: unknown;
 }
@@ -142,6 +142,11 @@ export interface ModelInfo {
   jsonResponse: boolean;
   available: boolean;
   weight?: number;
+
+  supportsImage?: boolean;
+  supportsVideo?: boolean;
+  supportsAudio?: boolean;
+  supportsFile?: boolean;
 }
 
 /**

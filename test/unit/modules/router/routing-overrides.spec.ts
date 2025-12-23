@@ -55,8 +55,6 @@ describe('RouterService - Routing Overrides', () => {
     contextSize: 8000,
     maxOutputTokens: 4000,
     available: true,
-    supportsVision: false,
-    supportsJsonResponse: false,
     jsonResponse: false,
     tags: [],
     weight: 10,

@@ -122,6 +122,16 @@ export class ChatMessageDto {
   public tool_call_id?: string;
 }
 
+export class ResponseFormatDto {
+  @IsString()
+  @IsIn(['text', 'json_object', 'json_schema'])
+  public type!: 'text' | 'json_object' | 'json_schema';
+
+  @ValidateIf(o => o.type === 'json_schema')
+  @IsObject()
+  public json_schema?: Record<string, any>;
+}
+
 /**
  * Chat completion request DTO
  */
@@ -166,6 +176,11 @@ export class ChatCompletionRequestDto {
   @IsOptional()
   public stop?: string | string[];
 
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => ResponseFormatDto)
+  public response_format?: ResponseFormatDto;
+
   // Function calling fields
   @IsOptional()
   @IsArray()
@@ -200,10 +215,6 @@ export class ChatCompletionRequestDto {
   @IsNumber()
   @Min(1)
   public min_max_output_tokens?: number;
-
-  @IsOptional()
-  @IsBoolean()
-  public json_response?: boolean;
 
   // Smart routing fields
   /**
@@ -242,15 +253,6 @@ export class ChatCompletionRequestDto {
   @IsOptional()
   @IsBoolean()
   public stream?: boolean;
-
-  /**
-   * Vision support required (multimodal - text + images)
-   * If true, only select models that support image_url content
-   * @deprecated Use supports_image instead
-   */
-  @IsOptional()
-  @IsBoolean()
-  public supports_vision?: boolean;
 
   /**
    * Image input support required

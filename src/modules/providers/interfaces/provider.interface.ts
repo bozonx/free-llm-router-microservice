@@ -78,9 +78,12 @@ export interface ChatCompletionParams {
   stop?: string | string[];
 
   /**
-   * JSON mode enabled
+   * OpenAI-compatible response format
    */
-  jsonMode?: boolean;
+  responseFormat?: {
+    type: 'text' | 'json_object' | 'json_schema';
+    json_schema?: Record<string, any>;
+  };
 
   /**
    * Abort signal for request cancellation (graceful shutdown)

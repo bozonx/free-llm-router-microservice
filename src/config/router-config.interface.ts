@@ -144,12 +144,6 @@ export interface ModelOverrideConfig {
   jsonResponse?: boolean;
 
   /**
-   * Override vision support
-   * @deprecated Use supportsImage instead
-   */
-  supportsVision?: boolean;
-
-  /**
    * Override image input support
    */
   supportsImage?: boolean;

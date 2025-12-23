@@ -298,7 +298,7 @@ OpenAI-совместимый endpoint для chat completions.
   "type": "fast",              // Фильтр по типу: "fast" | "reasoning"
   "min_context_size": 32000,   // Минимальный размер контекста
   "min_max_output_tokens": 4000, // Минимальное количество выходных токенов
-  "json_response": true,       // Требуется JSON ответ
+  "response_format": { "type": "json_object" }, // Требуется JSON ответ
   
   // Smart Strategy поля
   "prefer_fast": true,         // Предпочитать модели с наименьшей latency
@@ -385,7 +385,6 @@ curl -X POST http://localhost:8080/api/v1/chat/completions \
 - `supports_audio: true` — модели с поддержкой аудио
 - `supports_file: true` — модели с поддержкой файлов/документов
 - `supports_tools: true` — модели с поддержкой вызова инструментов
-- `supports_vision: true` — (устаревший) алиас для `supports_image`
 
 Также можно использовать тег `vision` для фильтрации моделей с поддержкой изображений.
 
@@ -459,13 +458,13 @@ curl -X POST http://localhost:8080/api/v1/chat/completions \
     "attempts": 1,
     "fallback_used": false, // Использовалась ли платная модель (fallback)
     "errors": [],  // Ошибки предыдущих попыток (если были)
-    "data": {...}  // Распарсенный JSON (только если json_response: true и ответ валидный JSON)
+    "data": {...}  // Распарсенный JSON (только если response_format запрашивает JSON и ответ валидный JSON)
   }
 }
 ```
 
 **Примечание о поле `data`:**
-Когда в запросе указан `json_response: true` и модель возвращает валидный JSON, сервер автоматически парсит содержимое поля `content` и добавляет результат в `_router.data`. Это упрощает работу с JSON-ответами в клиентских приложениях:
+Когда в запросе указан `response_format: { "type": "json_object" }` (или `json_schema`) и модель возвращает валидный JSON, сервер автоматически парсит содержимое поля `content` и добавляет результат в `_router.data`. Это упрощает работу с JSON-ответами в клиентских приложениях:
 
 ```javascript
 // Вместо ручного парсинга:
@@ -701,7 +700,7 @@ curl -X POST http://localhost:8080/api/v1/chat/completions \
    - Без провайдера — ротация по всем провайдерам модели
 2. **Конкретная модель** — если указана строка `model`, используем её
 3. **Smart Strategy** — если `model: "auto"` или не указан:
-   - Фильтруем по критериям (`tags`, `type`, `min_context_size`, `min_max_output_tokens`, `json_response`)
+   - Фильтруем по критериям (`tags`, `type`, `min_context_size`, `min_max_output_tokens`, `response_format`)
    - Исключаем модели с открытым Circuit Breaker (OPEN, PERMANENTLY_UNAVAILABLE)
    - Исключаем модели, превысившие `maxConcurrent` лимит
    - Если указан `min_success_rate` — исключаем модели с низким success rate

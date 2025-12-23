@@ -66,13 +66,6 @@ export interface SelectionCriteria {
   minSuccessRate?: number;
 
   /**
-   * Vision support required (multimodal - text + images)
-   * If true, only select models that support image_url content
-   * @deprecated Use supportsImage instead
-   */
-  supportsVision?: boolean;
-
-  /**
    * Image input support required
    * If true, only select models that support image_url content
    */

@@ -38,7 +38,7 @@ export class AdminController {
         type: modelDef?.type || 'fast',
         contextSize: modelDef?.contextSize || 0,
         weight: modelDef?.weight || 1,
-        supportsImage: modelDef?.supportsImage || modelDef?.supportsVision || false, // Fallback for backward compatibility
+        supportsImage: modelDef?.supportsImage || false,
         supportsVideo: modelDef?.supportsVideo || false,
         supportsAudio: modelDef?.supportsAudio || false,
         supportsFile: modelDef?.supportsFile || false,
