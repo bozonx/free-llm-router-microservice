@@ -414,6 +414,7 @@ export class FreeLlmRouter implements INodeType {
         }
         if (jsonResponse) {
             modelKwargs.json_response = true;
+            //modelKwargs.response_format = { type: 'json_object' };
         }
         if (options.maxModelSwitches !== undefined && options.maxModelSwitches > 0) {
             modelKwargs.max_model_switches = options.maxModelSwitches;
