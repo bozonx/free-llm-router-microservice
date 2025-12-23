@@ -13,14 +13,15 @@ import {
  */
 export class FreeLlmRouter implements INodeType {
     description: INodeTypeDescription = {
-        displayName: 'Free LLM Router Model',
+        displayName: 'Free LLM Router Chat Model',
         name: 'freeLlmRouter',
         icon: 'file:free-llm-router.svg',
         group: ['transform'],
         version: 1,
+        subtitle: '={{$parameter["model"]}}',
         description: 'Chat Model using Free LLM Router Microservice',
         defaults: {
-            name: 'Free LLM Router',
+            name: 'Free LLM Router Chat Model',
         },
         codex: {
             categories: ['AI'],
@@ -43,9 +44,8 @@ export class FreeLlmRouter implements INodeType {
         ],
         // eslint-disable-next-line n8n-nodes-base/node-class-description-inputs-wrong-regular-node
         inputs: [],
-        // eslint-disable-next-line n8n-nodes-base/node-class-description-outputs-wrong
         outputs: [NodeConnectionTypes.AiLanguageModel],
-        outputNames: ['Model'],
+        outputNames: ['Chat Model'],
         properties: [
             // Model configuration
             {
