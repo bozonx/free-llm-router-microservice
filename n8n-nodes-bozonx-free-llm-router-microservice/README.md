@@ -96,7 +96,6 @@ When using Auto mode, you can filter models by:
 - **Tags**: Filter by model capabilities (e.g., `code, reasoning`)
 - **Type**: `fast` or `reasoning`
 - **Minimum Context Size**: Required context window size
-- **JSON Response**: Only models supporting JSON mode
 - **Prefer Fast**: Prioritize models with lowest latency
 - **Minimum Success Rate**: Filter out unreliable models (0-1)
 

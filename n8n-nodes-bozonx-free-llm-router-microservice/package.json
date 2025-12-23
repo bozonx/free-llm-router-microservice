@@ -42,6 +42,9 @@
             "dist/nodes/FreeLlmRouter/FreeLlmRouter.node.js"
         ]
     },
+    "dependencies": {
+        "@langchain/openai": "^1.2.0"
+    },
     "devDependencies": {
         "@langchain/core": "^1.1.8",
         "@types/node": "^25.0.3",

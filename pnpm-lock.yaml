@@ -122,10 +122,14 @@ importers:
         version: 5.9.3
 
   n8n-nodes-bozonx-free-llm-router-microservice:
+    dependencies:
+      '@langchain/openai':
+        specifier: ^1.2.0
+        version: 1.2.0(@langchain/core@1.1.8(openai@6.15.0(zod@4.2.1)))
     devDependencies:
       '@langchain/core':
         specifier: ^1.1.8
-        version: 1.1.8
+        version: 1.1.8(openai@6.15.0(zod@4.2.1))
       '@types/node':
         specifier: ^25.0.3
         version: 25.0.3
@@ -735,6 +739,12 @@ packages:
   '@langchain/core@1.1.8':
     resolution: {integrity: sha512-kIUidOgc0ZdyXo4Ahn9Zas+OayqOfk4ZoKPi7XaDipNSWSApc2+QK5BVcjvwtzxstsNOrmXJiJWEN6WPF/MvAw==}
     engines: {node: '>=20'}
+
+  '@langchain/openai@1.2.0':
+    resolution: {integrity: sha512-r2g5Be3Sygw7VTJ89WVM/M94RzYToNTwXf8me1v+kgKxzdHbd/8XPYDFxpXEp3REyPgUrtJs+Oplba9pkTH5ug==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      '@langchain/core': ^1.0.0
 
   '@lukeed/csprng@1.1.0':
     resolution: {integrity: sha512-Z7C/xXCiGWsg0KuKsHTKJxbWhpI3Vs5GwLfOean7MGyVFGqdRgBbAjOCh6u4bbjPc/8MJ2pZmK/0DLdCbivLDA==}
@@ -2927,6 +2937,18 @@ packages:
     resolution: {integrity: sha512-kbpaSSGJTWdAY5KPVeMOKXSrPtr8C8C7wodJbcsd51jRnmD+GZu8Y0VoU6Dm5Z4vWr0Ig/1NKuWRKf7j5aaYSg==}
     engines: {node: '>=6'}
 
+  openai@6.15.0:
+    resolution: {integrity: sha512-F1Lvs5BoVvmZtzkUEVyh8mDQPPFolq4F+xdsx/DO8Hee8YF3IGAlZqUIsF+DVGhqf4aU0a3bTghsxB6OIsRy1g==}
+    hasBin: true
+    peerDependencies:
+      ws: ^8.18.0
+      zod: ^3.25 || ^4.0
+    peerDependenciesMeta:
+      ws:
+        optional: true
+      zod:
+        optional: true
+
   optionator@0.9.4:
     resolution: {integrity: sha512-6IpQ7mKUxRcZNLIObR0hz7lxsapSSIYNZJwXPGeF0mTVqGKFIXj1DQcMoT22S3ROcLyY/rz0PWaWZ9ayWmad9g==}
     engines: {node: '>= 0.8.0'}
@@ -4538,14 +4560,14 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  '@langchain/core@1.1.8':
+  '@langchain/core@1.1.8(openai@6.15.0(zod@4.2.1))':
     dependencies:
       '@cfworker/json-schema': 4.1.1
       ansi-styles: 5.2.0
       camelcase: 6.3.0
       decamelize: 1.2.0
       js-tiktoken: 1.0.21
-      langsmith: 0.4.2
+      langsmith: 0.4.2(openai@6.15.0(zod@4.2.1))
       mustache: 4.2.0
       p-queue: 6.6.2
       uuid: 10.0.0
@@ -4555,6 +4577,15 @@ snapshots:
       - '@opentelemetry/exporter-trace-otlp-proto'
       - '@opentelemetry/sdk-trace-base'
       - openai
+
+  '@langchain/openai@1.2.0(@langchain/core@1.1.8(openai@6.15.0(zod@4.2.1)))':
+    dependencies:
+      '@langchain/core': 1.1.8(openai@6.15.0(zod@4.2.1))
+      js-tiktoken: 1.0.21
+      openai: 6.15.0(zod@4.2.1)
+      zod: 4.2.1
+    transitivePeerDependencies:
+      - ws
 
   '@lukeed/csprng@1.1.0': {}
 
@@ -6813,7 +6844,7 @@ snapshots:
     dependencies:
       json-buffer: 3.0.1
 
-  langsmith@0.4.2:
+  langsmith@0.4.2(openai@6.15.0(zod@4.2.1)):
     dependencies:
       '@types/uuid': 10.0.0
       chalk: 4.1.2
@@ -6821,6 +6852,8 @@ snapshots:
       p-queue: 6.6.2
       semver: 7.7.3
       uuid: 10.0.0
+    optionalDependencies:
+      openai: 6.15.0(zod@4.2.1)
 
   last-run@2.0.0: {}
 
@@ -7064,6 +7097,10 @@ snapshots:
   onetime@5.1.2:
     dependencies:
       mimic-fn: 2.1.0
+
+  openai@6.15.0(zod@4.2.1):
+    optionalDependencies:
+      zod: 4.2.1
 
   optionator@0.9.4:
     dependencies:
