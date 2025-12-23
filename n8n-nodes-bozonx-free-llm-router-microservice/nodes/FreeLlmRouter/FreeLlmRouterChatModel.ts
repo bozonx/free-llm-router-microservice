@@ -62,9 +62,9 @@ export class FreeLlmRouterChatModel extends BaseChatModel {
 	private formatMessages(messages: BaseMessage[]): Array<{
 		role: string;
 		content:
-			| string
-			| Array<{ type: string; text?: string; image_url?: { url: string; detail?: string } }>
-			| null;
+		| string
+		| Array<{ type: string; text?: string; image_url?: { url: string; detail?: string } }>
+		| null;
 		tool_calls?: any[];
 		tool_call_id?: string;
 	}> {
@@ -85,9 +85,9 @@ export class FreeLlmRouterChatModel extends BaseChatModel {
 			const formatted: {
 				role: string;
 				content:
-					| string
-					| Array<{ type: string; text?: string; image_url?: { url: string; detail?: string } }>
-					| null;
+				| string
+				| Array<{ type: string; text?: string; image_url?: { url: string; detail?: string } }>
+				| null;
 				tool_calls?: any[];
 				tool_call_id?: string;
 			} = {
@@ -252,29 +252,23 @@ export class FreeLlmRouterChatModel extends BaseChatModel {
 			const messageContent = data.choices?.[0]?.message?.content || '';
 			const toolCalls = data.choices?.[0]?.message?.tool_calls;
 
-			// Use parsed JSON from _router.data if available
-			const parsedJson = data._router?.data;
 
-			// Create AI message with tool calls and parsed data if present
+
+			// Create AI message with tool calls
 			const aiMessage = new AIMessage({
 				content: messageContent,
 				additional_kwargs: {
 					...(toolCalls ? { tool_calls: toolCalls } : {}),
-					...(parsedJson ? { data: parsedJson } : {}),
 					...(data._router ? { _router: data._router } : {}),
 				},
 			});
 
 			const generation: ChatGeneration = {
-				// HACK: n8n Basic LLM Chain extracts this field
-				// If we have parsed JSON, return it as an object (not a string)
-				// This allows n8n to directly use the structured data
-				text: (parsedJson || messageContent) as any,
+				text: messageContent,
 				message: aiMessage,
 				generationInfo: {
 					finishReason: data.choices?.[0]?.finish_reason,
 					_router: data._router,
-					...(parsedJson ? { data: parsedJson } : {}),
 				},
 			};
 
@@ -287,7 +281,7 @@ export class FreeLlmRouterChatModel extends BaseChatModel {
 						totalTokens: data.usage?.total_tokens,
 					},
 					_router: data._router,
-					...(parsedJson ? { data: parsedJson } : {}),
+
 				},
 			};
 		} catch (error) {

@@ -328,7 +328,12 @@ OpenAI-совместимый endpoint для chat completions.
   "max_same_model_retries": 3,  // Override config.routing.maxSameModelRetries for this request only
   "retry_delay": 500,           // Override config.routing.retryDelay (ms) for this request only
   "timeout_secs": 60,           // Override config.routing.timeoutSecs and provider timeout for this request only
+  "fallback_provider": "deepseek", // Override fallback provider for this request
+  "fallback_model": "deepseek-chat", // Override fallback model for this request
   
+  // Capabilities filters
+  "supports_tools": true,       // Force selection of models with tool calling support
+
   // Streaming
   "stream": false               // Enable Server-Sent Events streaming (default: false)
 }
@@ -379,6 +384,7 @@ curl -X POST http://localhost:8080/api/v1/chat/completions \
 - `supports_video: true` — модели с поддержкой видео
 - `supports_audio: true` — модели с поддержкой аудио
 - `supports_file: true` — модели с поддержкой файлов/документов
+- `supports_tools: true` — модели с поддержкой вызова инструментов
 - `supports_vision: true` — (устаревший) алиас для `supports_image`
 
 Также можно использовать тег `vision` для фильтрации моделей с поддержкой изображений.
