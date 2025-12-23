@@ -272,6 +272,11 @@ export class FreeLlmRouterChatModel extends BaseChatModel {
 				},
 			};
 
+			// Notify n8n about the generated content so it appears in the node output
+			if (messageContent) {
+				await runManager?.handleLLMNewToken(messageContent);
+			}
+
 			return {
 				generations: [generation],
 				llmOutput: {
