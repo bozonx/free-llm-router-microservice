@@ -105,6 +105,10 @@
 - Интеграция с провайдерами OpenRouter и DeepSeek для передачи инструментов
 - Обновлена документация и добавлены примеры использования
 
+### Исправлено
+
+- Исправлено поведение `OpenRouterProvider` в режиме JSON (`response_format: json_object/json_schema`): reasoning больше не попадает в `choices[0].message.content`, ответ нормализуется до валидного JSON для корректной работы structured output парсеров.
+
 ### Планируется в v1.1
 - Streaming (SSE) поддержка для chat completions
 - Загрузка списка моделей по URL

@@ -2,6 +2,7 @@ import { Injectable, HttpException } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { Readable } from 'stream';
+import { JsonParser } from '../../common/utils/json-parser.util.js';
 import { BaseProvider, type BaseProviderConfig } from './base.provider.js';
 import type {
   ChatCompletionParams,
@@ -127,7 +128,7 @@ export class OpenRouterProvider extends BaseProvider {
         }),
       );
 
-      return this.mapResponse(response.data);
+      return this.mapResponse(response.data, { responseFormat: params.responseFormat });
     } catch (error) {
       const httpError = this.handleHttpError(error);
 
@@ -255,19 +256,39 @@ export class OpenRouterProvider extends BaseProvider {
   /**
    * Map OpenRouter response to standard format
    */
-  private mapResponse(response: OpenRouterResponse): ChatCompletionResult {
+  private mapResponse(
+    response: OpenRouterResponse,
+    options?: { responseFormat?: ChatCompletionParams['responseFormat'] },
+  ): ChatCompletionResult {
     const choice = response.choices[0];
     if (!choice) {
       this.logger.error({ response }, 'OpenRouter response error: no choices');
       throw new Error('No choices in OpenRouter response');
     }
 
-    // Some reasoning models (e.g., gpt-oss-20b) put response in reasoning field instead of content
-    // Use reasoning as fallback when content is empty
+    const jsonResponseRequested =
+      options?.responseFormat?.type === 'json_object' ||
+      options?.responseFormat?.type === 'json_schema';
+
     let messageContent = choice.message.content;
-    if (!messageContent && choice.message.reasoning) {
-      this.logger.debug('Using reasoning field as content fallback');
-      messageContent = choice.message.reasoning;
+
+    if (jsonResponseRequested) {
+      const parsedFromContent = JsonParser.safeParse(messageContent);
+      if (parsedFromContent !== undefined) {
+        messageContent = JSON.stringify(parsedFromContent);
+      } else {
+        const parsedFromReasoning = JsonParser.safeParse(choice.message.reasoning);
+        if (parsedFromReasoning !== undefined) {
+          messageContent = JSON.stringify(parsedFromReasoning);
+        }
+      }
+    } else {
+      // Some reasoning models (e.g., gpt-oss-20b) put response in reasoning field instead of content
+      // Use reasoning as fallback when content is empty
+      if (!messageContent && choice.message.reasoning) {
+        this.logger.debug('Using reasoning field as content fallback');
+        messageContent = choice.message.reasoning;
+      }
     }
 
     // Debug logging for truly empty responses

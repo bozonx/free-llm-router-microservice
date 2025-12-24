@@ -127,6 +127,78 @@ describe('OpenRouterProvider', () => {
       );
     });
 
+    it('should not use reasoning as content in JSON mode when content is missing', async () => {
+      const responseWithJsonInReasoning: AxiosResponse = {
+        ...mockResponse,
+        data: {
+          ...mockResponse.data,
+          choices: [
+            {
+              message: { role: 'assistant', content: null, reasoning: '{"ok":true}' },
+              finish_reason: 'stop',
+            },
+          ],
+        },
+      };
+
+      jest.spyOn(httpService, 'post').mockReturnValue(of(responseWithJsonInReasoning));
+
+      const result = await provider.chatCompletion({
+        ...mockRequest,
+        responseFormat: { type: 'json_object' },
+      });
+
+      expect(result.content).toBe('{"ok":true}');
+    });
+
+    it('should normalize JSON extracted from content in JSON mode', async () => {
+      const responseWithThinkAndJson: AxiosResponse = {
+        ...mockResponse,
+        data: {
+          ...mockResponse.data,
+          choices: [
+            {
+              message: {
+                role: 'assistant',
+                content: '<think>hidden</think>\n{\n  "value": 1\n}',
+              },
+              finish_reason: 'stop',
+            },
+          ],
+        },
+      };
+
+      jest.spyOn(httpService, 'post').mockReturnValue(of(responseWithThinkAndJson));
+
+      const result = await provider.chatCompletion({
+        ...mockRequest,
+        responseFormat: { type: 'json_object' },
+      });
+
+      expect(result.content).toBe('{"value":1}');
+    });
+
+    it('should use reasoning as content fallback in non-JSON mode when content is missing', async () => {
+      const responseWithReasoningOnly: AxiosResponse = {
+        ...mockResponse,
+        data: {
+          ...mockResponse.data,
+          choices: [
+            {
+              message: { role: 'assistant', content: null, reasoning: 'plain reasoning text' },
+              finish_reason: 'stop',
+            },
+          ],
+        },
+      };
+
+      jest.spyOn(httpService, 'post').mockReturnValue(of(responseWithReasoningOnly));
+
+      const result = await provider.chatCompletion(mockRequest);
+
+      expect(result.content).toBe('plain reasoning text');
+    });
+
     it('should handle HTTP errors', async () => {
       const error = new AxiosError('Rate Limit', '429', undefined, undefined, {
         status: 429,
