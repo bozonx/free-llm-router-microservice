@@ -143,7 +143,8 @@ describe('OpenRouterProvider', () => {
         expect(e).toBeInstanceOf(HttpException);
         const ex = e as HttpException;
         expect(ex.getStatus()).toBe(429);
-        expect(ex.message).toContain('OpenRouter API error');
+        const response = ex.getResponse() as any;
+        expect(response?.error?.message).toContain('OpenRouter API error: Too Many Requests');
       }
     });
 
