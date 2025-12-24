@@ -130,6 +130,16 @@ export class ErrorExtractor {
     return code !== undefined && code >= 400 && code < 500 && code !== 429 && code !== 404;
   }
 
+  /**
+   * Detect a capability mismatch where the selected model does not support requested response format.
+   * This is typically returned as a 400 by upstream providers, but in "auto" mode we want to
+   * switch to another model instead of failing the whole request.
+   */
+  public static isUnsupportedResponseFormatError(error: unknown): boolean {
+    const message = this.extractErrorMessage(error).toLowerCase();
+    return message.includes('response_format is not supported');
+  }
+
   public static isRateLimitError(code?: number): boolean {
     return code === 429;
   }

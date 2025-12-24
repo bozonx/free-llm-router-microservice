@@ -307,6 +307,41 @@ describe('RouterService', () => {
       expect(selectorService.selectNextModel).toHaveBeenCalledTimes(1);
     });
 
+    it('should switch model when response_format is not supported by selected model', async () => {
+      // Arrange
+      const failedModel = { ...mockModel, name: 'failed-model' };
+      const successModel = { ...mockModel, name: 'success-model' };
+
+      selectorService.selectNextModel
+        .mockReturnValueOnce(failedModel)
+        .mockReturnValueOnce(successModel);
+
+      const capabilityError = new Error(
+        'OpenRouter API error: Provider returned error - {"details":{"_errors":["response_format is not supported by this model"]}}',
+      );
+      (capabilityError as any).response = { status: 400 };
+
+      mockProvider.chatCompletion
+        .mockRejectedValueOnce(capabilityError)
+        .mockResolvedValueOnce(mockCompletionResult);
+
+      const request: ChatCompletionRequestDto = {
+        ...mockRequest,
+        model: 'auto',
+        response_format: { type: 'json_object' },
+      };
+
+      // Act
+      const result = await service.chatCompletion(request);
+
+      // Assert
+      expect(result).toBeDefined();
+      expect(result._router.attempts).toBe(2);
+      expect(result._router.fallback_used).toBe(false);
+      expect(result._router.errors).toHaveLength(1);
+      expect(selectorService.selectNextModel).toHaveBeenCalledTimes(2);
+    });
+
     it('should throw when all models and fallback fail', async () => {
       // Arrange
       selectorService.selectNextModel.mockReturnValueOnce(mockModel).mockReturnValueOnce(null);

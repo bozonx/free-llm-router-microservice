@@ -331,6 +331,17 @@ export class RouterService {
         );
 
         if (ErrorExtractor.isClientError(errorInfo.code)) {
+          const jsonRequested = this.shouldRequestJsonResponse(request);
+          const isUnsupportedResponseFormat =
+            ErrorExtractor.isUnsupportedResponseFormatError(error);
+
+          if (jsonRequested && isUnsupportedResponseFormat) {
+            this.logger.warn(
+              `Model ${model.name} does not support requested response_format, switching to next model`,
+            );
+            continue;
+          }
+
           this.logger.error('Client error detected, not retrying');
           throw error;
         }
