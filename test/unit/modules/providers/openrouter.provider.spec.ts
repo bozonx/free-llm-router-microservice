@@ -152,6 +152,9 @@ describe('OpenRouterProvider', () => {
       const error = new AxiosError('Bad Request', '400', undefined, undefined, {
         status: 400,
         data: { message: 'Provider returned error' },
+        headers: { 'x-request-id': 'prov-req-1' },
+        statusText: 'Bad Request',
+        config: {} as InternalAxiosRequestConfig,
       } as AxiosResponse);
 
       jest.spyOn(httpService, 'post').mockReturnValue(throwError(() => error));
@@ -164,6 +167,29 @@ describe('OpenRouterProvider', () => {
         expect(ex.getStatus()).toBe(400);
         const response = ex.getResponse() as any;
         expect(response?.error?.message).toContain('Provider returned error');
+        expect(response?.error?.provider_request_id).toBe('prov-req-1');
+        expect(response?.error?.provider_response).toContain('Provider returned error');
+      }
+    });
+
+    it('should include detail field for 400 responses when provider returns {detail}', async () => {
+      const error = new AxiosError('Bad Request', '400', undefined, undefined, {
+        status: 400,
+        data: { detail: 'Value error.' },
+        statusText: 'Bad Request',
+        config: {} as InternalAxiosRequestConfig,
+      } as AxiosResponse);
+
+      jest.spyOn(httpService, 'post').mockReturnValue(throwError(() => error));
+
+      try {
+        await provider.chatCompletion(mockRequest);
+      } catch (e) {
+        expect(e).toBeInstanceOf(HttpException);
+        const ex = e as HttpException;
+        expect(ex.getStatus()).toBe(400);
+        const response = ex.getResponse() as any;
+        expect(response?.error?.message).toContain('Value error.');
       }
     });
 

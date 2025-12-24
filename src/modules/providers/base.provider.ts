@@ -51,6 +51,16 @@ export interface HttpErrorResponse {
    * Provider-specific details (if available)
    */
   details?: string;
+
+  /**
+   * Provider request id / correlation id returned in response headers (if available)
+   */
+  providerRequestId?: string;
+
+  /**
+   * Truncated provider response body (if available)
+   */
+  providerResponse?: string;
 }
 
 /**
@@ -86,20 +96,90 @@ export abstract class BaseProvider implements LlmProvider {
 
       const normalizeText = (value: string): string => value.replace(/\s+/g, ' ').trim();
 
-      const extractString = (value: unknown): string | undefined => {
+      const safeStringify = (value: unknown): string | undefined => {
+        try {
+          return JSON.stringify(value);
+        } catch {
+          return undefined;
+        }
+      };
+
+      const extractText = (value: unknown, maxLen = 500): string | undefined => {
+        if (value === null || value === undefined) {
+          return undefined;
+        }
+
         if (typeof value === 'string') {
           const normalized = normalizeText(value);
-          return normalized ? truncate(normalized) : undefined;
+          return normalized ? truncate(normalized, maxLen) : undefined;
         }
+
+        if (typeof value === 'number' || typeof value === 'boolean') {
+          return truncate(String(value), maxLen);
+        }
+
+        if (typeof value === 'object') {
+          const serialized = safeStringify(value);
+          if (!serialized) {
+            return undefined;
+          }
+          const normalized = normalizeText(serialized);
+          return normalized ? truncate(normalized, maxLen) : undefined;
+        }
+
         return undefined;
+      };
+
+      const parseJsonIfPossible = (value: string): Record<string, unknown> | undefined => {
+        const trimmed = value.trim();
+        if (!trimmed) {
+          return undefined;
+        }
+
+        if (!(trimmed.startsWith('{') || trimmed.startsWith('['))) {
+          return undefined;
+        }
+
+        if (trimmed.length > 10_000) {
+          return undefined;
+        }
+
+        try {
+          const parsed = JSON.parse(trimmed) as unknown;
+          if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+            return parsed as Record<string, unknown>;
+          }
+          return undefined;
+        } catch {
+          return undefined;
+        }
       };
 
       const responseData = error.response?.data as unknown;
 
+      const providerRequestId = extractText(
+        error.response?.headers?.['x-request-id'] ??
+          error.response?.headers?.['request-id'] ??
+          error.response?.headers?.['x-amzn-requestid'] ??
+          error.response?.headers?.['cf-ray'],
+        200,
+      );
+
+      const providerResponse = extractText(
+        typeof responseData === 'string'
+          ? responseData
+          : typeof responseData === 'object'
+            ? safeStringify(responseData)
+            : responseData,
+        1000,
+      );
+
       const responseDataObj =
         responseData && typeof responseData === 'object'
           ? (responseData as Record<string, unknown>)
-          : undefined;
+          : typeof responseData === 'string'
+            ? parseJsonIfPossible(responseData)
+            : undefined;
 
       const errorObj =
         responseDataObj && responseDataObj.error && typeof responseDataObj.error === 'object'
@@ -112,22 +192,28 @@ export abstract class BaseProvider implements LlmProvider {
           : undefined;
 
       const extractedMessage =
-        extractString(responseData) ??
-        extractString(errorObj?.message) ??
-        extractString(responseDataObj?.message) ??
-        extractString((responseDataObj?.error as unknown) ?? undefined) ??
-        extractString(error.message) ??
+        extractText(errorObj?.message) ??
+        extractText(responseDataObj?.message) ??
+        extractText(responseDataObj?.error_description) ??
+        extractText(responseDataObj?.title) ??
+        extractText(responseDataObj?.detail) ??
+        extractText(responseDataObj?.error) ??
+        extractText(responseData) ??
+        extractText(error.message) ??
         'Unknown error';
 
       const extractedDetails =
-        extractString(metadataObj?.raw) ??
-        extractString(metadataObj?.details) ??
-        extractString(errorObj?.details) ??
-        extractString(responseDataObj?.details);
+        extractText(metadataObj?.raw) ??
+        extractText(metadataObj?.details) ??
+        extractText(errorObj?.details) ??
+        extractText(responseDataObj?.detail) ??
+        extractText(responseDataObj?.details) ??
+        (providerResponse && providerResponse !== extractedMessage ? providerResponse : undefined);
 
-      const message = extractedDetails
-        ? `${extractedMessage} - ${extractedDetails}`
-        : extractedMessage;
+      const message =
+        extractedDetails && extractedDetails !== extractedMessage
+          ? `${extractedMessage} - ${extractedDetails}`
+          : extractedMessage;
 
       const code = (typeof errorObj?.code === 'string' ? errorObj.code : undefined) ?? error.code;
 
@@ -137,7 +223,13 @@ export abstract class BaseProvider implements LlmProvider {
           error.response?.data ?? error.message,
         );
       } else {
-        this.logger.warn(`HTTP error: ${statusCode} - ${message}`);
+        const requestIdSuffix = providerRequestId
+          ? ` (provider_request_id: ${providerRequestId})`
+          : '';
+        const responseSuffix = providerResponse ? ` (provider_response: ${providerResponse})` : '';
+        this.logger.warn(
+          `HTTP error: ${statusCode} - ${message}${requestIdSuffix}${responseSuffix}`,
+        );
       }
 
       return {
@@ -145,6 +237,8 @@ export abstract class BaseProvider implements LlmProvider {
         message,
         code,
         details: extractedDetails,
+        providerRequestId,
+        providerResponse,
       };
     }
 

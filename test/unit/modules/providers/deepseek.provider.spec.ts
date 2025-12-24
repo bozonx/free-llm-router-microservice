@@ -131,6 +131,8 @@ describe('DeepSeekProvider', () => {
       const error = new AxiosError('Server Error', '500', undefined, undefined, {
         status: 500,
         data: { error: { message: 'Internal Server Error' } },
+        statusText: 'Server Error',
+        config: {} as InternalAxiosRequestConfig,
       } as AxiosResponse);
 
       jest.spyOn(httpService, 'post').mockReturnValue(throwError(() => error));
@@ -145,6 +147,7 @@ describe('DeepSeekProvider', () => {
         expect(ex.getStatus()).toBe(500);
         const response = ex.getResponse() as any;
         expect(response?.error?.message).toContain('DeepSeek API error: Internal Server Error');
+        expect(response?.error?.provider_response).toContain('Internal Server Error');
       }
     });
   });
