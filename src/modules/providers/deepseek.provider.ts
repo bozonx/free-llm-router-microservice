@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, HttpException } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { Readable } from 'stream';
@@ -127,9 +127,17 @@ export class DeepSeekProvider extends BaseProvider {
       return this.mapResponse(response.data);
     } catch (error) {
       const httpError = this.handleHttpError(error);
-      throw new Error(`DeepSeek API error: ${httpError.message}`, {
-        cause: httpError,
-      });
+
+      throw new HttpException(
+        {
+          error: {
+            message: `DeepSeek API error: ${httpError.message}`,
+            type: 'provider_error',
+            code: httpError.code,
+          },
+        },
+        httpError.statusCode,
+      );
     }
   }
 
@@ -220,9 +228,17 @@ export class DeepSeekProvider extends BaseProvider {
       }
     } catch (error) {
       const httpError = this.handleHttpError(error);
-      throw new Error(`DeepSeek streaming API error: ${httpError.message}`, {
-        cause: httpError,
-      });
+
+      throw new HttpException(
+        {
+          error: {
+            message: `DeepSeek streaming API error: ${httpError.message}`,
+            type: 'provider_error',
+            code: httpError.code,
+          },
+        },
+        httpError.statusCode,
+      );
     }
   }
 

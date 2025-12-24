@@ -759,36 +759,6 @@ models:
     weight: 1
     supportsTools: true
     supportsImage: true
-  - name: qwen3-235b-a22b
-    provider: openrouter
-    model: qwen/qwen3-235b-a22b:free
-    type: fast
-    contextSize: 131072
-    maxOutputTokens: 4096
-    tags:
-      - agentic
-      - best-for-ar
-      - best-for-en
-      - best-for-hi
-      - best-for-id
-      - best-for-ja
-      - best-for-ko
-      - best-for-ru
-      - best-for-th
-      - best-for-vi
-      - best-for-zh
-      - json-mode
-      - not-coder
-      - qwen
-      - qwen-3
-      - small
-      - stable
-      - tier-3
-      - tools
-    jsonResponse: true
-    available: true
-    weight: 1
-    supportsTools: true
   - name: qwen3-4b
     provider: openrouter
     model: qwen/qwen3-4b:free
@@ -923,7 +893,7 @@ models:
     model: xiaomi/mimo-v2-flash:free
     type: fast
     contextSize: 262144
-    maxOutputTokens: 262144
+    maxOutputTokens: 65536
     tags:
       - json-mode
       - not-coder

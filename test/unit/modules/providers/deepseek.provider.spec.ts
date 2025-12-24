@@ -1,4 +1,5 @@
 import { Test, type TestingModule } from '@nestjs/testing';
+import { HttpException } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { of, throwError } from 'rxjs';
 import { AxiosError, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios';
@@ -134,9 +135,17 @@ describe('DeepSeekProvider', () => {
 
       jest.spyOn(httpService, 'post').mockReturnValue(throwError(() => error));
 
-      await expect(provider.chatCompletion(mockRequest)).rejects.toThrow(
-        'DeepSeek API error: Internal Server Error',
-      );
+      await expect(provider.chatCompletion(mockRequest)).rejects.toThrow(HttpException);
+
+      try {
+        await provider.chatCompletion(mockRequest);
+      } catch (e) {
+        expect(e).toBeInstanceOf(HttpException);
+        const ex = e as HttpException;
+        expect(ex.getStatus()).toBe(500);
+        const response = ex.getResponse() as any;
+        expect(response?.error?.message).toContain('DeepSeek API error: Internal Server Error');
+      }
     });
   });
 });

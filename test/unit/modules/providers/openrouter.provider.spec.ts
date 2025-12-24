@@ -1,4 +1,5 @@
 import { Test, type TestingModule } from '@nestjs/testing';
+import { HttpException } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { of, throwError } from 'rxjs';
 import { AxiosError, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios';
@@ -134,9 +135,35 @@ describe('OpenRouterProvider', () => {
 
       jest.spyOn(httpService, 'post').mockReturnValue(throwError(() => error));
 
-      await expect(provider.chatCompletion(mockRequest)).rejects.toThrow(
-        'OpenRouter API error: Too Many Requests',
-      );
+      await expect(provider.chatCompletion(mockRequest)).rejects.toThrow(HttpException);
+
+      try {
+        await provider.chatCompletion(mockRequest);
+      } catch (e) {
+        expect(e).toBeInstanceOf(HttpException);
+        const ex = e as HttpException;
+        expect(ex.getStatus()).toBe(429);
+        expect(ex.message).toContain('OpenRouter API error');
+      }
+    });
+
+    it('should include provider error message for 400 responses', async () => {
+      const error = new AxiosError('Bad Request', '400', undefined, undefined, {
+        status: 400,
+        data: { message: 'Provider returned error' },
+      } as AxiosResponse);
+
+      jest.spyOn(httpService, 'post').mockReturnValue(throwError(() => error));
+
+      try {
+        await provider.chatCompletion(mockRequest);
+      } catch (e) {
+        expect(e).toBeInstanceOf(HttpException);
+        const ex = e as HttpException;
+        expect(ex.getStatus()).toBe(400);
+        const response = ex.getResponse() as any;
+        expect(response?.error?.message).toContain('Provider returned error');
+      }
     });
 
     it('should map unknown finish reason to stop', async () => {

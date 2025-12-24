@@ -1,3 +1,5 @@
+import { HttpException } from '@nestjs/common';
+
 export interface ErrorInfo {
   provider: string;
   model: string;
@@ -24,6 +26,37 @@ export class ErrorExtractor {
   }
 
   public static extractErrorMessage(error: unknown): string {
+    if (error instanceof HttpException) {
+      const response = error.getResponse();
+      if (typeof response === 'string') {
+        return response;
+      }
+      if (typeof response === 'object' && response !== null && 'message' in response) {
+        const msg = (response as { message: unknown }).message;
+        if (Array.isArray(msg)) {
+          return msg.join(', ');
+        }
+        if (typeof msg === 'string') {
+          return msg;
+        }
+      }
+
+      if (
+        typeof response === 'object' &&
+        response !== null &&
+        'error' in response &&
+        typeof (response as { error?: unknown }).error === 'object' &&
+        (response as { error: Record<string, unknown> }).error !== null
+      ) {
+        const err = (response as { error: Record<string, unknown> }).error;
+        if (typeof err.message === 'string' && err.message.trim()) {
+          return err.message;
+        }
+      }
+
+      return error.message;
+    }
+
     if (error instanceof Error) {
       return error.message;
     }
@@ -34,6 +67,10 @@ export class ErrorExtractor {
   }
 
   public static extractErrorCode(error: unknown): number | undefined {
+    if (error instanceof HttpException) {
+      return error.getStatus();
+    }
+
     if (!error || typeof error !== 'object') {
       return undefined;
     }

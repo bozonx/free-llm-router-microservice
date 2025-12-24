@@ -46,6 +46,11 @@ export interface HttpErrorResponse {
    * Error code (if available)
    */
   code?: string;
+
+  /**
+   * Provider-specific details (if available)
+   */
+  details?: string;
 }
 
 /**
@@ -75,12 +80,56 @@ export abstract class BaseProvider implements LlmProvider {
   protected handleHttpError(error: unknown): HttpErrorResponse {
     if (isAxiosError(error)) {
       const statusCode = error.response?.status ?? 500;
-      const message =
-        error.response?.data?.error?.message ??
-        error.response?.data?.message ??
-        error.message ??
+
+      const truncate = (value: string, maxLen = 500): string =>
+        value.length > maxLen ? `${value.slice(0, maxLen)}...` : value;
+
+      const normalizeText = (value: string): string => value.replace(/\s+/g, ' ').trim();
+
+      const extractString = (value: unknown): string | undefined => {
+        if (typeof value === 'string') {
+          const normalized = normalizeText(value);
+          return normalized ? truncate(normalized) : undefined;
+        }
+        return undefined;
+      };
+
+      const responseData = error.response?.data as unknown;
+
+      const responseDataObj =
+        responseData && typeof responseData === 'object'
+          ? (responseData as Record<string, unknown>)
+          : undefined;
+
+      const errorObj =
+        responseDataObj && responseDataObj.error && typeof responseDataObj.error === 'object'
+          ? (responseDataObj.error as Record<string, unknown>)
+          : undefined;
+
+      const metadataObj =
+        errorObj && errorObj.metadata && typeof errorObj.metadata === 'object'
+          ? (errorObj.metadata as Record<string, unknown>)
+          : undefined;
+
+      const extractedMessage =
+        extractString(responseData) ??
+        extractString(errorObj?.message) ??
+        extractString(responseDataObj?.message) ??
+        extractString((responseDataObj?.error as unknown) ?? undefined) ??
+        extractString(error.message) ??
         'Unknown error';
-      const code = error.response?.data?.error?.code ?? error.code;
+
+      const extractedDetails =
+        extractString(metadataObj?.raw) ??
+        extractString(metadataObj?.details) ??
+        extractString(errorObj?.details) ??
+        extractString(responseDataObj?.details);
+
+      const message = extractedDetails
+        ? `${extractedMessage} - ${extractedDetails}`
+        : extractedMessage;
+
+      const code = (typeof errorObj?.code === 'string' ? errorObj.code : undefined) ?? error.code;
 
       if (statusCode >= 500) {
         this.logger.error(
@@ -95,6 +144,7 @@ export abstract class BaseProvider implements LlmProvider {
         statusCode,
         message,
         code,
+        details: extractedDetails,
       };
     }
 
