@@ -111,9 +111,22 @@ describe('OpenRouterProvider', () => {
     });
 
     it('should handle JSON mode', async () => {
-      jest.spyOn(httpService, 'post').mockReturnValue(of(mockResponse));
+      const jsonResponse: AxiosResponse = {
+        ...mockResponse,
+        data: {
+          ...mockResponse.data,
+          choices: [
+            {
+              message: { role: 'assistant', content: '{"result":"ok"}' },
+              finish_reason: 'stop',
+            },
+          ],
+        },
+      };
 
-      await provider.chatCompletion({
+      jest.spyOn(httpService, 'post').mockReturnValue(of(jsonResponse));
+
+      const result = await provider.chatCompletion({
         ...mockRequest,
         responseFormat: { type: 'json_object' },
       });
@@ -125,9 +138,11 @@ describe('OpenRouterProvider', () => {
         }),
         expect.any(Object),
       );
+
+      expect(result.content).toBe('{"result":"ok"}');
     });
 
-    it('should not use reasoning as content in JSON mode when content is missing', async () => {
+    it('should throw error in JSON mode when content does not contain valid JSON', async () => {
       const responseWithJsonInReasoning: AxiosResponse = {
         ...mockResponse,
         data: {
@@ -143,12 +158,12 @@ describe('OpenRouterProvider', () => {
 
       jest.spyOn(httpService, 'post').mockReturnValue(of(responseWithJsonInReasoning));
 
-      const result = await provider.chatCompletion({
-        ...mockRequest,
-        responseFormat: { type: 'json_object' },
-      });
-
-      expect(result.content).toBe('{"ok":true}');
+      await expect(
+        provider.chatCompletion({
+          ...mockRequest,
+          responseFormat: { type: 'json_object' },
+        }),
+      ).rejects.toThrow(HttpException);
     });
 
     it('should normalize JSON extracted from content in JSON mode', async () => {

@@ -277,10 +277,21 @@ export class OpenRouterProvider extends BaseProvider {
       if (parsedFromContent !== undefined) {
         messageContent = JSON.stringify(parsedFromContent);
       } else {
-        const parsedFromReasoning = JsonParser.safeParse(choice.message.reasoning);
-        if (parsedFromReasoning !== undefined) {
-          messageContent = JSON.stringify(parsedFromReasoning);
-        }
+        this.logger.error(
+          { content: messageContent, reasoning: choice.message.reasoning },
+          'Failed to parse JSON from content in JSON response mode',
+        );
+        throw new HttpException(
+          {
+            error: {
+              message:
+                'Model did not return valid JSON in content field when JSON response format was requested',
+              type: 'invalid_response_error',
+              code: 'json_parse_failed',
+            },
+          },
+          502,
+        );
       }
     } else {
       // Some reasoning models (e.g., gpt-oss-20b) put response in reasoning field instead of content
