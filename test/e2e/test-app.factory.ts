@@ -14,6 +14,7 @@ export async function createTestApp(): Promise<NestFastifyApplication> {
   const app = moduleRef.createNestApplication<NestFastifyApplication>(
     new FastifyAdapter({
       logger: false, // We'll use Pino logger instead
+      ignoreTrailingSlash: true,
     }),
   );
 

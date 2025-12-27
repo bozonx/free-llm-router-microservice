@@ -13,6 +13,7 @@ async function bootstrap() {
     AppModule,
     new FastifyAdapter({
       logger: false, // We'll use Pino logger instead
+      ignoreTrailingSlash: true,
     }),
     {
       bufferLogs: true,
