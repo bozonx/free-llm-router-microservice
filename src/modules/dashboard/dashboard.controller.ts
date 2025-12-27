@@ -4,11 +4,14 @@ import { join, extname, normalize } from 'path';
 import { readFile, access } from 'fs/promises';
 import { constants } from 'fs';
 
+const dashboardBasePath = (process.env.BASE_PATH ?? '').replace(/^\/+|\/+$/g, '');
+const dashboardControllerPath = [dashboardBasePath, 'ui'].filter(Boolean).join('/');
+
 /**
  * Controller for serving static UI dashboard files
  * Serves the monitoring dashboard from the /public directory
  */
-@Controller(process.env.BASE_PATH ?? '')
+@Controller(dashboardControllerPath)
 export class DashboardController {
   private readonly publicPath: string;
 

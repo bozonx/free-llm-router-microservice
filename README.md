@@ -820,7 +820,7 @@ curl -X POST http://localhost:8080/api/v1/chat/completions \
 
 Сервис включает современный vanilla JavaScript dashboard для мониторинга и тестирования (без внешних зависимостей).
 
-**Доступ:** `http://localhost:8080/` (корневой путь)
+**Доступ:** `http://localhost:8080/ui/`
 
 ### Возможности
 
@@ -928,7 +928,7 @@ npm install n8n-nodes-bozonx-free-llm-router-microservice
 - [x] Admin API — мониторинг состояния системы
 - [x] Статистика запросов
 - [x] n8n node
-- [x] **Vanilla UI Dashboard** — мониторинг и тестирование сервиса (доступно на `/`)
+- [x] **Vanilla UI Dashboard** — мониторинг и тестирование сервиса (доступно на `/ui/`)
 - [x] Поддержка function calling / tools
 - [x] Streaming (SSE) поддержка
 - [x] **Vision support** — поддержка изображений в запросах (multimodal content)

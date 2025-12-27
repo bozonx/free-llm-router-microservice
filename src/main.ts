@@ -72,7 +72,7 @@ async function bootstrap() {
   // Dashboard routes to exclude from global prefix (which is for API)
   // We need to exclude the paths that DashboardController handles
   const dashboardPrefix = basePath ? `/${basePath}` : '';
-  const excludePaths = ['/', '/styles.css', '/app.js'].map(path =>
+  const excludePaths = ['/ui', '/ui/', '/ui/styles.css', '/ui/app.js', '/ui/:filename'].map(path =>
     (dashboardPrefix + path).replace('//', '/'),
   );
 

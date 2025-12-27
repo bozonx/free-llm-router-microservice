@@ -1,21 +1,23 @@
 // Configuration
-function getUiBasePathname() {
-    const pathname = window.location.pathname || '/';
+function getApiBasePathFromLocation() {
+    const pathname = (window.location.pathname || '/').replace(/\/+/g, '/');
+    const uiMatch = pathname.match(/(^|\/)ui(\/|$)/);
 
-    if (pathname.endsWith('/')) return pathname;
-
-    const lastSlashIndex = pathname.lastIndexOf('/');
-    const lastSegment = lastSlashIndex >= 0 ? pathname.slice(lastSlashIndex + 1) : pathname;
-
-    if (lastSegment.includes('.')) {
-        return pathname.slice(0, lastSlashIndex + 1) || '/';
+    if (uiMatch && typeof uiMatch.index === 'number') {
+        const prefix = pathname.slice(0, uiMatch.index);
+        const normalizedPrefix = prefix.replace(/\/+$/, '');
+        return `${normalizedPrefix}/api/v1` || '/api/v1';
     }
 
-    return `${pathname}/`;
+    if (pathname === '/' || pathname === '') return '/api/v1';
+
+    const normalizedPathname = pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
+    const lastSlashIndex = normalizedPathname.lastIndexOf('/');
+    const base = lastSlashIndex >= 0 ? normalizedPathname.slice(0, lastSlashIndex) : '';
+    return `${base}/api/v1` || '/api/v1';
 }
 
-const UI_BASE_PATHNAME = getUiBasePathname().replace(/\/+/g, '/');
-const API_BASE_PATH = `${UI_BASE_PATHNAME.replace(/\/$/, '')}/api/v1`;
+const API_BASE_PATH = getApiBasePathFromLocation();
 
 const REFRESH_INTERVAL = 5000; // 5 seconds
 let refreshTimer = null;
