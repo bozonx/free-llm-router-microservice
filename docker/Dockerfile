@@ -20,6 +20,7 @@ COPY package.json pnpm-lock.yaml ./
 COPY config.yaml models.yaml ./
 RUN pnpm install --prod --frozen-lockfile --prefer-offline || pnpm install --prod --prefer-offline
 
+COPY public ./public
 # Copy pre-built application
 COPY dist ./dist
 
