@@ -1,10 +1,8 @@
 import { Controller, Get, Param, Res } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import type { FastifyReply } from 'fastify';
 import { join, extname, normalize } from 'path';
 import { readFile, access } from 'fs/promises';
 import { constants } from 'fs';
-import type { AppConfig } from '../../config/app.config.js';
 
 /**
  * Controller for serving static UI dashboard files
@@ -13,7 +11,6 @@ import type { AppConfig } from '../../config/app.config.js';
 @Controller(process.env.BASE_PATH ?? '')
 export class DashboardController {
   private readonly publicPath: string;
-  private readonly apiBasePath: string;
 
   // MIME type mapping for common file extensions
   private readonly mimeTypes: Record<string, string> = {
@@ -34,14 +31,9 @@ export class DashboardController {
     '.eot': 'application/vnd.ms-fontobject',
   };
 
-  constructor(private readonly configService: ConfigService) {
+  constructor() {
     // Public directory is at the root of the project
     this.publicPath = join(process.cwd(), 'public');
-
-    // Get API base path from config
-    const appConfig = this.configService.get<AppConfig>('app');
-    const basePath = appConfig?.basePath ?? '';
-    this.apiBasePath = `/${[basePath, 'api', 'v1'].filter(Boolean).join('/')}`;
   }
 
   /**
@@ -54,14 +46,7 @@ export class DashboardController {
 
     try {
       await access(filePath, constants.R_OK);
-      let content = await readFile(filePath, 'utf-8');
-
-      // Inject API base path into the meta tag
-      content = content.replace(
-        '<meta name="api-base-path" content="">',
-        `<meta name="api-base-path" content="${this.apiBasePath}">`,
-      );
-
+      const content = await readFile(filePath, 'utf-8');
       reply.header('Content-Type', 'text/html; charset=utf-8').send(content);
     } catch (_error) {
       reply.code(404).send({ error: 'File not found' });

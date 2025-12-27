@@ -59,7 +59,6 @@ URL по умолчанию: `http://localhost:8080/api/v1`
 NODE_ENV=production
 LISTEN_HOST=0.0.0.0
 LISTEN_PORT=8080
-BASE_PATH=
 LOG_LEVEL=warn
 TZ=UTC
 

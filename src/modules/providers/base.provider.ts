@@ -182,12 +182,12 @@ export abstract class BaseProvider implements LlmProvider {
             : undefined;
 
       const errorObj =
-        responseDataObj && responseDataObj.error && typeof responseDataObj.error === 'object'
+        responseDataObj?.error && typeof responseDataObj.error === 'object'
           ? (responseDataObj.error as Record<string, unknown>)
           : undefined;
 
       const metadataObj =
-        errorObj && errorObj.metadata && typeof errorObj.metadata === 'object'
+        errorObj?.metadata && typeof errorObj.metadata === 'object'
           ? (errorObj.metadata as Record<string, unknown>)
           : undefined;
 

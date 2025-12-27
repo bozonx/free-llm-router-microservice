@@ -1,7 +1,21 @@
 // Configuration
-const API_BASE_PATH = window.location.pathname.includes('/api/')
-    ? '/api/v1'
-    : (document.querySelector('meta[name="api-base-path"]')?.getAttribute('content') || '/api/v1');
+function getUiBasePathname() {
+    const pathname = window.location.pathname || '/';
+
+    if (pathname.endsWith('/')) return pathname;
+
+    const lastSlashIndex = pathname.lastIndexOf('/');
+    const lastSegment = lastSlashIndex >= 0 ? pathname.slice(lastSlashIndex + 1) : pathname;
+
+    if (lastSegment.includes('.')) {
+        return pathname.slice(0, lastSlashIndex + 1) || '/';
+    }
+
+    return `${pathname}/`;
+}
+
+const UI_BASE_PATHNAME = getUiBasePathname().replace(/\/+/g, '/');
+const API_BASE_PATH = `${UI_BASE_PATHNAME.replace(/\/$/, '')}/api/v1`;
 
 const REFRESH_INTERVAL = 5000; // 5 seconds
 let refreshTimer = null;
