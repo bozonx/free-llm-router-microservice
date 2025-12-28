@@ -91,8 +91,8 @@ export class FreeLlmRouter implements INodeType {
 				name: 'tags',
 				type: 'string',
 				default: '',
-				placeholder: 'code, reasoning',
-				description: 'Comma-separated list of tags to filter models',
+				placeholder: 'coding&tier-1, llama',
+				description: 'Tags to filter models. Items separated by comma are combined with <b>OR</b>. Use <b>&</b> for <b>AND</b> within a group (e.g., "coding&tier-1, llama").',
 			},
 			{
 				displayName: 'Type',
