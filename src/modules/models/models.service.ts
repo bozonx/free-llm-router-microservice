@@ -119,6 +119,13 @@ export class ModelsService {
   }
 
   /**
+   * Get only available models (where available !== false)
+   */
+  getAvailable(): ModelDefinition[] {
+    return this.models.filter(model => model.available !== false);
+  }
+
+  /**
    * Find a model by its name or ID
    */
   findModel(modelName: string, provider?: string): ModelDefinition | undefined {
@@ -136,6 +143,26 @@ export class ModelsService {
 
     // Try finding by name field or model field
     return this.models.find(m => m.name === modelName || m.model === modelName);
+  }
+
+  /**
+   * Find all models matching the name and optionally provider.
+   * Used by SelectorService for priority list handling.
+   */
+  findByNameAndProvider(modelName: string, provider?: string): ModelDefinition[] {
+    const results: ModelDefinition[] = [];
+
+    // If provider is specified, look for exact match
+    if (provider) {
+      const match = this.models.find(m => m.name === modelName && m.provider === provider);
+      if (match) {
+        results.push(match);
+      }
+      return results;
+    }
+
+    // Find all models with matching name
+    return this.models.filter(m => m.name === modelName);
   }
 
   /**
