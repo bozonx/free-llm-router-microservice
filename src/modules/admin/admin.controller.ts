@@ -13,7 +13,7 @@ export class AdminController {
     private readonly stateService: StateService,
     private readonly rateLimiterService: RateLimiterService,
     private readonly modelsService: ModelsService,
-  ) {}
+  ) { }
 
   /**
    * Get current state of all models.
@@ -23,7 +23,7 @@ export class AdminController {
   public getStates() {
     const states = this.stateService.getAllStates();
     const models = states.map(state => {
-      const modelDef = this.modelsService.findByName(state.name);
+      const modelDef = this.modelsService.findModel(state.name);
       // Capitalize provider name for better display
       const provider = modelDef?.provider
         ? modelDef.provider.charAt(0).toUpperCase() + modelDef.provider.slice(1)

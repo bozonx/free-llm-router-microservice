@@ -222,7 +222,7 @@ function displayModels(models) {
     let filteredModels = [...models];
     if (activeTagFilters.length > 0) {
         filteredModels = filteredModels.filter(m =>
-            activeTagFilters.every(tag => m.tags && m.tags.includes(tag))
+            activeTagFilters.some(tag => m.tags && m.tags.includes(tag))
         );
     }
 

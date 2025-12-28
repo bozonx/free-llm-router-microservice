@@ -141,26 +141,49 @@ export class ModelsService {
    * Filter models based on criteria
    */
   filter(criteria: FilterCriteria): ModelDefinition[] {
-    return this.models.filter(model => this.matchesCriteria(model, criteria));
+    // 1. First, filter by basic criteria (type, context size, capabilities, etc.)
+    // Requirement: Basic filters apply before tags.
+    const nonTagMatches = this.models.filter((model) => this.matchesNonTagCriteria(model, criteria));
+
+    if (nonTagMatches.length === 0) {
+      if (this.models.length > 0) {
+        this.logger.warn(
+          `No models found matching basic filters: ${this.formatCriteria(criteria)}. ` +
+          `Total models checked: ${this.models.length}`,
+        );
+      }
+      return [];
+    }
+
+    // 2. Then, filter the resulting set by tags
+    if (!criteria.tags || (Array.isArray(criteria.tags) && criteria.tags.length === 0)) {
+      return nonTagMatches;
+    }
+
+    const tagGroups =
+      typeof criteria.tags === 'string'
+        ? criteria.tags.split(',').map((t) => t.trim())
+        : criteria.tags;
+
+    const finalMatches = nonTagMatches.filter((model) => this.matchesTagGroups(model, tagGroups));
+
+    if (finalMatches.length === 0) {
+      this.logger.warn(
+        `Models found (${nonTagMatches.length}) matching basic filters, but none match tags: "${tagGroups.join(', ')}". ` +
+        `Applied filters: ${this.formatCriteria(criteria)}`,
+      );
+    }
+
+    return finalMatches;
   }
 
   /**
-   * Check if a model matches the given selection criteria
+   * Check if a model matches non-tag selection criteria
    */
-  matchesCriteria(model: ModelDefinition, criteria: FilterCriteria): boolean {
+  private matchesNonTagCriteria(model: ModelDefinition, criteria: FilterCriteria): boolean {
     // Model must be marked as available
     if (model.available === false) {
       return false;
-    }
-
-    if (criteria.tags) {
-      const tagGroups = typeof criteria.tags === 'string'
-        ? criteria.tags.split(',').map(t => t.trim())
-        : criteria.tags;
-
-      if (!this.matchesTagGroups(model, tagGroups)) {
-        return false;
-      }
     }
 
     if (criteria.type && model.type !== criteria.type) {
@@ -176,7 +199,7 @@ export class ModelsService {
     }
 
     if (criteria.jsonResponse && model.jsonResponse !== true) {
-      return false; // Model doesn't support JSON via our config
+      return false;
     }
 
     if (criteria.supportsImage && model.supportsImage !== true) {
@@ -211,23 +234,63 @@ export class ModelsService {
    * Each group can contain multiple tags joined by '&' (AND logic within group)
    */
   private matchesTagGroups(model: ModelDefinition, tagGroups: string[]): boolean {
-    if (tagGroups.length === 0) return true;
+    const activeGroups = tagGroups.filter((g) => g.trim().length > 0);
+    if (activeGroups.length === 0) return true;
 
     // OR between groups (array elements or comma-separated)
-    return tagGroups.some(group => {
-      // AND within group (e.g. "coding&tier-2")
-      const requiredTags = group.split('&').map(t => t.trim()).filter(t => t.length > 0);
+    return activeGroups.some((group) => {
+      // AND within group (e.g. "coding&tier-1")
+      const requiredTags = group
+        .split('&')
+        .map((t) => t.trim())
+        .filter((t) => t.length > 0);
 
       if (requiredTags.length === 0) return false;
 
-      return requiredTags.every(tag => {
+      return requiredTags.every((tag) => {
         // Support legacy '|' for OR inside AND group if needed
         if (tag.includes('|')) {
-          const orTags = tag.split('|').map(t => t.trim());
-          return orTags.some(orTag => model.tags.includes(orTag));
+          const orTags = tag.split('|').map((t) => t.trim());
+          return orTags.some((orTag) => model.tags.includes(orTag));
         }
         return model.tags.includes(tag);
       });
     });
+  }
+
+  /**
+   * Format criteria for logging
+   */
+  private formatCriteria(criteria: FilterCriteria): string {
+    const parts: string[] = [];
+    if (criteria.type) parts.push(`type=${criteria.type}`);
+    if (criteria.minContextSize) parts.push(`minContextSize=${criteria.minContextSize}`);
+    if (criteria.jsonResponse) parts.push(`jsonResponse=true`);
+    if (criteria.supportsImage) parts.push(`supportsImage=true`);
+    if (criteria.supportsTools) parts.push(`supportsTools=true`);
+    if (criteria.provider) parts.push(`provider=${criteria.provider}`);
+    return parts.length > 0 ? parts.join(', ') : 'any';
+  }
+
+  /**
+   * Check if a model matches the given selection criteria (legacy/compatibility)
+   */
+  matchesCriteria(model: ModelDefinition, criteria: FilterCriteria): boolean {
+    if (!this.matchesNonTagCriteria(model, criteria)) {
+      return false;
+    }
+
+    if (criteria.tags) {
+      const tagGroups =
+        typeof criteria.tags === 'string'
+          ? criteria.tags.split(',').map((t) => t.trim())
+          : criteria.tags;
+
+      if (!this.matchesTagGroups(model, tagGroups)) {
+        return false;
+      }
+    }
+
+    return true;
   }
 }
