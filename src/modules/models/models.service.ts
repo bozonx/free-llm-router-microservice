@@ -15,9 +15,9 @@ export interface FilterCriteria {
   /**
    * Tags filter. 
    * Supports DNF logic: 
-   * - Array elements (or comma-separated string) are OR-ed.
-   * - Tags within an element joined by '&' are AND-ed.
-   * Example: ["tier-1", "coding&tier-2"] means (tier-1) OR (coding AND tier-2)
+   * - Array elements (or comma-separated string) are AND-ed.
+   * - Tags within an element joined by '|' are OR-ed.
+   * Example: ["tier-1|tier-2", "coding"] means (tier-1 OR tier-2) AND (coding)
    */
   tags?: string | string[];
 
@@ -423,20 +423,22 @@ export class ModelsService implements OnModuleInit {
   private matchesTagGroups(model: ModelDefinition, tagGroups: string[]): boolean {
     if (tagGroups.length === 0) return true;
 
-    // OR between groups
-    return tagGroups.some(group => {
-      // AND within group (e.g. "coding&tier-2")
-      const requiredTags = group.split('&').map(t => t.trim()).filter(t => t.length > 0);
-      if (requiredTags.length === 0) return false;
+    // AND between groups (array elements)
+    return tagGroups.every(group => {
+      // Tags within group (e.g. "coding|reasoning")
+      // Legacy split by '&' for AND is still supported but array is preferred now
+      const splitChar = group.includes('|') ? '|' : '&';
+      const tags = group.split(splitChar).map(t => t.trim()).filter(t => t.length > 0);
 
-      return requiredTags.every(tag => {
-        // Still support the legacy '|' just in case, but '&' and ',' are preferred now
-        if (tag.includes('|')) {
-          const orTags = tag.split('|').map(t => t.trim());
-          return orTags.some(orTag => model.tags.includes(orTag));
-        }
-        return model.tags.includes(tag);
-      });
+      if (tags.length === 0) return true;
+
+      if (splitChar === '|') {
+        // OR within group
+        return tags.some(tag => model.tags.includes(tag));
+      } else {
+        // AND within group
+        return tags.every(tag => model.tags.includes(tag));
+      }
     });
   }
 }

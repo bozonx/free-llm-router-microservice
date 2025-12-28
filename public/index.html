@@ -155,12 +155,6 @@
                 <div class="section-header">
                     <h2>Model States</h2>
                     <div class="header-actions">
-                        <div id="active-filter-indicator" class="active-filter-indicator" style="display: none;">
-                            <span class="filter-label">Active Filters:</span>
-                            <div id="filter-tags-list" class="filter-tags-list"></div>
-                            <button id="clear-filter" class="clear-filter-btn" title="Clear all filters">Clear
-                                All</button>
-                        </div>
                         <div class="sort-control">
                             <label for="model-sort">Sort by:</label>
                             <select id="model-sort" class="sort-select">
@@ -175,6 +169,12 @@
                             Refresh
                         </button>
                     </div>
+                </div>
+
+                <div id="active-filter-indicator" class="active-filter-row" style="display: none;">
+                    <span class="filter-label">Active Filters:</span>
+                    <div id="filter-tags-list" class="filter-tags-list"></div>
+                    <button id="clear-filter" class="clear-filter-btn" title="Clear all filters">Clear All</button>
                 </div>
                 <div id="models-list" class="models-list">
                     <div class="loading-state">Loading models...</div>
