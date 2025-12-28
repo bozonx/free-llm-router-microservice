@@ -154,10 +154,21 @@
             <section id="tab-models" class="tab-content">
                 <div class="section-header">
                     <h2>Model States</h2>
-                    <button class="refresh-button" id="refresh-models">
-                        <span class="refresh-icon">↻</span>
-                        Refresh
-                    </button>
+                    <div class="header-actions">
+                        <div class="sort-control">
+                            <label for="model-sort">Sort by:</label>
+                            <select id="model-sort" class="sort-select">
+                                <option value="default">Default</option>
+                                <option value="requests">Requests</option>
+                                <option value="latency">Avg Latency</option>
+                                <option value="success_rate">Success Rate</option>
+                            </select>
+                        </div>
+                        <button class="refresh-button" id="refresh-models">
+                            <span class="refresh-icon">↻</span>
+                            Refresh
+                        </button>
+                    </div>
                 </div>
                 <div id="models-list" class="models-list">
                     <div class="loading-state">Loading models...</div>

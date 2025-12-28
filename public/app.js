@@ -22,11 +22,14 @@ const API_BASE_PATH = getApiBasePathFromLocation();
 const REFRESH_INTERVAL = 5000; // 5 seconds
 let refreshTimer = null;
 let currentTab = 'overview';
+let currentModelSort = localStorage.getItem('modelSort') || 'default';
+let cachedModels = [];
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
     initializeTabs();
     initializeRefreshButtons();
+    initializeModelsSort();
     initializeTester();
     loadAllData();
 });
@@ -69,8 +72,24 @@ function switchTab(tabName) {
 // Refresh Buttons
 function initializeRefreshButtons() {
     document.getElementById('refresh-metrics')?.addEventListener('click', loadMetrics);
-    document.getElementById('refresh-models')?.addEventListener('click', loadModels);
+    document.getElementById('refresh-models')?.addEventListener('click', () => loadModels());
     document.getElementById('refresh-rate-limits')?.addEventListener('click', loadRateLimits);
+}
+
+// Models Sort
+function initializeModelsSort() {
+    const sortSelect = document.getElementById('model-sort');
+    if (!sortSelect) return;
+
+    sortSelect.value = currentModelSort;
+
+    sortSelect.addEventListener('change', (e) => {
+        currentModelSort = e.target.value;
+        localStorage.setItem('modelSort', currentModelSort);
+        if (cachedModels.length > 0) {
+            displayModels(cachedModels);
+        }
+    });
 }
 
 // Load All Data
@@ -160,7 +179,8 @@ async function loadModels() {
         }
 
         const data = await response.json();
-        displayModels(data.models || []);
+        cachedModels = data.models || [];
+        displayModels(cachedModels);
         updateLastUpdate();
     } catch (error) {
         console.error('Failed to load models:', error);
@@ -188,7 +208,9 @@ function displayModels(models) {
         return;
     }
 
-    container.innerHTML = models.map(model => `
+    const sortedModels = sortModels([...models], currentModelSort);
+
+    container.innerHTML = sortedModels.map(model => `
     <div class="model-card">
       <div class="model-header">
         <div class="model-info">
@@ -278,6 +300,26 @@ function getCircuitIcon(state) {
 function calculateSuccessRate(stats) {
     if (!stats || stats.totalRequests === 0) return 0;
     return Math.round((stats.successCount / stats.totalRequests) * 100);
+}
+
+function sortModels(models, sortType) {
+    switch (sortType) {
+        case 'requests':
+            return models.sort((a, b) => (b.stats?.lifetimeTotalRequests || 0) - (a.stats?.lifetimeTotalRequests || 0));
+        case 'latency':
+            // Sort by average latency (lower is better), but only for models that have at least one request
+            return models.sort((a, b) => {
+                const aLat = a.stats?.avgLatency || Infinity;
+                const bLat = b.stats?.avgLatency || Infinity;
+                if (aLat === bLat) return 0;
+                return aLat - bLat;
+            });
+        case 'success_rate':
+            return models.sort((a, b) => calculateSuccessRate(b.stats) - calculateSuccessRate(a.stats));
+        case 'default':
+        default:
+            return models; // Already sorted by default from API
+    }
 }
 
 // Load Rate Limits
