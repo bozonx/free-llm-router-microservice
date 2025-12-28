@@ -34,7 +34,7 @@ describe('AdminController', () => {
         {
           provide: ModelsService,
           useValue: {
-            findByName: jest.fn(),
+            findModel: jest.fn(),
           },
         },
       ],

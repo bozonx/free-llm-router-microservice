@@ -34,7 +34,7 @@ describe('CircuitBreakerService', () => {
 
   beforeEach(async () => {
     const mockModelsService = {
-      getAll: jest.fn().mockReturnValue(mockModels),
+      getModels: jest.fn().mockReturnValue(mockModels),
     };
 
     const module: TestingModule = await Test.createTestingModule({

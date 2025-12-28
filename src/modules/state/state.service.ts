@@ -24,7 +24,7 @@ export class StateService implements OnModuleInit, OnModuleDestroy {
    * Initialize states for all models on module start
    */
   public onModuleInit(): void {
-    const models = this.modelsService.getAll();
+    const models = this.modelsService.getModels();
 
     for (const model of models) {
       this.states.set(model.name, this.createInitialState(model.name));

@@ -1,7 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject } from '@nestjs/common';
 import * as yaml from 'js-yaml';
 import * as fs from 'fs';
-import { ConfigService } from '../../config/config.service.js';
+import { ROUTER_CONFIG } from '../../config/router-config.provider.js';
+import type { RouterConfig } from '../../config/router-config.interface.js';
 import type { ModelDefinition } from './interfaces/model.interface.js';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
@@ -76,7 +77,7 @@ export class ModelsService {
   private models: ModelDefinition[] = [];
 
   constructor(
-    private readonly configService: ConfigService,
+    @Inject(ROUTER_CONFIG) private readonly config: RouterConfig,
     private readonly httpService: HttpService,
   ) { }
 
@@ -89,7 +90,7 @@ export class ModelsService {
    */
   async loadModels() {
     try {
-      const modelsFile = this.configService.config.modelsFile;
+      const modelsFile = this.config.modelsFile;
       let content: string;
 
       if (modelsFile.startsWith('http://') || modelsFile.startsWith('https://')) {
@@ -105,7 +106,7 @@ export class ModelsService {
       this.models = data.models || [];
       this.logger.log(`Loaded ${this.models.length} models`);
     } catch (error) {
-      this.logger.error(`Failed to load models: ${error.message}`);
+      this.logger.error(`Failed to load models: ${error instanceof Error ? error.message : String(error)}`);
       this.models = [];
     }
   }
