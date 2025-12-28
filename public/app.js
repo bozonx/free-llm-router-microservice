@@ -29,7 +29,6 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeRefreshButtons();
     initializeTester();
     loadAllData();
-    startAutoRefresh();
 });
 
 // Tab Management
@@ -57,8 +56,10 @@ function switchTab(tabName) {
 
     currentTab = tabName;
 
-    // Load data for specific tab if needed
-    if (tabName === 'models') {
+    // Load data for specific tab
+    if (tabName === 'overview') {
+        loadMetrics();
+    } else if (tabName === 'models') {
         loadModels();
     } else if (tabName === 'rate-limits') {
         loadRateLimits();
@@ -67,28 +68,9 @@ function switchTab(tabName) {
 
 // Refresh Buttons
 function initializeRefreshButtons() {
+    document.getElementById('refresh-metrics')?.addEventListener('click', loadMetrics);
     document.getElementById('refresh-models')?.addEventListener('click', loadModels);
     document.getElementById('refresh-rate-limits')?.addEventListener('click', loadRateLimits);
-}
-
-// Auto Refresh
-function startAutoRefresh() {
-    refreshTimer = setInterval(() => {
-        if (currentTab === 'overview') {
-            loadMetrics();
-        } else if (currentTab === 'models') {
-            loadModels();
-        } else if (currentTab === 'rate-limits') {
-            loadRateLimits();
-        }
-    }, REFRESH_INTERVAL);
-}
-
-function stopAutoRefresh() {
-    if (refreshTimer) {
-        clearInterval(refreshTimer);
-        refreshTimer = null;
-    }
 }
 
 // Load All Data
@@ -248,6 +230,10 @@ function displayModels(models) {
           <div class="stat-item-label">Avg Latency</div>
           <div class="stat-item-value">${formatNumber(model.stats?.avgLatency || 0)} ms</div>
         </div>
+        <div class="stat-item">
+          <div class="stat-item-label">Requests</div>
+          <div class="stat-item-value">${formatNumber(model.stats?.lifetimeTotalRequests || 0)}</div>
+        </div>
       </div>
     </div>
   `).join('');
@@ -392,6 +378,8 @@ async function sendTestRequest() {
 
     const streaming = document.getElementById('test-streaming')?.checked || false;
     const toolsInput = document.getElementById('test-tools')?.value?.trim();
+    const tagsInput = document.getElementById('test-tags')?.value?.trim();
+    const maxModelSwitches = parseInt(document.getElementById('test-max-model-switches')?.value || '3', 10);
 
     // Disable button
     button.disabled = true;
@@ -433,8 +421,14 @@ async function sendTestRequest() {
         supports_image: !!imageUrl,
         supports_video: !!videoUrl,
         supports_audio: !!audioUrl,
-        supports_file: !!fileUrl
+        supports_file: !!fileUrl,
+        max_model_switches: maxModelSwitches
     };
+
+    // Add tags if provided
+    if (tagsInput) {
+        requestBody.tags = tagsInput.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+    }
 
     // Add tools if provided
     if (toolsInput) {
@@ -699,7 +693,3 @@ function updateLastUpdate() {
     }
 }
 
-// Cleanup on page unload
-window.addEventListener('beforeunload', () => {
-    stopAutoRefresh();
-});

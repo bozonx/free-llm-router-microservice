@@ -24,6 +24,9 @@ export interface ModelStats {
   /** Total requests in window */
   totalRequests: number;
 
+  /** Total requests since service start */
+  lifetimeTotalRequests: number;
+
   /** Successful requests count */
   successCount: number;
 

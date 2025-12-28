@@ -18,7 +18,7 @@ export class StateService implements OnModuleInit, OnModuleDestroy {
   constructor(
     private readonly modelsService: ModelsService,
     @Inject(CIRCUIT_BREAKER_CONFIG) private readonly config: CircuitBreakerConfig,
-  ) {}
+  ) { }
 
   /**
    * Initialize states for all models on module start
@@ -91,6 +91,7 @@ export class StateService implements OnModuleInit, OnModuleDestroy {
     });
 
     // Update counters
+    state.stats.lifetimeTotalRequests++;
     state.consecutiveFailures = 0;
     state.consecutiveSuccesses++;
 
@@ -113,6 +114,7 @@ export class StateService implements OnModuleInit, OnModuleDestroy {
     });
 
     // Update counters
+    state.stats.lifetimeTotalRequests++;
     state.consecutiveFailures++;
     state.consecutiveSuccesses = 0;
 
@@ -203,6 +205,7 @@ export class StateService implements OnModuleInit, OnModuleDestroy {
   private createInitialStats(): ModelStats {
     return {
       totalRequests: 0,
+      lifetimeTotalRequests: 0,
       successCount: 0,
       errorCount: 0,
       avgLatency: 0,

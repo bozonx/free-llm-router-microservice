@@ -73,6 +73,13 @@
         <main class="main-content">
             <!-- Overview Tab -->
             <section id="tab-overview" class="tab-content active">
+                <div class="section-header">
+                    <h2>System Metrics</h2>
+                    <button class="refresh-button" id="refresh-metrics">
+                        <span class="refresh-icon">↻</span>
+                        Refresh
+                    </button>
+                </div>
                 <div class="metrics-grid">
                     <div class="metric-card">
                         <div class="metric-header">
@@ -170,6 +177,12 @@
                         </div>
 
                         <div class="form-group">
+                            <label for="test-tags">Tags (Comma-separated)</label>
+                            <input type="text" id="test-tags" placeholder="e.g., free, fast, google">
+                            <span class="form-hint">Filter models by tags</span>
+                        </div>
+
+                        <div class="form-group">
                             <label for="test-message">Message</label>
                             <textarea id="test-message" rows="4"
                                 placeholder="Enter your test message">Hello! How are you?</textarea>
@@ -233,6 +246,12 @@
                         <div class="form-group">
                             <label for="test-max-tokens">Max Tokens</label>
                             <input type="number" id="test-max-tokens" min="1" max="4096" value="150">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="test-max-model-switches">Max Model Switches</label>
+                            <input type="number" id="test-max-model-switches" min="1" max="10" value="3">
+                            <span class="form-hint">Maximum number of models to try if initial fails</span>
                         </div>
 
                         <button class="primary-button" id="send-test-request">
