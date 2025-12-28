@@ -24,12 +24,14 @@ let refreshTimer = null;
 let currentTab = 'overview';
 let currentModelSort = localStorage.getItem('modelSort') || 'default';
 let cachedModels = [];
+let activeTagFilters = [];
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
     initializeTabs();
     initializeRefreshButtons();
     initializeModelsSort();
+    initializeFilterIndicator();
     initializeTester();
     loadAllData();
 });
@@ -90,6 +92,13 @@ function initializeModelsSort() {
             displayModels(cachedModels);
         }
     });
+}
+
+function initializeFilterIndicator() {
+    const clearBtn = document.getElementById('clear-filter');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', clearTagFilter);
+    }
 }
 
 // Load All Data
@@ -170,6 +179,8 @@ async function loadModels() {
     if (!container) return;
 
     container.innerHTML = '<div class="loading-state">Loading models...</div>';
+    activeTagFilters = [];
+    updateFilterIndicator();
 
     try {
         const response = await fetch(`${API_BASE_PATH}/admin/state`);
@@ -208,7 +219,25 @@ function displayModels(models) {
         return;
     }
 
-    const sortedModels = sortModels([...models], currentModelSort);
+    let filteredModels = [...models];
+    if (activeTagFilters.length > 0) {
+        filteredModels = filteredModels.filter(m =>
+            activeTagFilters.every(tag => m.tags && m.tags.includes(tag))
+        );
+    }
+
+    const sortedModels = sortModels(filteredModels, currentModelSort);
+
+    if (sortedModels.length === 0 && activeTagFilters.length > 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <span class="empty-icon">🔍</span>
+                <p>No models found with tags: ${activeTagFilters.map(t => `"${escapeHtml(t)}"`).join(', ')}.</p>
+                <button class="refresh-button" onclick="clearTagFilter()" style="margin-top: 1rem;">Clear All Filters</button>
+            </div>
+        `;
+        return;
+    }
 
     container.innerHTML = sortedModels.map(model => `
     <div class="model-card">
@@ -258,14 +287,65 @@ function displayModels(models) {
         </div>
       </div>
     </div>
-  `).join('');
+    `).join('');
+
+    // Add event listeners to tags
+    container.querySelectorAll('.tag').forEach(tagEl => {
+        tagEl.style.cursor = 'pointer';
+        tagEl.addEventListener('click', (e) => {
+            e.preventDefault();
+            const tag = e.target.textContent;
+            applyTagFilter(tag);
+        });
+    });
+}
+
+function applyTagFilter(tag) {
+    if (activeTagFilters.includes(tag)) {
+        activeTagFilters = activeTagFilters.filter(t => t !== tag);
+    } else {
+        activeTagFilters.push(tag);
+    }
+    updateFilterIndicator();
+    displayModels(cachedModels);
+}
+
+window.removeTagFilter = function (tag) {
+    activeTagFilters = activeTagFilters.filter(t => t !== tag);
+    updateFilterIndicator();
+    displayModels(cachedModels);
+};
+
+window.clearTagFilter = function () {
+    activeTagFilters = [];
+    updateFilterIndicator();
+    displayModels(cachedModels);
+};
+
+function updateFilterIndicator() {
+    const indicator = document.getElementById('active-filter-indicator');
+    const tagsContainer = document.getElementById('filter-tags-list');
+
+    if (!indicator || !tagsContainer) return;
+
+    if (activeTagFilters.length > 0) {
+        tagsContainer.innerHTML = activeTagFilters.map(tag => `
+            <span class="filter-bubble">
+                ${escapeHtml(tag)}
+                <span class="remove-bubble" onclick="removeTagFilter('${escapeHtml(tag)}')">&times;</span>
+            </span>
+        `).join('');
+        indicator.style.display = 'flex';
+    } else {
+        indicator.style.display = 'none';
+    }
 }
 
 function renderTags(tags) {
     if (!tags || !tags.length) return '';
     return `
         <div class="tags-list">
-            ${tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join('')}
+            ${tags.map(tag => `<span class="tag ${activeTagFilters.includes(tag) ? 'active' : ''}">${escapeHtml(tag)}</span>`).join('')}
         </div>
     `;
 }
