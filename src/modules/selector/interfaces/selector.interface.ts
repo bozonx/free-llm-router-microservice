@@ -21,9 +21,10 @@ export interface SelectionCriteria {
   allowAutoFallback?: boolean;
 
   /**
-   * Tags filter (all must match)
+   * Tags filter. Supports OR logic for elements and AND logic via '&'.
+   * Can be a string ("tag1, tag2&tag3") or array (["tag1", "tag2&tag3"]).
    */
-  tags?: string[];
+  tags?: string | string[];
 
   /**
    * Model type filter

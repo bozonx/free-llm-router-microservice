@@ -13,9 +13,13 @@ import { MODELS_FETCH_TIMEOUT_MS } from '../../common/constants/app.constants.js
  */
 export interface FilterCriteria {
   /**
-   * Tags to filter by (all must match)
+   * Tags filter. 
+   * Supports DNF logic: 
+   * - Array elements (or comma-separated string) are OR-ed.
+   * - Tags within an element joined by '&' are AND-ed.
+   * Example: ["tier-1", "coding&tier-2"] means (tier-1) OR (coding AND tier-2)
    */
-  tags?: string[];
+  tags?: string | string[];
 
   /**
    * Model type
@@ -76,7 +80,7 @@ export class ModelsService implements OnModuleInit {
   private readonly logger = new Logger(ModelsService.name);
   private models: ModelDefinition[] = [];
 
-  constructor(@Inject(ROUTER_CONFIG) private readonly config: RouterConfig) {}
+  constructor(@Inject(ROUTER_CONFIG) private readonly config: RouterConfig) { }
 
   public async onModuleInit(): Promise<void> {
     const modelsSource = this.config.modelsFile;
@@ -359,8 +363,14 @@ export class ModelsService implements OnModuleInit {
       return false;
     }
 
-    if (criteria.tags && !this.hasAllTags(model, criteria.tags)) {
-      return false;
+    if (criteria.tags) {
+      const tagGroups = typeof criteria.tags === 'string'
+        ? criteria.tags.split(',').map(t => t.trim())
+        : criteria.tags;
+
+      if (!this.matchesTagGroups(model, tagGroups)) {
+        return false;
+      }
     }
 
     if (criteria.type && model.type !== criteria.type) {
@@ -406,14 +416,27 @@ export class ModelsService implements OnModuleInit {
     return true;
   }
 
-  private hasAllTags(model: ModelDefinition, requiredTags: string[]): boolean {
-    return requiredTags.every(tag => {
-      // Support OR logic within a single tag string using '|' (e.g., "medium|large")
-      if (tag.includes('|')) {
-        const orTags = tag.split('|').map(t => t.trim());
-        return orTags.some(orTag => model.tags.includes(orTag));
-      }
-      return model.tags.includes(tag);
+  /**
+   * Check if model matches any of the tag groups (OR logic between groups)
+   * Each group can contain multiple tags joined by '&' (AND logic within group)
+   */
+  private matchesTagGroups(model: ModelDefinition, tagGroups: string[]): boolean {
+    if (tagGroups.length === 0) return true;
+
+    // OR between groups
+    return tagGroups.some(group => {
+      // AND within group (e.g. "coding&tier-2")
+      const requiredTags = group.split('&').map(t => t.trim()).filter(t => t.length > 0);
+      if (requiredTags.length === 0) return false;
+
+      return requiredTags.every(tag => {
+        // Still support the legacy '|' just in case, but '&' and ',' are preferred now
+        if (tag.includes('|')) {
+          const orTags = tag.split('|').map(t => t.trim());
+          return orTags.some(orTag => model.tags.includes(orTag));
+        }
+        return model.tags.includes(tag);
+      });
     });
   }
 }

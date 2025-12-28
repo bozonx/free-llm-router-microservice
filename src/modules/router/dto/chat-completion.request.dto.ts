@@ -197,9 +197,7 @@ export class ChatCompletionRequestDto {
   public model?: string | string[];
 
   @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  public tags?: string[];
+  public tags?: string | string[];
 
   @IsOptional()
   @IsString()
