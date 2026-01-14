@@ -1,60 +1,24 @@
 models:
-  - name: tongyi-deepresearch-30b-a3b
+  - name: molmo-2-8b
     provider: openrouter
-    model: alibaba/tongyi-deepresearch-30b-a3b:free
+    model: allenai/molmo-2-8b:free
     type: fast
-    contextSize: 131072
-    maxOutputTokens: 131072
+    contextSize: 36864
+    maxOutputTokens: 36864
     tags:
-      - analysis
-      - best-for-ru
-      - best-for-zh
-      - json-mode
-      - not-coder
-      - small
-      - stable
-      - tier-3
-      - tools
-    jsonResponse: true
-    available: true
-    weight: 1
-    supportsTools: true
-  - name: olmo-3-32b-think
-    provider: openrouter
-    model: allenai/olmo-3-32b-think:free
-    type: reasoning
-    contextSize: 65536
-    maxOutputTokens: 65536
-    tags:
-      - json-mode
       - not-coder
       - olmo
-      - olmo-3
+      - olmo-2
       - small
       - stable
       - tier-3
-    jsonResponse: true
+      - vision
+    jsonResponse: false
     available: true
     weight: 1
     supportsTools: false
-  - name: olmo-3.1-32b-think
-    provider: openrouter
-    model: allenai/olmo-3.1-32b-think:free
-    type: reasoning
-    contextSize: 65536
-    maxOutputTokens: 65536
-    tags:
-      - json-mode
-      - not-coder
-      - olmo
-      - olmo-3
-      - small
-      - stable
-      - tier-3
-    jsonResponse: true
-    available: true
-    weight: 1
-    supportsTools: false
+    supportsImage: true
+    supportsVideo: true
   - name: trinity-mini
     provider: openrouter
     model: arcee-ai/trinity-mini:free
@@ -239,22 +203,6 @@ models:
     weight: 1
     supportsTools: true
     supportsImage: true
-  - name: kat-coder-pro
-    provider: openrouter
-    model: kwaipilot/kat-coder-pro:free
-    type: fast
-    contextSize: 256000
-    maxOutputTokens: 32768
-    tags:
-      - coding
-      - json-mode
-      - stable
-      - tier-3
-      - tools
-    jsonResponse: true
-    available: true
-    weight: 1
-    supportsTools: true
   - name: llama-3.1-405b-instruct
     provider: openrouter
     model: meta-llama/llama-3.1-405b-instruct:free
@@ -503,35 +451,6 @@ models:
     available: true
     weight: 1
     supportsTools: false
-  - name: deepseek-v3.1-nex-n1
-    provider: openrouter
-    model: nex-agi/deepseek-v3.1-nex-n1:free
-    type: fast
-    contextSize: 131072
-    maxOutputTokens: 163840
-    tags:
-      - agentic
-      - best-for-en
-      - best-for-id
-      - best-for-ja
-      - best-for-ko
-      - best-for-ru
-      - best-for-th
-      - best-for-vi
-      - best-for-zh
-      - deepseek
-      - json-mode
-      - latest
-      - not-coder
-      - not-small
-      - powerful
-      - tier-1
-      - tier-1-2
-      - tools
-    jsonResponse: true
-    available: true
-    weight: 3
-    supportsTools: true
   - name: hermes-3-llama-3.1-405b
     provider: openrouter
     model: nousresearch/hermes-3-llama-3.1-405b:free
@@ -689,7 +608,7 @@ models:
     model: openai/gpt-oss-20b:free
     type: fast
     contextSize: 131072
-    maxOutputTokens: 128000
+    maxOutputTokens: 4096
     tags:
       - best-for-ar
       - best-for-cs
@@ -877,7 +796,7 @@ models:
     model: tngtech/tng-r1t-chimera:free
     type: reasoning
     contextSize: 163840
-    maxOutputTokens: 163840
+    maxOutputTokens: 65536
     tags:
       - json-mode
       - not-coder
@@ -909,19 +828,18 @@ models:
     model: z-ai/glm-4.5-air:free
     type: fast
     contextSize: 131072
-    maxOutputTokens: 131072
+    maxOutputTokens: 96000
     tags:
       - best-for-ru
       - best-for-zh
       - glm
       - glm-4
-      - json-mode
       - latest
       - not-coder
       - tier-1-2
       - tier-2
       - tools
-    jsonResponse: true
+    jsonResponse: false
     available: true
     weight: 2
     supportsTools: true
