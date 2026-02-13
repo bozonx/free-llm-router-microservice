@@ -10,38 +10,66 @@ interface ExecutionContext {
 }
 
 function loadRouterConfigFromEnv(env: Record<string, string | undefined>): RouterConfig {
-  const rawConfig = env['ROUTER_CONFIG_YAML'];
-  if (!rawConfig) {
-    throw new Error('ROUTER_CONFIG_YAML is required in Cloudflare Workers environment');
-  }
+  const getEnv = (name: string, defaultValue?: string): string | undefined =>
+    env[name] ?? defaultValue;
+  const getEnvNum = (name: string, defaultValue: number): number => {
+    const val = env[name];
+    return val ? Number(val) : defaultValue;
+  };
+  const getEnvBool = (name: string, defaultValue: boolean): boolean => {
+    const val = env[name];
+    if (val === undefined) return defaultValue;
+    return val.toLowerCase() === 'true' || val === '1';
+  };
 
-  const substituted = rawConfig.replace(/\$\{([^}]+)\}/g, (_, varName: string) => {
-    const value = env[varName];
-    if (value === undefined) {
-      throw new Error(`Environment variable ${varName} is not defined`);
+  const openrouterKey = getEnv('OPENROUTER_API_KEY');
+  const deepseekKey = getEnv('DEEPSEEK_API_KEY');
+
+  const config: RouterConfig = {
+    // In worker environment, models.yaml is always bundled and located in root
+    modelsFile: './models.yaml',
+    modelRequestsPerMinute: getEnvNum('ROUTER_MODEL_REQUESTS_PER_MINUTE', 200),
+    providers: {
+      openrouter: {
+        enabled: getEnvBool('OPENROUTER_ENABLED', !!openrouterKey),
+        apiKey: openrouterKey ?? '',
+        baseUrl: getEnv('OPENROUTER_BASE_URL', 'https://openrouter.ai/api/v1'),
+      },
+      deepseek: {
+        enabled: getEnvBool('DEEPSEEK_ENABLED', !!deepseekKey),
+        apiKey: deepseekKey ?? '',
+        baseUrl: getEnv('DEEPSEEK_BASE_URL', 'https://api.deepseek.com'),
+      },
+    },
+    routing: {
+      maxModelSwitches: getEnvNum('ROUTING_MAX_MODEL_SWITCHES', 3),
+      maxSameModelRetries: getEnvNum('ROUTING_MAX_SAME_MODEL_RETRIES', 2),
+      retryDelay: getEnvNum('ROUTING_RETRY_DELAY', 3000),
+      timeoutSecs: getEnvNum('ROUTING_TIMEOUT_SECS', 60),
+      fallback: {
+        enabled: getEnvBool('ROUTING_FALLBACK_ENABLED', true),
+        provider: getEnv('ROUTING_FALLBACK_PROVIDER', 'deepseek')!,
+        model: getEnv('ROUTING_FALLBACK_MODEL', 'deepseek-chat')!,
+      },
+    },
+    circuitBreaker: {
+      failureThreshold: getEnvNum('CB_FAILURE_THRESHOLD', 3),
+      cooldownPeriodMins: getEnvNum('CB_COOLDOWN_PERIOD_MINS', 3),
+      successThreshold: getEnvNum('CB_SUCCESS_THRESHOLD', 2),
+      statsWindowSizeMins: getEnvNum('CB_STATS_WINDOW_SIZE_MINS', 10),
+    },
+  };
+
+  // Load model overrides from JSON string if provided
+  const overridesJson = getEnv('ROUTER_MODEL_OVERRIDES');
+  if (overridesJson) {
+    try {
+      config.modelOverrides = JSON.parse(overridesJson);
+    } catch (error) {
+      throw new Error(
+        `Failed to parse ROUTER_MODEL_OVERRIDES JSON: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
-    return value;
-  });
-
-  const parsed = parseYaml(substituted) as unknown;
-  if (!parsed || typeof parsed !== 'object') {
-    throw new Error('ROUTER_CONFIG_YAML must be a valid YAML object');
-  }
-
-  const config = parsed as RouterConfig;
-
-  const modelsFileUrl = env['MODELS_FILE_URL'];
-  if (modelsFileUrl) {
-    config.modelsFile = modelsFileUrl;
-  }
-
-  if (
-    !config.modelsFile ||
-    !(config.modelsFile.startsWith('http://') || config.modelsFile.startsWith('https://'))
-  ) {
-    throw new Error(
-      'In Cloudflare Workers environment modelsFile must be an http(s) URL. Provide MODELS_FILE_URL.',
-    );
   }
 
   return config;

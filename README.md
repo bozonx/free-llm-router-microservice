@@ -48,72 +48,56 @@ URL по умолчанию: `http://localhost:8080/api/v1`
 
 ## 🔧 Конфигурация
 
-> ⚠️ **Важно:** Конфигурационные файлы (`config.yaml`, `models.yaml` и .env) загружаются **только при старте приложения**. Для применения любых изменений в конфигурации необходимо **перезапустить сервис**.
+Все настройки микросервиса выполняются через переменные окружения.
 
 ### Переменные окружения
 
-Основные переменные (`.env.production`):
+Микросервис поддерживает автоматическую загрузку переменных из `.env` файлов в зависимости от `NODE_ENV`. Основные файлы: `.env.production` и `.env.development`.
 
 ```bash
-# Основные настройки
+###### Basic app settings
 NODE_ENV=production
 LISTEN_HOST=0.0.0.0
 LISTEN_PORT=8080
 LOG_LEVEL=warn
 TZ=UTC
 
-# Путь к конфигу роутера
-ROUTER_CONFIG_PATH=./config.yaml
+###### Router configuration
+# Путь к файлу со списком моделей (только для Node.js)
+ROUTER_MODELS_FILE=./models.yaml
+# Лимит запросов в минуту на одну модель
+ROUTER_MODEL_REQUESTS_PER_MINUTE=200
+# Переопределение параметров моделей (JSON строка)
+# Пример: [{"name": "llama-3.3-70b", "weight": 50}]
+ROUTER_MODEL_OVERRIDES=[]
 
-# Произвольные переменные для использования в config.yaml
-# Названия могут быть любыми — в конфиге они подставляются через ${VAR_NAME}
+###### Providers
+# OpenRouter settings
 OPENROUTER_API_KEY=your_openrouter_key
+OPENROUTER_ENABLED=true
+OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
+
+# DeepSeek settings
 DEEPSEEK_API_KEY=your_deepseek_key
-```
+DEEPSEEK_ENABLED=true
+DEEPSEEK_BASE_URL=https://api.deepseek.com
 
-### Конфигурация роутера
+###### Routing
+ROUTING_MAX_MODEL_SWITCHES=3
+ROUTING_MAX_SAME_MODEL_RETRIES=2
+ROUTING_RETRY_DELAY=3000
+ROUTING_TIMEOUT_SECS=60
 
-Основной конфиг (`config.yaml`):
+###### Fallback
+ROUTING_FALLBACK_ENABLED=true
+ROUTING_FALLBACK_PROVIDER=deepseek
+ROUTING_FALLBACK_MODEL=deepseek-chat
 
-```yaml
-# Путь к файлу со списком моделей
-modelsFile: ./models.yaml
-
-# Настройки провайдеров
-providers:
-  openrouter:
-    enabled: true
-    apiKey: ${OPENROUTER_API_KEY}
-    baseUrl: https://openrouter.ai/api/v1
-    
-  deepseek:
-    enabled: true
-    apiKey: ${DEEPSEEK_API_KEY}
-    baseUrl: https://api.deepseek.com
-
-# Настройки роутинга
-routing:
-  maxModelSwitches: 3        # Максимум переключений между моделями
-  maxSameModelRetries: 2     # Максимум ретраев на одной модели (429, сетевые ошибки)
-  retryDelay: 3000           # Задержка между повторами (429 и сетевые ошибки) (мс)
-  timeoutSecs: 60            # Таймаут запроса к провайдеру (в секундах)
-  
-  # Fallback на платную модель
-  fallback:
-    enabled: true
-    provider: deepseek
-    model: deepseek-chat
-
-# Circuit Breaker (опционально, есть дефолты)
-# circuitBreaker:
-#   failureThreshold: 3       # Ошибок для открытия circuit (default: 3)
-#   cooldownPeriodMins: 3     # Время в OPEN состоянии, мин (default: 3)
-#   successThreshold: 2       # Успехов для закрытия из HALF_OPEN (default: 2)
-#   statsWindowSizeMins: 10   # Окно статистики, мин (default: 10)
-
-# Global model rate limit (protection against skew)
-# Max requests per minute per model. Default: 200.
-modelRequestsPerMinute: 200
+###### Circuit Breaker
+CB_FAILURE_THRESHOLD=3
+CB_COOLDOWN_PERIOD_MINS=3
+CB_SUCCESS_THRESHOLD=2
+CB_STATS_WINDOW_SIZE_MINS=10
 ```
 
 ### Список моделей
