@@ -1,19 +1,17 @@
-import { Injectable, Logger, Inject } from '@nestjs/common';
 import * as yaml from 'js-yaml';
-import * as fs from 'fs';
-import { ROUTER_CONFIG } from '../../config/router-config.provider.js';
+import * as fs from 'node:fs';
 import type { RouterConfig } from '../../config/router-config.interface.js';
 import type { ModelDefinition } from './interfaces/model.interface.js';
-import { HttpService } from '@nestjs/axios';
-import { firstValueFrom } from 'rxjs';
+import type { FetchClient } from '../../http/fetch-client.js';
+import { Logger } from '../../common/logger.js';
 
 /**
  * Filter criteria for model selection
  */
 export interface FilterCriteria {
   /**
-   * Tags filter. 
-   * Supports DNF logic: 
+   * Tags filter.
+   * Supports DNF logic:
    * - Array elements (or comma-separated string) are OR-ed.
    * - Tags within an element joined by '&' are AND-ed.
    * Example: ["coding&tier-1", "llama"] means (coding AND tier-1) OR (llama)
@@ -71,18 +69,23 @@ export interface FilterCriteria {
   provider?: string;
 }
 
-@Injectable()
 export class ModelsService {
   private readonly logger = new Logger(ModelsService.name);
   private models: ModelDefinition[] = [];
 
-  constructor(
-    @Inject(ROUTER_CONFIG) private readonly config: RouterConfig,
-    private readonly httpService: HttpService,
-  ) { }
+  public constructor(
+    private readonly deps: {
+      config: RouterConfig;
+      fetchClient: FetchClient;
+    },
+  ) {}
 
-  async onModuleInit() {
-    await this.loadModels();
+  private get config(): RouterConfig {
+    return this.deps.config;
+  }
+
+  private get fetchClient(): FetchClient {
+    return this.deps.fetchClient;
   }
 
   /**
@@ -95,8 +98,16 @@ export class ModelsService {
 
       if (modelsFile.startsWith('http://') || modelsFile.startsWith('https://')) {
         this.logger.log(`Loading models from URL: ${modelsFile}`);
-        const response = await firstValueFrom(this.httpService.get(modelsFile));
-        content = typeof response.data === 'string' ? response.data : yaml.dump(response.data);
+        const response = await this.fetchClient.fetch(modelsFile, {
+          method: 'GET',
+          headers: {
+            Accept: 'application/yaml, text/yaml, text/plain, application/json',
+          },
+        });
+        if (!response.ok) {
+          throw new Error(`Failed to fetch models file: ${response.status} ${response.statusText}`);
+        }
+        content = await response.text();
       } else {
         this.logger.log(`Loading models from file: ${modelsFile}`);
         content = fs.readFileSync(modelsFile, 'utf8');
@@ -106,7 +117,9 @@ export class ModelsService {
       this.models = data.models || [];
       this.logger.log(`Loaded ${this.models.length} models`);
     } catch (error) {
-      this.logger.error(`Failed to load models: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Failed to load models: ${error instanceof Error ? error.message : String(error)}`,
+      );
       this.models = [];
     }
   }
@@ -171,13 +184,13 @@ export class ModelsService {
   filter(criteria: FilterCriteria): ModelDefinition[] {
     // 1. First, filter by basic criteria (type, context size, capabilities, etc.)
     // Requirement: Basic filters apply before tags.
-    const nonTagMatches = this.models.filter((model) => this.matchesNonTagCriteria(model, criteria));
+    const nonTagMatches = this.models.filter(model => this.matchesNonTagCriteria(model, criteria));
 
     if (nonTagMatches.length === 0) {
       if (this.models.length > 0) {
         this.logger.warn(
           `No models found matching basic filters: ${this.formatCriteria(criteria)}. ` +
-          `Total models checked: ${this.models.length}`,
+            `Total models checked: ${this.models.length}`,
         );
       }
       return [];
@@ -190,15 +203,15 @@ export class ModelsService {
 
     const tagGroups =
       typeof criteria.tags === 'string'
-        ? criteria.tags.split(',').map((t) => t.trim())
+        ? criteria.tags.split(',').map(t => t.trim())
         : criteria.tags;
 
-    const finalMatches = nonTagMatches.filter((model) => this.matchesTagGroups(model, tagGroups));
+    const finalMatches = nonTagMatches.filter(model => this.matchesTagGroups(model, tagGroups));
 
     if (finalMatches.length === 0) {
       this.logger.warn(
         `Models found (${nonTagMatches.length}) matching basic filters, but none match tags: "${tagGroups.join(', ')}". ` +
-        `Applied filters: ${this.formatCriteria(criteria)}`,
+          `Applied filters: ${this.formatCriteria(criteria)}`,
       );
     }
 
@@ -262,24 +275,24 @@ export class ModelsService {
    * Each group can contain multiple tags joined by '&' (AND logic within group)
    */
   private matchesTagGroups(model: ModelDefinition, tagGroups: string[]): boolean {
-    const activeGroups = tagGroups.filter((g) => g.trim().length > 0);
+    const activeGroups = tagGroups.filter(g => g.trim().length > 0);
     if (activeGroups.length === 0) return true;
 
     // OR between groups (array elements or comma-separated)
-    return activeGroups.some((group) => {
+    return activeGroups.some(group => {
       // AND within group (e.g. "coding&tier-1")
       const requiredTags = group
         .split('&')
-        .map((t) => t.trim())
-        .filter((t) => t.length > 0);
+        .map(t => t.trim())
+        .filter(t => t.length > 0);
 
       if (requiredTags.length === 0) return false;
 
-      return requiredTags.every((tag) => {
+      return requiredTags.every(tag => {
         // Support legacy '|' for OR inside AND group if needed
         if (tag.includes('|')) {
-          const orTags = tag.split('|').map((t) => t.trim());
-          return orTags.some((orTag) => model.tags.includes(orTag));
+          const orTags = tag.split('|').map(t => t.trim());
+          return orTags.some(orTag => model.tags.includes(orTag));
         }
         return model.tags.includes(tag);
       });
@@ -311,7 +324,7 @@ export class ModelsService {
     if (criteria.tags) {
       const tagGroups =
         typeof criteria.tags === 'string'
-          ? criteria.tags.split(',').map((t) => t.trim())
+          ? criteria.tags.split(',').map(t => t.trim())
           : criteria.tags;
 
       if (!this.matchesTagGroups(model, tagGroups)) {

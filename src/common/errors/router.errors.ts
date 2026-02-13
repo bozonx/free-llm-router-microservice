@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus } from '@nestjs/common';
+import { HttpError } from '../http-errors.js';
 
 export class AllModelsFailedError extends Error {
   constructor(
@@ -29,13 +29,22 @@ export class ProviderNotFoundError extends Error {
   }
 }
 
-export class RequestCancelledError extends HttpException {
+export class RequestCancelledError extends HttpError {
   constructor(reason: 'shutdown' | 'client') {
     const message =
       reason === 'shutdown'
         ? 'Request cancelled: server is shutting down'
         : 'Request cancelled by client';
-    super(message, HttpStatus.SERVICE_UNAVAILABLE);
+    super({
+      message,
+      statusCode: 503,
+      body: {
+        error: {
+          message,
+          type: 'request_cancelled',
+        },
+      },
+    });
     this.name = 'RequestCancelledError';
   }
 }

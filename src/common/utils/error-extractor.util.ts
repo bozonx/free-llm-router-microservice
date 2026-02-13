@@ -1,4 +1,4 @@
-import { HttpException } from '@nestjs/common';
+import { HttpError } from '../http-errors.js';
 
 export interface ErrorInfo {
   provider: string;
@@ -26,31 +26,18 @@ export class ErrorExtractor {
   }
 
   public static extractErrorMessage(error: unknown): string {
-    if (error instanceof HttpException) {
-      const response = error.getResponse();
-      if (typeof response === 'string') {
-        return response;
-      }
-      if (typeof response === 'object' && response !== null && 'message' in response) {
-        const msg = (response as { message: unknown }).message;
-        if (Array.isArray(msg)) {
-          return msg.join(', ');
-        }
-        if (typeof msg === 'string') {
-          return msg;
-        }
-      }
-
+    if (error instanceof HttpError) {
+      const body = error.body;
       if (
-        typeof response === 'object' &&
-        response !== null &&
-        'error' in response &&
-        typeof (response as { error?: unknown }).error === 'object' &&
-        (response as { error: Record<string, unknown> }).error !== null
+        body &&
+        typeof body === 'object' &&
+        'error' in (body as Record<string, unknown>) &&
+        typeof (body as Record<string, unknown>).error === 'object' &&
+        (body as Record<string, unknown>).error !== null
       ) {
-        const err = (response as { error: Record<string, unknown> }).error;
-        if (typeof err.message === 'string' && err.message.trim()) {
-          return err.message;
+        const errObj = (body as { error: Record<string, unknown> }).error;
+        if (typeof errObj.message === 'string' && errObj.message.trim()) {
+          return errObj.message;
         }
       }
 
@@ -67,8 +54,8 @@ export class ErrorExtractor {
   }
 
   public static extractErrorCode(error: unknown): number | undefined {
-    if (error instanceof HttpException) {
-      return error.getStatus();
+    if (error instanceof HttpError) {
+      return error.statusCode;
     }
 
     if (!error || typeof error !== 'object') {

@@ -1,6 +1,6 @@
-import { Logger } from '@nestjs/common';
-import type { HttpService } from '@nestjs/axios';
-import { isAxiosError } from 'axios';
+import { Logger } from '../../common/logger.js';
+import { HttpError } from '../../common/http-errors.js';
+import type { FetchClient } from '../../http/fetch-client.js';
 import type {
   LlmProvider,
   ChatCompletionParams,
@@ -70,7 +70,7 @@ export abstract class BaseProvider implements LlmProvider {
   protected readonly logger: Logger;
 
   constructor(
-    protected readonly httpService: HttpService,
+    protected readonly fetchClient: FetchClient,
     protected readonly config: BaseProviderConfig,
   ) {
     this.logger = new Logger(this.constructor.name);
@@ -88,164 +88,117 @@ export abstract class BaseProvider implements LlmProvider {
    * Handle HTTP errors and convert to standard error response
    */
   protected handleHttpError(error: unknown): HttpErrorResponse {
-    if (isAxiosError(error)) {
-      const statusCode = error.response?.status ?? 500;
-
-      const truncate = (value: string, maxLen = 500): string =>
-        value.length > maxLen ? `${value.slice(0, maxLen)}...` : value;
-
-      const normalizeText = (value: string): string => value.replace(/\s+/g, ' ').trim();
-
-      const safeStringify = (value: unknown): string | undefined => {
-        try {
-          return JSON.stringify(value);
-        } catch {
-          return undefined;
-        }
-      };
-
-      const extractText = (value: unknown, maxLen = 500): string | undefined => {
-        if (value === null || value === undefined) {
-          return undefined;
-        }
-
-        if (typeof value === 'string') {
-          const normalized = normalizeText(value);
-          return normalized ? truncate(normalized, maxLen) : undefined;
-        }
-
-        if (typeof value === 'number' || typeof value === 'boolean') {
-          return truncate(String(value), maxLen);
-        }
-
-        if (typeof value === 'object') {
-          const serialized = safeStringify(value);
-          if (!serialized) {
-            return undefined;
-          }
-          const normalized = normalizeText(serialized);
-          return normalized ? truncate(normalized, maxLen) : undefined;
-        }
-
-        return undefined;
-      };
-
-      const parseJsonIfPossible = (value: string): Record<string, unknown> | undefined => {
-        const trimmed = value.trim();
-        if (!trimmed) {
-          return undefined;
-        }
-
-        if (!(trimmed.startsWith('{') || trimmed.startsWith('['))) {
-          return undefined;
-        }
-
-        if (trimmed.length > 10_000) {
-          return undefined;
-        }
-
-        try {
-          const parsed = JSON.parse(trimmed) as unknown;
-          if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-            return parsed as Record<string, unknown>;
-          }
-          return undefined;
-        } catch {
-          return undefined;
-        }
-      };
-
-      const responseData = error.response?.data as unknown;
-
-      const providerRequestId = extractText(
-        error.response?.headers?.['x-request-id'] ??
-          error.response?.headers?.['request-id'] ??
-          error.response?.headers?.['x-amzn-requestid'] ??
-          error.response?.headers?.['cf-ray'],
-        200,
-      );
-
-      const providerResponse = extractText(
-        typeof responseData === 'string'
-          ? responseData
-          : typeof responseData === 'object'
-            ? safeStringify(responseData)
-            : responseData,
-        1000,
-      );
-
-      const responseDataObj =
-        responseData && typeof responseData === 'object'
-          ? (responseData as Record<string, unknown>)
-          : typeof responseData === 'string'
-            ? parseJsonIfPossible(responseData)
-            : undefined;
-
-      const errorObj =
-        responseDataObj?.error && typeof responseDataObj.error === 'object'
-          ? (responseDataObj.error as Record<string, unknown>)
-          : undefined;
-
-      const metadataObj =
-        errorObj?.metadata && typeof errorObj.metadata === 'object'
-          ? (errorObj.metadata as Record<string, unknown>)
-          : undefined;
-
-      const extractedMessage =
-        extractText(errorObj?.message) ??
-        extractText(responseDataObj?.message) ??
-        extractText(responseDataObj?.error_description) ??
-        extractText(responseDataObj?.title) ??
-        extractText(responseDataObj?.detail) ??
-        extractText(responseDataObj?.error) ??
-        extractText(responseData) ??
-        extractText(error.message) ??
-        'Unknown error';
-
-      const extractedDetails =
-        extractText(metadataObj?.raw) ??
-        extractText(metadataObj?.details) ??
-        extractText(errorObj?.details) ??
-        extractText(responseDataObj?.detail) ??
-        extractText(responseDataObj?.details) ??
-        (providerResponse && providerResponse !== extractedMessage ? providerResponse : undefined);
-
-      const message =
-        extractedDetails && extractedDetails !== extractedMessage
-          ? `${extractedMessage} - ${extractedDetails}`
-          : extractedMessage;
-
-      const code = (typeof errorObj?.code === 'string' ? errorObj.code : undefined) ?? error.code;
-
-      if (statusCode >= 500) {
-        this.logger.error(
-          `HTTP error: ${statusCode} - ${message}`,
-          error.response?.data ?? error.message,
-        );
-      } else {
-        const requestIdSuffix = providerRequestId
-          ? ` (provider_request_id: ${providerRequestId})`
-          : '';
-        const responseSuffix = providerResponse ? ` (provider_response: ${providerResponse})` : '';
-        this.logger.warn(
-          `HTTP error: ${statusCode} - ${message}${requestIdSuffix}${responseSuffix}`,
-        );
-      }
-
+    if (error instanceof HttpError) {
       return {
-        statusCode,
-        message,
-        code,
-        details: extractedDetails,
-        providerRequestId,
-        providerResponse,
+        statusCode: error.statusCode,
+        message: error.message,
       };
     }
 
-    this.logger.error('Unknown error type', error);
+    const err = error instanceof Error ? error : new Error(String(error));
+
+    const anyErr = err as Error & { code?: string; statusCode?: number; status?: number };
+    const statusCode =
+      typeof anyErr.statusCode === 'number'
+        ? anyErr.statusCode
+        : typeof anyErr.status === 'number'
+          ? anyErr.status
+          : 500;
+
     return {
-      statusCode: 500,
-      message: String(error),
+      statusCode,
+      message: err.message || 'Unknown error',
+      code: anyErr.code,
+    };
+  }
+
+  protected throwProviderHttpError(params: {
+    statusCode: number;
+    message: string;
+    code?: string;
+    details?: string;
+    providerRequestId?: string;
+    providerResponse?: string;
+  }): never {
+    throw new HttpError({
+      statusCode: params.statusCode,
+      message: params.message,
+      body: {
+        error: {
+          message: params.message,
+          type: 'provider_error',
+          code: params.code,
+          details: params.details,
+          provider_request_id: params.providerRequestId,
+          provider_response: params.providerResponse,
+        },
+      },
+    });
+  }
+
+  protected async parseErrorResponse(response: Response): Promise<HttpErrorResponse> {
+    const statusCode = response.status || 500;
+
+    const truncate = (value: string, maxLen = 500): string =>
+      value.length > maxLen ? `${value.slice(0, maxLen)}...` : value;
+
+    const normalizeText = (value: string): string => value.replace(/\s+/g, ' ').trim();
+
+    const providerRequestId =
+      response.headers.get('x-request-id') ??
+      response.headers.get('request-id') ??
+      response.headers.get('x-amzn-requestid') ??
+      response.headers.get('cf-ray') ??
+      undefined;
+
+    let rawText: string | undefined;
+    try {
+      rawText = await response.text();
+    } catch {
+      rawText = undefined;
+    }
+
+    const providerResponse = rawText ? truncate(normalizeText(rawText), 1000) : undefined;
+
+    let extractedMessage: string | undefined;
+    let extractedDetails: string | undefined;
+    let code: string | undefined;
+
+    if (rawText) {
+      try {
+        const parsed = JSON.parse(rawText) as unknown;
+        if (parsed && typeof parsed === 'object') {
+          const obj = parsed as Record<string, unknown>;
+          const errObj =
+            obj.error && typeof obj.error === 'object' && obj.error !== null
+              ? (obj.error as Record<string, unknown>)
+              : undefined;
+
+          extractedMessage =
+            (typeof errObj?.message === 'string' ? errObj.message : undefined) ??
+            (typeof obj.message === 'string' ? obj.message : undefined) ??
+            (typeof obj.error_description === 'string' ? obj.error_description : undefined);
+
+          extractedDetails = typeof errObj?.details === 'string' ? errObj.details : undefined;
+          code = typeof errObj?.code === 'string' ? errObj.code : undefined;
+        }
+      } catch {
+        // ignore json parse
+      }
+    }
+
+    const message = truncate(
+      normalizeText(extractedMessage ?? response.statusText ?? 'Unknown error'),
+      500,
+    );
+
+    return {
+      statusCode,
+      message,
+      code,
+      details: extractedDetails,
+      providerRequestId: providerRequestId ? truncate(providerRequestId, 200) : undefined,
+      providerResponse,
     };
   }
 

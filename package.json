@@ -5,11 +5,10 @@
   "type": "module",
   "main": "dist/src/main.js",
   "scripts": {
-    "build": "nest build",
+    "build": "tsc -p tsconfig.json",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "start": "nest start",
-    "start:dev": "NODE_ENV=development nest start --watch",
-    "start:debug": "NODE_ENV=development nest start --debug --watch",
+    "start": "node dist/src/main.js",
+    "start:dev": "NODE_ENV=development node --watch src/main.ts",
     "start:prod": "NODE_ENV=production node dist/src/main.js",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "NODE_OPTIONS='--experimental-vm-modules' jest",
@@ -23,28 +22,17 @@
     "update-models": "ts-node scripts/fetch-models.ts > models.yaml"
   },
   "dependencies": {
-    "@nestjs/axios": "^4.0.1",
-    "@nestjs/common": "^11.1.11",
-    "@nestjs/config": "^4.0.2",
-    "@nestjs/core": "^11.1.11",
-    "@nestjs/platform-fastify": "^11.1.11",
-    "axios": "^1.13.2",
+    "@hono/node-server": "^1.19.4",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.3",
     "dotenv": "^17.2.3",
-    "fastify": "^5.6.2",
+    "hono": "^4.9.1",
     "js-yaml": "^4.1.1",
-    "nestjs-pino": "^4.5.0",
-    "pino": "^10.1.1",
-    "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.2"
+    "pino": "^10.1.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
     "@jest/globals": "^30.2.0",
-    "@nestjs/cli": "^11.0.14",
-    "@nestjs/schematics": "^11.0.9",
-    "@nestjs/testing": "^11.1.11",
     "@types/jest": "^30.0.0",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^25.0.8",
@@ -63,7 +51,6 @@
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.9.3"
   },
-  "author": "Ivan K",
   "license": "MIT",
   "engines": {
     "node": ">=24.0.0"

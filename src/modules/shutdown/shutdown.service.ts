@@ -1,16 +1,11 @@
-import {
-  Injectable,
-  Logger,
-  OnApplicationShutdown,
-  ServiceUnavailableException,
-} from '@nestjs/common';
+import { Logger } from '../../common/logger.js';
+import { ServiceUnavailableError } from '../../common/http-errors.js';
 import { SHUTDOWN_TIMEOUT_MS } from '../../common/constants/app.constants.js';
 
 /**
  * Service for managing graceful shutdown with request cancellation
  */
-@Injectable()
-export class ShutdownService implements OnApplicationShutdown {
+export class ShutdownService {
   private readonly logger = new Logger(ShutdownService.name);
   private abortController: AbortController | null = null;
   private isShuttingDown = false;
@@ -36,11 +31,11 @@ export class ShutdownService implements OnApplicationShutdown {
 
   /**
    * Register a new active request
-   * @throws ServiceUnavailableException if shutdown is in progress
+   * @throws ServiceUnavailableError if shutdown is in progress
    */
   public registerRequest(): void {
     if (this.isShuttingDown) {
-      throw new ServiceUnavailableException('Server is shutting down, not accepting new requests');
+      throw new ServiceUnavailableError('Server is shutting down, not accepting new requests');
     }
     this.activeRequests++;
   }
@@ -72,7 +67,7 @@ export class ShutdownService implements OnApplicationShutdown {
   /**
    * Called by NestJS when application is shutting down
    */
-  public async onApplicationShutdown(signal?: string): Promise<void> {
+  public async shutdown(signal?: string): Promise<void> {
     this.logger.log(`Shutdown signal received: ${signal ?? 'unknown'}`);
     this.isShuttingDown = true;
 

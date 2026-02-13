@@ -1,8 +1,7 @@
-import { Injectable, Inject, Logger } from '@nestjs/common';
+import { Logger } from '../../common/logger.js';
 import { StateService } from './state.service.js';
 import type { ModelDefinition } from '../models/interfaces/model.interface.js';
 import type { CircuitBreakerConfig } from './interfaces/state.interface.js';
-import { CIRCUIT_BREAKER_CONFIG } from './circuit-breaker-config.provider.js';
 
 /**
  * Circuit Breaker service implementing the Circuit Breaker pattern.
@@ -13,14 +12,23 @@ import { CIRCUIT_BREAKER_CONFIG } from './circuit-breaker-config.provider.js';
  * - HALF_OPEN: Testing if service recovered, limited requests allowed
  * - PERMANENTLY_UNAVAILABLE: Model doesn't exist (404), blocked until restart
  */
-@Injectable()
 export class CircuitBreakerService {
   private readonly logger = new Logger(CircuitBreakerService.name);
 
-  constructor(
-    private readonly stateService: StateService,
-    @Inject(CIRCUIT_BREAKER_CONFIG) private readonly config: CircuitBreakerConfig,
+  public constructor(
+    private readonly deps: {
+      stateService: StateService;
+      config: CircuitBreakerConfig;
+    },
   ) {}
+
+  private get stateService(): StateService {
+    return this.deps.stateService;
+  }
+
+  private get config(): CircuitBreakerConfig {
+    return this.deps.config;
+  }
 
   /**
    * Handle successful response from a model.

@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Logger } from '../../common/logger.js';
 import { ModelsService } from '../models/models.service.js';
 import { SmartStrategy } from './strategies/smart.strategy.js';
 import { CircuitBreakerService } from '../state/circuit-breaker.service.js';
@@ -9,15 +9,28 @@ import type { SelectionCriteria } from './interfaces/selector.interface.js';
  * Service for selecting models based on criteria.
  * Uses SmartStrategy for intelligent model selection.
  */
-@Injectable()
 export class SelectorService {
   private readonly logger = new Logger(SelectorService.name);
 
-  constructor(
-    private readonly modelsService: ModelsService,
-    private readonly smartStrategy: SmartStrategy,
-    private readonly circuitBreaker: CircuitBreakerService,
+  public constructor(
+    private readonly deps: {
+      modelsService: ModelsService;
+      smartStrategy: SmartStrategy;
+      circuitBreaker: CircuitBreakerService;
+    },
   ) {}
+
+  private get modelsService(): ModelsService {
+    return this.deps.modelsService;
+  }
+
+  private get smartStrategy(): SmartStrategy {
+    return this.deps.smartStrategy;
+  }
+
+  private get circuitBreaker(): CircuitBreakerService {
+    return this.deps.circuitBreaker;
+  }
 
   /**
    * Select a model based on criteria

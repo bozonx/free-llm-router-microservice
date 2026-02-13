@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Logger } from '../../../common/logger.js';
 import { RETRY_JITTER_PERCENT } from '../../../common/constants/retry.constants.js';
 
 export interface RetryConfig {
@@ -6,7 +6,6 @@ export interface RetryConfig {
   baseDelay: number;
 }
 
-@Injectable()
 export class RetryHandlerService {
   private readonly logger = new Logger(RetryHandlerService.name);
 

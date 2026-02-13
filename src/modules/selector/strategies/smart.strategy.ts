@@ -1,7 +1,6 @@
-import { Injectable, Inject, Logger } from '@nestjs/common';
+import { Logger } from '../../../common/logger.js';
 import { StateService } from '../../state/state.service.js';
 import { CircuitBreakerService } from '../../state/circuit-breaker.service.js';
-import { ROUTER_CONFIG } from '../../../config/router-config.provider.js';
 import type { RouterConfig } from '../../../config/router-config.interface.js';
 import type { ModelDefinition } from '../../models/interfaces/model.interface.js';
 import type { SelectionStrategy, SelectionCriteria } from '../interfaces/selector.interface.js';
@@ -21,15 +20,28 @@ import {
  * - Request filters (tags, type, min_context_size, min_max_output_tokens, prefer_fast, min_success_rate)
 
  */
-@Injectable()
 export class SmartStrategy implements SelectionStrategy {
   private readonly logger = new Logger(SmartStrategy.name);
 
-  constructor(
-    private readonly stateService: StateService,
-    private readonly circuitBreaker: CircuitBreakerService,
-    @Inject(ROUTER_CONFIG) private readonly config: RouterConfig,
+  public constructor(
+    private readonly deps: {
+      stateService: StateService;
+      circuitBreaker: CircuitBreakerService;
+      config: RouterConfig;
+    },
   ) {}
+
+  private get stateService(): StateService {
+    return this.deps.stateService;
+  }
+
+  private get circuitBreaker(): CircuitBreakerService {
+    return this.deps.circuitBreaker;
+  }
+
+  private get config(): RouterConfig {
+    return this.deps.config;
+  }
 
   public select(models: ModelDefinition[], criteria: SelectionCriteria): ModelDefinition | null {
     if (models.length === 0) {

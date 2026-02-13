@@ -1,29 +1,41 @@
-import { Injectable, OnModuleInit, OnModuleDestroy, Inject, Logger } from '@nestjs/common';
+import { Logger } from '../../common/logger.js';
 import { ModelsService } from '../models/models.service.js';
 import type { ModelState, ModelStats, CircuitBreakerConfig } from './interfaces/state.interface.js';
 import { STATE_CLEANUP_INTERVAL_MS } from '../../common/constants/app.constants.js';
-import { CIRCUIT_BREAKER_CONFIG } from './circuit-breaker-config.provider.js';
+import { DEFAULT_CIRCUIT_BREAKER_CONFIG } from './interfaces/state.interface.js';
 
 /**
  * Service for managing in-memory state of all models.
  * Tracks Circuit Breaker state, active requests, and statistics.
  */
-@Injectable()
-export class StateService implements OnModuleInit, OnModuleDestroy {
+export class StateService {
   private readonly logger = new Logger(StateService.name);
   private readonly states: Map<string, ModelState> = new Map();
   private cleanupIntervalId?: ReturnType<typeof setInterval>;
   private _fallbacksUsed = 0;
 
-  constructor(
-    private readonly modelsService: ModelsService,
-    @Inject(CIRCUIT_BREAKER_CONFIG) private readonly config: CircuitBreakerConfig,
-  ) { }
+  public constructor(
+    private readonly deps: {
+      modelsService: ModelsService;
+      config?: Partial<CircuitBreakerConfig>;
+    },
+  ) {}
+
+  private get modelsService(): ModelsService {
+    return this.deps.modelsService;
+  }
+
+  private get config(): CircuitBreakerConfig {
+    return {
+      ...DEFAULT_CIRCUIT_BREAKER_CONFIG,
+      ...(this.deps.config ?? {}),
+    };
+  }
 
   /**
    * Initialize states for all models on module start
    */
-  public onModuleInit(): void {
+  public init(): void {
     const models = this.modelsService.getModels();
 
     for (const model of models) {
@@ -40,7 +52,7 @@ export class StateService implements OnModuleInit, OnModuleDestroy {
   /**
    * Clean up on module destroy
    */
-  public onModuleDestroy(): void {
+  public close(): void {
     if (this.cleanupIntervalId) {
       clearInterval(this.cleanupIntervalId);
     }

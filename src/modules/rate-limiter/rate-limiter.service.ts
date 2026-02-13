@@ -1,18 +1,16 @@
-import { Injectable, OnModuleDestroy, Inject, Logger } from '@nestjs/common';
-import { ROUTER_CONFIG } from '../../config/router-config.provider.js';
 import type { RouterConfig } from '../../config/router-config.interface.js';
 import type { RateLimitStatus, TokenBucket } from './interfaces/rate-limiter.interface.js';
 import {
   STALE_BUCKET_THRESHOLD_MS,
   RATE_LIMITER_CLEANUP_INTERVAL_MS,
 } from '../../common/constants/app.constants.js';
+import { Logger } from '../../common/logger.js';
 
 /**
  * Rate Limiter Service implementing Token Bucket algorithm.
  * Provides global, per-client, and per-model rate limiting.
  */
-@Injectable()
-export class RateLimiterService implements OnModuleDestroy {
+export class RateLimiterService {
   private readonly logger = new Logger(RateLimiterService.name);
   private readonly modelRequestsPerMinute?: number;
 
@@ -22,8 +20,8 @@ export class RateLimiterService implements OnModuleDestroy {
   // Cleanup interval for stale buckets
   private cleanupIntervalId?: ReturnType<typeof setInterval>;
 
-  constructor(@Inject(ROUTER_CONFIG) routerConfig: RouterConfig) {
-    this.modelRequestsPerMinute = routerConfig.modelRequestsPerMinute;
+  public constructor(private readonly deps: { config: RouterConfig }) {
+    this.modelRequestsPerMinute = deps.config.modelRequestsPerMinute;
 
     if (this.modelRequestsPerMinute) {
       this.logger.log(`Rate limiting enabled for models: ${this.modelRequestsPerMinute} req/min`);
@@ -38,9 +36,9 @@ export class RateLimiterService implements OnModuleDestroy {
   }
 
   /**
-   * Clean up on module destroy
+   * Cleanup timers
    */
-  public onModuleDestroy(): void {
+  public close(): void {
     if (this.cleanupIntervalId) {
       clearInterval(this.cleanupIntervalId);
     }

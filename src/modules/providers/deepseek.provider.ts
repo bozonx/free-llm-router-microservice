@@ -1,7 +1,3 @@
-import { Injectable, HttpException } from '@nestjs/common';
-import { HttpService } from '@nestjs/axios';
-import { firstValueFrom } from 'rxjs';
-import { Readable } from 'stream';
 import { BaseProvider, type BaseProviderConfig } from './base.provider.js';
 import type {
   ChatCompletionParams,
@@ -80,10 +76,9 @@ interface DeepSeekStreamChunk {
 /**
  * DeepSeek LLM provider implementation
  */
-@Injectable()
 export class DeepSeekProvider extends BaseProvider {
-  constructor(httpService: HttpService, config: BaseProviderConfig) {
-    super(httpService, config);
+  constructor(fetchClient: BaseProvider['fetchClient'], config: BaseProviderConfig) {
+    super(fetchClient, config);
   }
 
   public get name(): string {
@@ -111,37 +106,35 @@ export class DeepSeekProvider extends BaseProvider {
       request.response_format = params.responseFormat;
     }
 
-    try {
-      const response = await firstValueFrom(
-        this.httpService.post<DeepSeekResponse>('/chat/completions', request, {
-          baseURL: this.config.baseUrl,
-          timeout: (params.timeoutSecs || this.config.timeoutSecs) * 1000,
-          headers: {
-            Authorization: `Bearer ${this.config.apiKey}`,
-            'Content-Type': 'application/json',
-          },
-          signal: params.abortSignal,
-        }),
-      );
+    const abortSignal = this.createAbortSignalWithTimeout({
+      abortSignal: params.abortSignal,
+      timeoutSecs: params.timeoutSecs,
+    });
 
-      return this.mapResponse(response.data);
-    } catch (error) {
-      const httpError = this.handleHttpError(error);
+    const response = await this.fetchClient.fetch(`${this.config.baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${this.config.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(request),
+      signal: abortSignal,
+    });
 
-      throw new HttpException(
-        {
-          error: {
-            message: `DeepSeek API error: ${httpError.message}`,
-            type: 'provider_error',
-            code: httpError.code,
-            details: httpError.details,
-            provider_request_id: httpError.providerRequestId,
-            provider_response: httpError.providerResponse,
-          },
-        },
-        httpError.statusCode,
-      );
+    if (!response.ok) {
+      const httpError = await this.parseErrorResponse(response);
+      this.throwProviderHttpError({
+        statusCode: httpError.statusCode,
+        message: `DeepSeek API error: ${httpError.message}`,
+        code: httpError.code,
+        details: httpError.details,
+        providerRequestId: httpError.providerRequestId,
+        providerResponse: httpError.providerResponse,
+      });
     }
+
+    const data = (await response.json()) as DeepSeekResponse;
+    return this.mapResponse(data);
   }
 
   /**
@@ -168,84 +161,120 @@ export class DeepSeekProvider extends BaseProvider {
       request.response_format = params.responseFormat;
     }
 
-    try {
-      const response = await firstValueFrom(
-        this.httpService.post('/chat/completions', request, {
-          baseURL: this.config.baseUrl,
-          timeout: (params.timeoutSecs || this.config.timeoutSecs) * 1000,
-          headers: {
-            Authorization: `Bearer ${this.config.apiKey}`,
-            'Content-Type': 'application/json',
-          },
-          signal: params.abortSignal,
-          responseType: 'stream',
-        }),
-      );
+    const abortSignal = this.createAbortSignalWithTimeout({
+      abortSignal: params.abortSignal,
+      timeoutSecs: params.timeoutSecs,
+    });
 
-      const stream = response.data as Readable;
+    const response = await this.fetchClient.fetch(`${this.config.baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${this.config.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(request),
+      signal: abortSignal,
+    });
 
-      // Parse SSE stream
-      let buffer = '';
-      for await (const chunk of stream) {
-        buffer += chunk.toString();
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
+    if (!response.ok) {
+      const httpError = await this.parseErrorResponse(response);
+      this.throwProviderHttpError({
+        statusCode: httpError.statusCode,
+        message: `DeepSeek streaming API error: ${httpError.message}`,
+        code: httpError.code,
+        details: httpError.details,
+        providerRequestId: httpError.providerRequestId,
+        providerResponse: httpError.providerResponse,
+      });
+    }
 
-        for (const line of lines) {
-          const trimmedLine = line.trim();
-          if (!trimmedLine || trimmedLine.startsWith(':')) {
-            continue; // Skip empty lines and comments
-          }
+    if (!response.body) {
+      this.throwProviderHttpError({
+        statusCode: 502,
+        message: 'DeepSeek streaming API error: empty response body',
+      });
+    }
 
-          if (trimmedLine === 'data: [DONE]') {
-            return; // Stream completed
-          }
+    for await (const sseChunk of this.parseStream(response.body as ReadableStream<Uint8Array>)) {
+      const choice = sseChunk.choices[0];
+      if (!choice) {
+        continue;
+      }
 
-          if (trimmedLine.startsWith('data: ')) {
-            try {
-              const jsonData = trimmedLine.slice(6); // Remove "data: " prefix
-              const sseChunk = JSON.parse(jsonData) as DeepSeekStreamChunk;
+      yield {
+        id: sseChunk.id,
+        model: sseChunk.model,
+        delta: {
+          role: choice.delta.role,
+          content: choice.delta.content,
+          tool_calls: choice.delta.tool_calls,
+        },
+        finishReason: choice.finish_reason ? this.mapFinishReason(choice.finish_reason) : undefined,
+      };
+    }
+  }
 
-              const choice = sseChunk.choices[0];
-              if (!choice) {
-                continue;
-              }
+  private async *parseStream(
+    body: ReadableStream<Uint8Array>,
+  ): AsyncGenerator<DeepSeekStreamChunk, void, unknown> {
+    const decoder = new TextDecoder();
+    const reader = body.getReader();
 
-              yield {
-                id: sseChunk.id,
-                model: sseChunk.model,
-                delta: {
-                  role: choice.delta.role,
-                  content: choice.delta.content,
-                  tool_calls: choice.delta.tool_calls,
-                },
-                finishReason: choice.finish_reason
-                  ? this.mapFinishReason(choice.finish_reason)
-                  : undefined,
-              };
-            } catch (parseError) {
-              this.logger.warn(`Failed to parse SSE chunk: ${trimmedLine}`, parseError);
-            }
+    let buffer = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        break;
+      }
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() ?? '';
+
+      for (const line of lines) {
+        const trimmedLine = line.trim();
+        if (!trimmedLine || trimmedLine.startsWith(':')) {
+          continue;
+        }
+
+        if (trimmedLine === 'data: [DONE]') {
+          return;
+        }
+
+        if (trimmedLine.startsWith('data: ')) {
+          const jsonData = trimmedLine.slice('data: '.length);
+          try {
+            yield JSON.parse(jsonData) as DeepSeekStreamChunk;
+          } catch (parseError) {
+            this.logger.warn(`Failed to parse SSE chunk: ${trimmedLine}`, parseError);
           }
         }
       }
-    } catch (error) {
-      const httpError = this.handleHttpError(error);
-
-      throw new HttpException(
-        {
-          error: {
-            message: `DeepSeek streaming API error: ${httpError.message}`,
-            type: 'provider_error',
-            code: httpError.code,
-            details: httpError.details,
-            provider_request_id: httpError.providerRequestId,
-            provider_response: httpError.providerResponse,
-          },
-        },
-        httpError.statusCode,
-      );
     }
+  }
+
+  private createAbortSignalWithTimeout(params: {
+    abortSignal?: AbortSignal;
+    timeoutSecs?: number;
+  }): AbortSignal | undefined {
+    const timeoutSecs = params.timeoutSecs ?? this.config.timeoutSecs;
+    const timeoutMs = timeoutSecs * 1000;
+    if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
+      return params.abortSignal;
+    }
+
+    const timeoutController = new AbortController();
+    const timeoutId = setTimeout(() => timeoutController.abort(), timeoutMs);
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    timeoutId.unref?.();
+
+    if (params.abortSignal) {
+      params.abortSignal.addEventListener('abort', () => timeoutController.abort(), { once: true });
+    }
+
+    return params.abortSignal
+      ? AbortSignal.any([timeoutController.signal, params.abortSignal])
+      : timeoutController.signal;
   }
 
   /**

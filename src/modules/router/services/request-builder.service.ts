@@ -1,8 +1,6 @@
-import { Injectable } from '@nestjs/common';
 import type { ChatCompletionRequestDto } from '../dto/chat-completion.request.dto.js';
 import type { ChatCompletionParams } from '../../providers/interfaces/provider.interface.js';
 
-@Injectable()
 export class RequestBuilderService {
   /**
    * Check if request contains image content (multimodal)

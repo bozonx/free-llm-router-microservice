@@ -1,11 +1,10 @@
-import { Injectable, Logger, Inject } from '@nestjs/common';
+import { Logger } from '../../common/logger.js';
+import { HttpError } from '../../common/http-errors.js';
 import { SelectorService } from '../selector/selector.service.js';
 import { StateService } from '../state/state.service.js';
 import { CircuitBreakerService } from '../state/circuit-breaker.service.js';
 import { ShutdownService } from '../shutdown/shutdown.service.js';
-import { ROUTER_CONFIG } from '../../config/router-config.provider.js';
-import type { ProvidersMap } from '../providers/providers.module.js';
-import { PROVIDERS_MAP } from '../providers/providers.module.js';
+import type { ProvidersMap } from '../providers/providers.factory.js';
 import type { ChatCompletionRequestDto } from './dto/chat-completion.request.dto.js';
 import type { ChatCompletionResponseDto } from './dto/chat-completion.response.dto.js';
 import type {
@@ -25,26 +24,62 @@ import {
 } from '../../common/errors/router.errors.js';
 import { RateLimiterService } from '../rate-limiter/rate-limiter.service.js';
 import { JsonParser } from '../../common/utils/json-parser.util.js';
-import { HttpException, HttpStatus } from '@nestjs/common';
 
 /**
  * Router service for handling chat completion requests with fallback logic
  */
-@Injectable()
 export class RouterService {
   private readonly logger = new Logger(RouterService.name);
 
-  constructor(
-    private readonly selectorService: SelectorService,
-    private readonly stateService: StateService,
-    private readonly circuitBreaker: CircuitBreakerService,
-    private readonly shutdownService: ShutdownService,
-    private readonly retryHandler: RetryHandlerService,
-    private readonly requestBuilder: RequestBuilderService,
-    @Inject(PROVIDERS_MAP) private readonly providersMap: ProvidersMap,
-    @Inject(ROUTER_CONFIG) private readonly config: RouterConfig,
-    private readonly rateLimiterService: RateLimiterService,
+  public constructor(
+    private readonly deps: {
+      selectorService: SelectorService;
+      stateService: StateService;
+      circuitBreaker: CircuitBreakerService;
+      shutdownService: ShutdownService;
+      retryHandler: RetryHandlerService;
+      requestBuilder: RequestBuilderService;
+      providersMap: ProvidersMap;
+      config: RouterConfig;
+      rateLimiterService: RateLimiterService;
+    },
   ) {}
+
+  private get selectorService(): SelectorService {
+    return this.deps.selectorService;
+  }
+
+  private get stateService(): StateService {
+    return this.deps.stateService;
+  }
+
+  private get circuitBreaker(): CircuitBreakerService {
+    return this.deps.circuitBreaker;
+  }
+
+  private get shutdownService(): ShutdownService {
+    return this.deps.shutdownService;
+  }
+
+  private get retryHandler(): RetryHandlerService {
+    return this.deps.retryHandler;
+  }
+
+  private get requestBuilder(): RequestBuilderService {
+    return this.deps.requestBuilder;
+  }
+
+  private get providersMap(): ProvidersMap {
+    return this.deps.providersMap;
+  }
+
+  private get config(): RouterConfig {
+    return this.deps.config;
+  }
+
+  private get rateLimiterService(): RateLimiterService {
+    return this.deps.rateLimiterService;
+  }
 
   /**
    * Handle chat completion request with retry and fallback logic
@@ -54,7 +89,7 @@ export class RouterService {
     clientSignal?: AbortSignal,
   ): Promise<ChatCompletionResponseDto> {
     // Register request for graceful shutdown tracking
-    this.shutdownService.registerRequest();
+    this.deps.shutdownService.registerRequest();
 
     try {
       // Use per-request overrides or fall back to config
@@ -70,7 +105,7 @@ export class RouterService {
       });
     } finally {
       // Always unregister request when done
-      this.shutdownService.unregisterRequest();
+      this.deps.shutdownService.unregisterRequest();
     }
   }
 
@@ -90,7 +125,7 @@ export class RouterService {
     clientSignal?: AbortSignal,
   ): AsyncGenerator<ChatCompletionStreamChunk, void, unknown> {
     // Register request for graceful shutdown tracking
-    this.shutdownService.registerRequest();
+    this.deps.shutdownService.registerRequest();
 
     try {
       // Use per-request overrides or fall back to config
@@ -373,7 +408,7 @@ export class RouterService {
     const effectiveMaxRetries = maxSameModelRetries ?? this.config.routing.maxSameModelRetries;
     const effectiveRetryDelay = retryDelay ?? this.config.routing.retryDelay;
 
-    return await this.retryHandler.executeWithRetry({
+    return await this.deps.retryHandler.executeWithRetry({
       operation: async () => this.executeSingleRequest(model, request, abortSignal),
       maxRetries: effectiveMaxRetries,
       retryDelay: effectiveRetryDelay,
@@ -411,7 +446,7 @@ export class RouterService {
       throw new ProviderNotFoundError(fallbackProviderName);
     }
 
-    const completionParams = this.requestBuilder.buildChatCompletionParams(
+    const completionParams = this.deps.requestBuilder.buildChatCompletionParams(
       request,
       fallbackModelName,
       abortSignal,
@@ -484,7 +519,7 @@ export class RouterService {
   }
 
   private createCombinedAbortSignal(clientSignal?: AbortSignal): AbortSignal {
-    const shutdownSignal = this.shutdownService.createRequestSignal();
+    const shutdownSignal = this.deps.shutdownService.createRequestSignal();
     // If client provides a signal, we want to abort if EITHER the client cancels OR the server shuts down
     return clientSignal ? AbortSignal.any([shutdownSignal, clientSignal]) : shutdownSignal;
   }
@@ -495,9 +530,9 @@ export class RouterService {
     excludedModels: string[],
   ): ModelDefinition | null {
     // Check if request contains images
-    const needsVision = this.requestBuilder.hasImageContent(request.messages);
+    const needsVision = this.deps.requestBuilder.hasImageContent(request.messages);
 
-    const model = this.selectorService.selectNextModel(
+    const model = this.deps.selectorService.selectNextModel(
       {
         models: parsedModel.models,
         allowAutoFallback: parsedModel.allowAutoFallback,
@@ -541,17 +576,18 @@ export class RouterService {
     this.checkAbortSignal(abortSignal);
 
     // Check rate limit for this model
-    if (!this.rateLimiterService.checkModel(model.name)) {
-      throw new HttpException(
-        {
+    if (!this.deps.rateLimiterService.checkModel(model.name)) {
+      throw new HttpError({
+        statusCode: 429,
+        message: 'Model rate limit exceeded',
+        body: {
           error: {
             message: 'Model rate limit exceeded',
             type: 'rate_limit_error',
             code: 'rate_limit_exceeded',
           },
         },
-        HttpStatus.TOO_MANY_REQUESTS,
-      );
+      });
     }
 
     const provider = this.providersMap.get(model.provider);
