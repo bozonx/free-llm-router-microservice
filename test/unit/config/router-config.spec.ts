@@ -26,8 +26,7 @@ describe('loadRouterConfig', () => {
   });
 
   it('should load default configuration when no env vars are set', () => {
-    const config = loadRouterConfig();
-    expect(config.modelsFile).toBe('./models.yaml');
+    const config = loadRouterConfig(process.env);
     expect(config.modelRequestsPerMinute).toBe(200);
     expect(config.providers.openrouter.enabled).toBe(false);
     expect(config.providers.deepseek.enabled).toBe(true);
@@ -45,8 +44,7 @@ describe('loadRouterConfig', () => {
     process.env.ROUTING_FALLBACK_PROVIDER = 'openrouter';
     process.env.ROUTING_FALLBACK_MODEL = 'fallback-model';
 
-    const config = loadRouterConfig();
-    expect(config.modelsFile).toBe('./custom-models.yaml');
+    const config = loadRouterConfig(process.env);
     expect(config.modelRequestsPerMinute).toBe(500);
     expect(config.providers.openrouter.apiKey).toBe('sk-or-123');
     expect(config.providers.openrouter.enabled).toBe(true);
@@ -64,19 +62,19 @@ describe('loadRouterConfig', () => {
     ];
     process.env.ROUTER_MODEL_OVERRIDES = JSON.stringify(overrides);
 
-    const config = loadRouterConfig();
+    const config = loadRouterConfig(process.env);
     expect(config.modelOverrides).toEqual(overrides);
   });
 
   it('should throw error on invalid overrides JSON', () => {
     process.env.ROUTER_MODEL_OVERRIDES = '{ invalid json }';
-    expect(() => loadRouterConfig()).toThrow('Failed to parse ROUTER_MODEL_OVERRIDES JSON');
+    expect(() => loadRouterConfig(process.env)).toThrow('Failed to parse ROUTER_MODEL_OVERRIDES JSON');
   });
 
   it('should respect explicit ENABLED flags', () => {
     process.env.OPENROUTER_API_KEY = 'key';
     process.env.OPENROUTER_ENABLED = 'false';
-    const config = loadRouterConfig();
+    const config = loadRouterConfig(process.env);
     expect(config.providers.openrouter.enabled).toBe(false);
   });
 });

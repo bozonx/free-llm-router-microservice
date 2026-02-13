@@ -105,7 +105,7 @@ export class ShutdownService {
         resolve();
       }, SHUTDOWN_TIMEOUT_MS);
 
-      this.shutdownTimeoutId.unref?.();
+      this.shutdownTimeoutId?.unref?.();
     });
 
     // Wait for either all requests to complete or timeout

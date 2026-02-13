@@ -89,4 +89,18 @@ export class UpstashRedisStateStorage implements StateStorage {
   private getRequestsKey(modelName: string): string {
     return `${this.REQUESTS_KEY_PREFIX}${modelName}`;
   }
+  private getRateLimitKey(key: string): string {
+    return `${this.KEY_PREFIX}ratelimit:${key}`;
+  }
+
+  public async checkRateLimit(key: string, limit: number, windowSecs: number): Promise<boolean> {
+    const redisKey = this.getRateLimitKey(key);
+    
+    const count = await this.redis.incr(redisKey);
+    if (count === 1) {
+      await this.redis.expire(redisKey, windowSecs);
+    }
+    
+    return count <= limit;
+  }
 }

@@ -29,14 +29,12 @@
     "dotenv": "^17.2.3",
     "hono": "^4.9.1",
     "ioredis": "^5.9.3",
-    "js-yaml": "^4.1.1",
     "pino": "^10.1.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
     "@jest/globals": "^30.2.0",
     "@types/jest": "^30.0.0",
-    "@types/js-yaml": "^4.0.9",
     "@types/node": "^25.0.8",
     "@typescript-eslint/eslint-plugin": "^8.53.0",
     "@typescript-eslint/parser": "^8.53.0",

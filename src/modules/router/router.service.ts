@@ -585,7 +585,7 @@ export class RouterService {
     this.checkAbortSignal(abortSignal);
 
     // Check rate limit for this model
-    if (!this.deps.rateLimiterService.checkModel(model.name)) {
+    if (!(await this.deps.rateLimiterService.checkModel(model.name))) {
       throw new HttpError({
         statusCode: 429,
         message: 'Model rate limit exceeded',

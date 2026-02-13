@@ -54,4 +54,23 @@ export class InMemoryStateStorage implements StateStorage {
   public async getModelNames(): Promise<string[]> {
     return Array.from(this.states.keys());
   }
+
+  private rateLimits: Map<string, { count: number; resetAt: number }> = new Map();
+
+  public async checkRateLimit(key: string, limit: number, windowSecs: number): Promise<boolean> {
+    const now = Date.now();
+    const bucket = this.rateLimits.get(key);
+
+    if (!bucket || now >= bucket.resetAt) {
+      this.rateLimits.set(key, { count: 1, resetAt: now + windowSecs * 1000 });
+      return true;
+    }
+
+    if (bucket.count < limit) {
+      bucket.count++;
+      return true;
+    }
+
+    return false;
+  }
 }

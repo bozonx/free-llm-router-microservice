@@ -1,4 +1,4 @@
-import Redis from 'ioredis';
+import { Redis } from 'ioredis';
 import type { ModelState, RequestRecord } from '../interfaces/state.interface.js';
 import type { StateStorage } from '../interfaces/state-storage.interface.js';
 import { Logger } from '../../../common/logger.js';
@@ -18,10 +18,10 @@ export class RedisStateStorage implements StateStorage {
   constructor(url: string) {
     this.redis = new Redis(url, {
       maxRetriesPerRequest: 3,
-      retryStrategy: (times) => Math.min(times * 50, 2000),
+      retryStrategy: (times: number) => Math.min(times * 50, 2000),
     });
 
-    this.redis.on('error', (err) => {
+    this.redis.on('error', (err: Error) => {
       this.logger.error(`Redis connection error: ${err.message}`);
     });
   }
@@ -79,7 +79,7 @@ export class RedisStateStorage implements StateStorage {
     await this.redis.zremrangebyscore(key, '-inf', windowStart - 1);
     
     const records = await this.redis.zrangebyscore(key, windowStart, '+inf');
-    return records.map(r => JSON.parse(r));
+    return records.map((r: string) => JSON.parse(r));
   }
 
   public async resetState(modelName: string): Promise<void> {
@@ -88,7 +88,7 @@ export class RedisStateStorage implements StateStorage {
 
   public async getModelNames(): Promise<string[]> {
     const keys = await this.redis.keys(`${this.STATE_KEY_PREFIX}*`);
-    return keys.map(k => k.replace(this.STATE_KEY_PREFIX, ''));
+    return keys.map((k: string) => k.replace(this.STATE_KEY_PREFIX, ''));
   }
 
   private getStateKey(modelName: string): string {
@@ -97,5 +97,19 @@ export class RedisStateStorage implements StateStorage {
 
   private getRequestsKey(modelName: string): string {
     return `${this.REQUESTS_KEY_PREFIX}${modelName}`;
+  }
+  private getRateLimitKey(key: string): string {
+    return `${this.KEY_PREFIX}ratelimit:${key}`;
+  }
+
+  public async checkRateLimit(key: string, limit: number, windowSecs: number): Promise<boolean> {
+    const redisKey = this.getRateLimitKey(key);
+    
+    const count = await this.redis.incr(redisKey);
+    if (count === 1) {
+      await this.redis.expire(redisKey, windowSecs);
+    }
+    
+    return count <= limit;
   }
 }

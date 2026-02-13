@@ -194,14 +194,6 @@ export interface RedisConfig {
  */
 export interface RouterConfig {
   /**
-   * Path to models file or URL (http/https)
-   * Examples:
-   *   - ./models.yaml (local file)
-   *   - https://example.com/models.yaml (remote file)
-   */
-  modelsFile: string;
-
-  /**
    * Provider configurations
    */
   providers: Record<string, ProviderConfig>;

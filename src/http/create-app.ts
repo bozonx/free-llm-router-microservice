@@ -19,18 +19,16 @@ import { StateStorageFactory } from '../modules/state/storage/state-storage.fact
 
 export interface CreateAppOptions {
   fetchClient: FetchClient;
-  serveStaticFiles?: boolean;
-  routerConfig?: RouterConfig;
+  serveStaticFiles: boolean;
+  routerConfig: RouterConfig;
 }
 
 export async function createApp(options: CreateAppOptions): Promise<Hono> {
   const logger = new Logger('App');
-  const routerConfig =
-    options.routerConfig ?? (await import('../config/router.config.js')).loadRouterConfig();
+  const { routerConfig } = options;
 
   const modelsService = new ModelsService({
     config: routerConfig,
-    fetchClient: options.fetchClient,
   });
   await modelsService.loadModels();
 
@@ -68,7 +66,10 @@ export async function createApp(options: CreateAppOptions): Promise<Hono> {
   const shutdownService = new ShutdownService();
   const retryHandler = new RetryHandlerService();
   const requestBuilder = new RequestBuilderService();
-  const rateLimiterService = new RateLimiterService({ config: routerConfig });
+  const rateLimiterService = new RateLimiterService({ 
+    config: routerConfig,
+    storage: stateStorage,
+  });
 
   const routerService = new RouterService({
     selectorService,

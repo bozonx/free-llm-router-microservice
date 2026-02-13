@@ -54,4 +54,13 @@ export interface StateStorage {
    * Get all model names with stored states
    */
   getModelNames(): Promise<string[]>;
+
+  /**
+   * Check if rate limit is exceeded
+   * @param key Unique key for the limit (e.g. model:name)
+   * @param limit Maximum number of requests
+   * @param windowSecs Time window in seconds
+   * @returns true if allowed, false if limited
+   */
+  checkRateLimit(key: string, limit: number, windowSecs: number): Promise<boolean>;
 }

@@ -11,6 +11,8 @@ import { HttpError, NotFoundError } from '../common/http-errors.js';
 import { validateDto } from './validation.js';
 import { ChatCompletionRequestDto } from '../modules/router/dto/chat-completion.request.dto.js';
 
+const startedAt = Date.now();
+
 export function registerRoutes(
   app: Hono,
   deps: {
@@ -24,8 +26,9 @@ export function registerRoutes(
     streamSSE: typeof streamSSE;
   },
 ): void {
-  const basePath = (process.env.BASE_PATH ?? '').replace(/^\/+|\/+$/g, '');
-  const apiPrefix = `/${[basePath, 'api', 'v1'].filter(Boolean).join('/')}`;
+  // Use config instead of process.env
+  // Note: Hono can also use basePath if needed, but here it's used to construct apiPrefix
+  const apiPrefix = '/api/v1'; 
 
   app.onError((err: Error, c: Context) => {
     if (err instanceof HttpError) {
@@ -151,7 +154,7 @@ export function registerRoutes(
     ).length;
 
     return c.json({
-      uptime: process.uptime(),
+      uptime: Math.floor((Date.now() - startedAt) / 1000),
       totalRequests,
       successfulRequests,
       failedRequests,
@@ -168,7 +171,7 @@ export function registerRoutes(
     return c.json({ message: 'Maintenance completed successfully' });
   });
 
-  app.get(`${basePath}/admin/rate-limits`, (c: Context) =>
+  app.get('/admin/rate-limits', (c: Context) =>
     c.json(deps.rateLimiterService.getStatus()),
   );
 

@@ -1,25 +1,18 @@
-import { readFileSync, existsSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { load as parseYaml } from 'js-yaml';
-import { config as loadDotenv } from 'dotenv';
 import type { RouterConfig } from './router-config.interface.js';
 import { RouterConfigValidator } from './validators/router-config-validator.js';
 
 /**
  * Load router configuration from environment variables
  */
-export function loadRouterConfig(): RouterConfig {
-  // Load environment variables from .env files
-  loadEnvironmentVariables();
-
+export function loadRouterConfig(env: Record<string, string | undefined>): RouterConfig {
   const getEnv = (name: string, defaultValue?: string): string | undefined =>
-    process.env[name] ?? defaultValue;
+    env[name] ?? defaultValue;
   const getEnvNum = (name: string, defaultValue: number): number => {
-    const val = process.env[name];
+    const val = env[name];
     return val ? Number(val) : defaultValue;
   };
   const getEnvBool = (name: string, defaultValue: boolean): boolean => {
-    const val = process.env[name];
+    const val = env[name];
     if (val === undefined) return defaultValue;
     return val.toLowerCase() === 'true' || val === '1';
   };
@@ -28,7 +21,6 @@ export function loadRouterConfig(): RouterConfig {
   const deepseekKey = getEnv('DEEPSEEK_API_KEY');
 
   const config: RouterConfig = {
-    modelsFile: getEnv('ROUTER_MODELS_FILE', './models.yaml')!,
     modelRequestsPerMinute: getEnvNum('ROUTER_MODEL_REQUESTS_PER_MINUTE', 200),
     providers: {
       openrouter: {
@@ -80,23 +72,6 @@ export function loadRouterConfig(): RouterConfig {
 
   validateRouterConfig(config);
   return config;
-
-  /**
-   * Load environment variables from .env files
-   * Follows the same pattern as ConfigModule in AppModule
-   */
-  function loadEnvironmentVariables(): void {
-    const nodeEnv = process.env['NODE_ENV'] ?? 'development';
-    const envFiles = [`.env.${nodeEnv}`, '.env'];
-
-    // Load each env file if it exists
-    for (const envFile of envFiles) {
-      const envPath = resolve(envFile);
-      if (existsSync(envPath)) {
-        loadDotenv({ path: envPath });
-      }
-    }
-  }
 
   function validateRouterConfig(config: unknown): asserts config is RouterConfig {
     const validator: RouterConfigValidator = new RouterConfigValidator();

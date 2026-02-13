@@ -1,5 +1,4 @@
-import * as yaml from 'js-yaml';
-import * as fs from 'node:fs';
+import modelsData from './models.json' with { type: 'json' };
 import type { RouterConfig } from '../../config/router-config.interface.js';
 import type { ModelDefinition } from './interfaces/model.interface.js';
 import type { FetchClient } from '../../http/fetch-client.js';
@@ -76,7 +75,6 @@ export class ModelsService {
   public constructor(
     private readonly deps: {
       config: RouterConfig;
-      fetchClient: FetchClient;
     },
   ) {}
 
@@ -84,38 +82,14 @@ export class ModelsService {
     return this.deps.config;
   }
 
-  private get fetchClient(): FetchClient {
-    return this.deps.fetchClient;
-  }
-
   /**
-   * Load models from YAML file or URL
+   * Load models from static JSON
    */
+  // eslint-disable-next-line @typescript-eslint/require-await
   async loadModels() {
     try {
-      const modelsFile = this.config.modelsFile;
-      let content: string;
-
-      if (modelsFile.startsWith('http://') || modelsFile.startsWith('https://')) {
-        this.logger.log(`Loading models from URL: ${modelsFile}`);
-        const response = await this.fetchClient.fetch(modelsFile, {
-          method: 'GET',
-          headers: {
-            Accept: 'application/yaml, text/yaml, text/plain, application/json',
-          },
-        });
-        if (!response.ok) {
-          throw new Error(`Failed to fetch models file: ${response.status} ${response.statusText}`);
-        }
-        content = await response.text();
-      } else {
-        this.logger.log(`Loading models from file: ${modelsFile}`);
-        content = fs.readFileSync(modelsFile, 'utf8');
-      }
-
-      const data = yaml.load(content) as { models: ModelDefinition[] };
-      this.models = data.models || [];
-      this.logger.log(`Loaded ${this.models.length} models`);
+      this.models = (modelsData as unknown as { models: ModelDefinition[] }).models || [];
+      this.logger.log(`Loaded ${this.models.length} models from static JSON`);
     } catch (error) {
       this.logger.error(
         `Failed to load models: ${error instanceof Error ? error.message : String(error)}`,

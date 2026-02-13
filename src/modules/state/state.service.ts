@@ -1,7 +1,6 @@
 import { Logger } from '../../common/logger.js';
 import { ModelsService } from '../models/models.service.js';
 import type { ModelState, ModelStats, CircuitBreakerConfig, RequestRecord } from './interfaces/state.interface.js';
-import { STATE_CLEANUP_INTERVAL_MS } from '../../common/constants/app.constants.js';
 import { DEFAULT_CIRCUIT_BREAKER_CONFIG } from './interfaces/state.interface.js';
 import type { StateStorage } from './interfaces/state-storage.interface.js';
 
