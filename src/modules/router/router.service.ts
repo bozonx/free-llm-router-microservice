@@ -109,6 +109,15 @@ export class RouterService {
     }
   }
 
+  /**
+   * Perform manual maintenance tasks (e.g., stats cleanup)
+   */
+  public async performMaintenance(): Promise<void> {
+    this.logger.log('Starting manual maintenance');
+    await this.stateService.cleanupStaleData();
+    this.logger.log('Manual maintenance completed');
+  }
+
   private shouldRequestJsonResponse(request: ChatCompletionRequestDto): boolean {
     return (
       request.response_format?.type === 'json_object' ||

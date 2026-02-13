@@ -12,7 +12,7 @@ import type { StateStorage } from './interfaces/state-storage.interface.js';
  */
 export class StateService {
   private readonly logger = new Logger(StateService.name);
-  private cleanupIntervalId?: ReturnType<typeof setInterval>;
+
 
   public constructor(
     private readonly deps: {
@@ -52,20 +52,12 @@ export class StateService {
     }
 
     this.logger.log(`Initialized state for ${models.length} models`);
-
-    this.cleanupIntervalId = setInterval(() => this.cleanupStaleData(), STATE_CLEANUP_INTERVAL_MS);
-    if (this.cleanupIntervalId.unref) {
-      this.cleanupIntervalId.unref();
-    }
   }
 
   /**
    * Clean up on module destroy
    */
   public async close(): Promise<void> {
-    if (this.cleanupIntervalId) {
-      clearInterval(this.cleanupIntervalId);
-    }
     await this.storage.close();
   }
 
@@ -290,7 +282,7 @@ export class StateService {
    * Clean up stale data from all models.
    * Periodically called to ensure stats are fresh even when no requests occur.
    */
-  private async cleanupStaleData(): Promise<void> {
+  public async cleanupStaleData(): Promise<void> {
     const modelNames = await this.storage.getModelNames();
     for (const name of modelNames) {
       const state = await this.getState(name);

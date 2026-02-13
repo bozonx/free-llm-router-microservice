@@ -162,8 +162,13 @@ export function registerRoutes(
       modelsPermanentlyUnavailable,
     });
   });
+ 
+  app.post(`${apiPrefix}/admin/maintenance`, async (c: Context) => {
+    await deps.routerService.performMaintenance();
+    return c.json({ message: 'Maintenance completed successfully' });
+  });
 
-  app.get(`${apiPrefix}/admin/rate-limits`, (c: Context) =>
+  app.get(`${basePath}/admin/rate-limits`, (c: Context) =>
     c.json(deps.rateLimiterService.getStatus()),
   );
 
