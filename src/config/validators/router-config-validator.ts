@@ -18,6 +18,7 @@ export class RouterConfigValidator extends BaseValidator<RouterConfig> {
     this.providerValidator.validate(config.providers, `${path}.providers`);
     this.routingValidator.validate(config.routing, `${path}.routing`);
     this.circuitBreakerValidator.validate(config.circuitBreaker, `${path}.circuitBreaker`);
+    this.validateRedisConfig(config.redis, `${path}.redis`);
 
     if (config.modelRequestsPerMinute !== undefined) {
       this.assertNumber(config.modelRequestsPerMinute, `${path}.modelRequestsPerMinute`, 1, 10000);
@@ -103,6 +104,26 @@ export class RouterConfigValidator extends BaseValidator<RouterConfig> {
 
     if (override.available !== undefined) {
       this.assertBoolean(override.available, `${path}.available`);
+    }
+  }
+
+  private validateRedisConfig(value: unknown, path: string): void {
+    if (value === undefined) return;
+    this.assertType(value, 'object', path);
+    const redis = value as Record<string, unknown>;
+
+    if (redis.type !== undefined) {
+      if (!['memory', 'redis', 'upstash'].includes(redis.type as string)) {
+        throw new Error(`${path}.type: must be one of "memory", "redis", "upstash"`);
+      }
+    }
+
+    if (redis.type === 'redis' || redis.type === 'upstash') {
+      this.assertString(redis.url, `${path}.url`);
+    }
+
+    if (redis.type === 'upstash') {
+      this.assertString(redis.token, `${path}.token`);
     }
   }
 }

@@ -34,16 +34,16 @@ export class CircuitBreakerService {
    * Handle successful response from a model.
    * May transition HALF_OPEN -> CLOSED.
    */
-  public onSuccess(modelName: string, latencyMs: number): void {
-    this.stateService.recordSuccess(modelName, latencyMs);
-    const state = this.stateService.getState(modelName);
+  public async onSuccess(modelName: string, latencyMs: number): Promise<void> {
+    await this.stateService.recordSuccess(modelName, latencyMs);
+    const state = await this.stateService.getState(modelName);
 
     // If in HALF_OPEN and enough consecutive successes, close the circuit
     if (
       state.circuitState === 'HALF_OPEN' &&
       state.consecutiveSuccesses >= this.config.successThreshold
     ) {
-      this.stateService.setCircuitState(modelName, 'CLOSED');
+      await this.stateService.setCircuitState(modelName, 'CLOSED');
       this.logger.log(
         `Model ${modelName} recovered: HALF_OPEN -> CLOSED after ${state.consecutiveSuccesses} successes`,
       );
@@ -53,20 +53,16 @@ export class CircuitBreakerService {
   /**
    * Handle error response from a model.
    * May transition CLOSED -> OPEN or mark as PERMANENTLY_UNAVAILABLE.
-   *
-   * @param modelName Model name
-   * @param errorCode HTTP error code (optional)
-   * @param latencyMs Request latency (optional)
    */
-  public onFailure(modelName: string, errorCode?: number, latencyMs: number = 0): void {
+  public async onFailure(modelName: string, errorCode?: number, latencyMs: number = 0): Promise<void> {
     // 404 means model doesn't exist - mark as permanently unavailable
     if (errorCode === 404) {
-      this.stateService.markPermanentlyUnavailable(modelName, '404 Not Found');
+      await this.stateService.markPermanentlyUnavailable(modelName, '404 Not Found');
       return;
     }
 
-    this.stateService.recordFailure(modelName, latencyMs);
-    const state = this.stateService.getState(modelName);
+    await this.stateService.recordFailure(modelName, latencyMs);
+    const state = await this.stateService.getState(modelName);
 
     // Check if we should open the circuit
     if (
@@ -74,7 +70,7 @@ export class CircuitBreakerService {
       state.circuitState !== 'PERMANENTLY_UNAVAILABLE' &&
       state.consecutiveFailures >= this.config.failureThreshold
     ) {
-      this.stateService.setCircuitState(modelName, 'OPEN');
+      await this.stateService.setCircuitState(modelName, 'OPEN');
       this.logger.warn(
         `Model ${modelName} circuit opened after ${state.consecutiveFailures} consecutive failures`,
       );
@@ -82,7 +78,7 @@ export class CircuitBreakerService {
 
     // If in HALF_OPEN and a failure occurs, go back to OPEN
     if (state.circuitState === 'HALF_OPEN') {
-      this.stateService.setCircuitState(modelName, 'OPEN');
+      await this.stateService.setCircuitState(modelName, 'OPEN');
       this.logger.warn(`Model ${modelName} failed during HALF_OPEN, returning to OPEN`);
     }
   }
@@ -91,8 +87,8 @@ export class CircuitBreakerService {
    * Check if a request can be made to the model.
    * Handles state transitions for cooldown expiry.
    */
-  public canRequest(modelName: string): boolean {
-    const state = this.stateService.getState(modelName);
+  public async canRequest(modelName: string): Promise<boolean> {
+    const state = await this.stateService.getState(modelName);
 
     switch (state.circuitState) {
       case 'CLOSED':
@@ -108,7 +104,7 @@ export class CircuitBreakerService {
           const elapsed = Date.now() - state.openedAt;
           if (elapsed >= this.config.cooldownPeriodMins * 60 * 1000) {
             // Transition to HALF_OPEN to test if the service has recovered
-            this.stateService.setCircuitState(modelName, 'HALF_OPEN');
+            await this.stateService.setCircuitState(modelName, 'HALF_OPEN');
             this.logger.log(`Model ${modelName} cooldown expired, transitioning to HALF_OPEN`);
             return true;
           }
@@ -128,15 +124,16 @@ export class CircuitBreakerService {
   /**
    * Filter models to only those available for requests
    */
-  public filterAvailable(models: ModelDefinition[]): ModelDefinition[] {
-    return models.filter(model => this.canRequest(model.name));
+  public async filterAvailable(models: ModelDefinition[]): Promise<ModelDefinition[]> {
+    const availability = await Promise.all(models.map(m => this.canRequest(m.name)));
+    return models.filter((_, index) => availability[index]);
   }
 
   /**
    * Get remaining cooldown time for a model in OPEN state
    */
-  public getRemainingCooldown(modelName: string): number {
-    const state = this.stateService.getState(modelName);
+  public async getRemainingCooldown(modelName: string): Promise<number> {
+    const state = await this.stateService.getState(modelName);
 
     if (state.circuitState !== 'OPEN' || !state.openedAt) {
       return 0;

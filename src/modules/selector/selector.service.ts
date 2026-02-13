@@ -35,7 +35,7 @@ export class SelectorService {
   /**
    * Select a model based on criteria
    */
-  public selectModel(criteria: SelectionCriteria): ModelDefinition | null {
+  public async selectModel(criteria: SelectionCriteria): Promise<ModelDefinition | null> {
     // 1. Handle Priority List (new way)
     if (criteria.models && criteria.models.length > 0) {
       for (const modelRef of criteria.models) {
@@ -60,7 +60,7 @@ export class SelectorService {
             continue;
           }
 
-          if (!this.circuitBreaker.canRequest(candidate.name)) {
+          if (!(await this.circuitBreaker.canRequest(candidate.name))) {
             this.logger.debug(
               `Model "${candidate.name}" (${candidate.provider}) is unavailable (Circuit Breaker)`,
             );
@@ -107,7 +107,7 @@ export class SelectorService {
 
     // Use smart strategy to pick a model
     // Note: SmartStrategy should also respect excludeModels passed in criteria
-    const selectedModel = this.smartStrategy.select(filteredModels, criteria);
+    const selectedModel = await this.smartStrategy.select(filteredModels, criteria);
 
     if (!selectedModel) {
       this.logger.warn('Selection strategy returned no model');
@@ -142,15 +142,15 @@ export class SelectorService {
   /**
    * Select next model excluding already tried ones
    */
-  public selectNextModel(
+  public async selectNextModel(
     criteria: SelectionCriteria,
     excludeModels: string[],
-  ): ModelDefinition | null {
+  ): Promise<ModelDefinition | null> {
     const extendedCriteria: SelectionCriteria = {
       ...criteria,
       excludeModels: [...(criteria.excludeModels ?? []), ...excludeModels],
     };
 
-    return this.selectModel(extendedCriteria);
+    return await this.selectModel(extendedCriteria);
   }
 }

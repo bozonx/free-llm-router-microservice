@@ -58,6 +58,11 @@ function loadRouterConfigFromEnv(env: Record<string, string | undefined>): Route
       successThreshold: getEnvNum('CB_SUCCESS_THRESHOLD', 2),
       statsWindowSizeMins: getEnvNum('CB_STATS_WINDOW_SIZE_MINS', 10),
     },
+    redis: {
+      type: (getEnv('REDIS_TYPE', 'memory') as 'memory' | 'redis' | 'upstash') || 'memory',
+      url: getEnv('REDIS_URL'),
+      token: getEnv('REDIS_TOKEN'),
+    },
   };
 
   // Load model overrides from JSON string if provided

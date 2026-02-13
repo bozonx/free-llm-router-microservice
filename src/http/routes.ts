@@ -75,8 +75,8 @@ export function registerRoutes(
   });
 
   // Admin
-  app.get(`${apiPrefix}/admin/state`, (c: Context) => {
-    const states = deps.stateService.getAllStates();
+  app.get(`${apiPrefix}/admin/state`, async (c: Context) => {
+    const states = await deps.stateService.getAllStates();
     const models = states.map(state => {
       const modelDef = deps.modelsService.findModel(state.name);
       const provider = modelDef?.provider
@@ -104,25 +104,28 @@ export function registerRoutes(
     return c.json({ models, timestamp: new Date().toISOString() });
   });
 
-  app.get(`${apiPrefix}/admin/state/:modelName`, (c: Context) => {
+  app.get(`${apiPrefix}/admin/state/:modelName`, async (c: Context) => {
     const modelName = c.req.param('modelName');
-    if (!deps.stateService.hasState(modelName)) {
+    // Check if model exists in definitions first as hasState is less reliable now with Redis
+    const modelDef = deps.modelsService.findModel(modelName);
+    if (!modelDef) {
       throw new NotFoundError(`Model \"${modelName}\" not found`);
     }
-    return c.json(deps.stateService.getState(modelName));
+    return c.json(await deps.stateService.getState(modelName));
   });
 
-  app.post(`${apiPrefix}/admin/state/:modelName/reset`, (c: Context) => {
+  app.post(`${apiPrefix}/admin/state/:modelName/reset`, async (c: Context) => {
     const modelName = c.req.param('modelName');
-    if (!deps.stateService.hasState(modelName)) {
+    const modelDef = deps.modelsService.findModel(modelName);
+    if (!modelDef) {
       throw new NotFoundError(`Model \"${modelName}\" not found`);
     }
-    deps.stateService.resetState(modelName);
+    await deps.stateService.resetState(modelName);
     return c.json({ message: `State for model ${modelName} reset` });
   });
 
-  app.get(`${apiPrefix}/admin/metrics`, (c: Context) => {
-    const states = deps.stateService.getAllStates();
+  app.get(`${apiPrefix}/admin/metrics`, async (c: Context) => {
+    const states = await deps.stateService.getAllStates();
 
     const totalRequests = states.reduce((sum, s) => sum + s.stats.totalRequests, 0);
     const successfulRequests = states.reduce((sum, s) => sum + s.stats.successCount, 0);
@@ -152,7 +155,7 @@ export function registerRoutes(
       totalRequests,
       successfulRequests,
       failedRequests,
-      fallbacksUsed: deps.stateService.getFallbacksUsed(),
+      fallbacksUsed: await deps.stateService.getFallbacksUsed(),
       avgLatency: Math.round(avgLatency),
       modelsAvailable,
       modelsInOpenState,

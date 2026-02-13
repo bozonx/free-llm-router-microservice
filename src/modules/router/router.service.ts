@@ -145,7 +145,7 @@ export class RouterService {
       for (let i = 0; i < maxModelSwitches; i++) {
         attemptCount++;
 
-        const model = this.selectModel(request, parsedModel, excludedModels);
+        const model = await this.selectModel(request, parsedModel, excludedModels);
         if (!model) {
           this.logger.warn('No suitable model found for streaming');
           break;
@@ -191,7 +191,7 @@ export class RouterService {
 
           // Record success
           const latencyMs = Date.now() - startTime;
-          this.circuitBreaker.onSuccess(model.name, latencyMs);
+          await this.circuitBreaker.onSuccess(model.name, latencyMs);
 
           this.logger.debug(
             `Streaming successful: ${model.name} (${model.provider}) in ${attemptCount} attempt(s)`,
@@ -203,7 +203,7 @@ export class RouterService {
           const errorInfo = ErrorExtractor.extractErrorInfo(error, model);
 
           if (!ErrorExtractor.isClientError(errorInfo.code)) {
-            this.circuitBreaker.onFailure(model.name, errorInfo.code, latencyMs);
+            await this.circuitBreaker.onFailure(model.name, errorInfo.code, latencyMs);
           }
 
           if (ErrorExtractor.isAbortError(error)) {
@@ -249,7 +249,7 @@ export class RouterService {
             abortSignal,
           );
 
-          this.stateService.recordFallbackUsage();
+          await this.stateService.recordFallbackUsage();
 
           for await (const chunk of fallbackProvider.chatCompletionStream(completionParams)) {
             this.checkAbortSignal(abortSignal);
@@ -315,7 +315,7 @@ export class RouterService {
     for (let i = 0; i < maxModelSwitches; i++) {
       attemptCount++;
 
-      const model = this.selectModel(request, parsedModel, excludedModels);
+      const model = await this.selectModel(request, parsedModel, excludedModels);
       if (!model) {
         this.logger.warn('No suitable model found');
         break;
@@ -453,7 +453,7 @@ export class RouterService {
     );
 
     const result = await fallbackProvider.chatCompletion(completionParams);
-    this.stateService.recordFallbackUsage();
+    await this.stateService.recordFallbackUsage();
 
     this.logger.debug('Fallback request successful');
 
@@ -524,15 +524,15 @@ export class RouterService {
     return clientSignal ? AbortSignal.any([shutdownSignal, clientSignal]) : shutdownSignal;
   }
 
-  private selectModel(
+  private async selectModel(
     request: ChatCompletionRequestDto,
     parsedModel: ReturnType<typeof parseModelInput>,
     excludedModels: string[],
-  ): ModelDefinition | null {
+  ): Promise<ModelDefinition | null> {
     // Check if request contains images
     const needsVision = this.deps.requestBuilder.hasImageContent(request.messages);
 
-    const model = this.deps.selectorService.selectNextModel(
+    const model = await this.deps.selectorService.selectNextModel(
       {
         models: parsedModel.models,
         allowAutoFallback: parsedModel.allowAutoFallback,
@@ -606,7 +606,7 @@ export class RouterService {
     try {
       const result = await provider.chatCompletion(completionParams);
       const latencyMs = Date.now() - startTime;
-      this.circuitBreaker.onSuccess(model.name, latencyMs);
+      await this.circuitBreaker.onSuccess(model.name, latencyMs);
       return result;
     } catch (error) {
       if (ErrorExtractor.isAbortError(error)) {
@@ -620,7 +620,7 @@ export class RouterService {
       // Client errors (400, 401, 403, etc.) are problems with the request/config,
       // not with the model itself, so they should not affect the circuit breaker
       if (!ErrorExtractor.isClientError(errorInfo.code)) {
-        this.circuitBreaker.onFailure(model.name, errorInfo.code, latencyMs);
+        await this.circuitBreaker.onFailure(model.name, errorInfo.code, latencyMs);
       }
 
       throw error;

@@ -170,6 +170,26 @@ export interface ModelOverrideConfig {
 }
 
 /**
+ * Redis configuration
+ */
+export interface RedisConfig {
+  /**
+   * Storage type: memory (default), redis (TCP), upstash (HTTP)
+   */
+  type: 'memory' | 'redis' | 'upstash';
+
+  /**
+   * Redis URL (required for redis/upstash)
+   */
+  url?: string;
+
+  /**
+   * Auth token (required for upstash)
+   */
+  token?: string;
+}
+
+/**
  * Router configuration
  */
 export interface RouterConfig {
@@ -206,4 +226,9 @@ export interface RouterConfig {
    * Protection against skew/overload of specific models
    */
   modelRequestsPerMinute?: number;
+
+  /**
+   * Redis configuration for state storage
+   */
+  redis?: RedisConfig;
 }

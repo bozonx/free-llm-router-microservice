@@ -15,6 +15,7 @@ import { RouterService } from '../modules/router/router.service.js';
 import { RateLimiterService } from '../modules/rate-limiter/rate-limiter.service.js';
 import { registerRoutes } from './routes.js';
 import type { FetchClient } from './fetch-client.js';
+import { StateStorageFactory } from '../modules/state/storage/state-storage.factory.js';
 
 export interface CreateAppOptions {
   fetchClient: FetchClient;
@@ -38,8 +39,14 @@ export async function createApp(options: CreateAppOptions): Promise<Hono> {
     fetchClient: options.fetchClient,
   });
 
-  const stateService = new StateService({ modelsService, config: routerConfig.circuitBreaker });
-  stateService.init();
+  const stateStorage = StateStorageFactory.create(routerConfig.redis);
+  
+  const stateService = new StateService({ 
+    modelsService, 
+    storage: stateStorage,
+    config: routerConfig.circuitBreaker 
+  });
+  await stateService.init();
 
   const circuitBreaker = new CircuitBreakerService({
     stateService,

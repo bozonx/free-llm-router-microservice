@@ -1,5 +1,4 @@
-import { Test, type TestingModule } from '@nestjs/testing';
-import { jest } from '@jest/globals';
+import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import { SelectorService } from '../../../../src/modules/selector/selector.service.js';
 import { ModelsService } from '../../../../src/modules/models/models.service.js';
 import { SmartStrategy } from '../../../../src/modules/selector/strategies/smart.strategy.js';
@@ -8,8 +7,9 @@ import type { ModelDefinition } from '../../../../src/modules/models/interfaces/
 
 describe('SelectorService', () => {
   let service: SelectorService;
-  let modelsService: ModelsService;
-  let strategy: SmartStrategy;
+  let modelsService: jest.Mocked<ModelsService>;
+  let strategy: jest.Mocked<SmartStrategy>;
+  let circuitBreaker: jest.Mocked<CircuitBreakerService>;
 
   const mockModel: ModelDefinition = {
     name: 'test-model',
@@ -23,33 +23,25 @@ describe('SelectorService', () => {
     model: 'provider/test-model',
   };
 
-  const mockModelsService = {
-    findByName: jest.fn(),
-    findByNameAndProvider: jest.fn(),
-    filter: jest.fn(),
-  };
+  beforeEach(() => {
+    modelsService = {
+      findByNameAndProvider: jest.fn<() => ModelDefinition[]>(),
+      filter: jest.fn<() => ModelDefinition[]>(),
+    } as unknown as jest.Mocked<ModelsService>;
 
-  const mockStrategy = {
-    select: jest.fn(),
-  };
+    strategy = {
+      select: jest.fn<() => Promise<ModelDefinition | null>>(),
+    } as unknown as jest.Mocked<SmartStrategy>;
 
-  const mockCircuitBreakerService = {
-    canRequest: jest.fn().mockReturnValue(true),
-  };
+    circuitBreaker = {
+      canRequest: jest.fn<() => Promise<boolean>>().mockResolvedValue(true),
+    } as unknown as jest.Mocked<CircuitBreakerService>;
 
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        SelectorService,
-        { provide: ModelsService, useValue: mockModelsService },
-        { provide: SmartStrategy, useValue: mockStrategy },
-        { provide: CircuitBreakerService, useValue: mockCircuitBreakerService },
-      ],
-    }).compile();
-
-    service = module.get<SelectorService>(SelectorService);
-    modelsService = module.get<ModelsService>(ModelsService);
-    strategy = module.get<SmartStrategy>(SmartStrategy);
+    service = new SelectorService({
+      modelsService,
+      smartStrategy: strategy,
+      circuitBreaker,
+    });
   });
 
   afterEach(() => {
@@ -61,11 +53,11 @@ describe('SelectorService', () => {
   });
 
   describe('selectModel', () => {
-    it('should return specific model from priority list if found', () => {
-      mockModelsService.findByNameAndProvider.mockReturnValue([mockModel]);
-      mockCircuitBreakerService.canRequest.mockReturnValue(true);
+    it('should return specific model from priority list if found', async () => {
+      modelsService.findByNameAndProvider.mockReturnValue([mockModel]);
+      circuitBreaker.canRequest.mockResolvedValue(true);
 
-      const result = service.selectModel({
+      const result = await service.selectModel({
         models: [{ name: 'test-model' }],
         allowAutoFallback: false,
       });
@@ -74,10 +66,10 @@ describe('SelectorService', () => {
       expect(result).toEqual(mockModel);
     });
 
-    it('should return null if specific model not found in priority list', () => {
-      mockModelsService.findByNameAndProvider.mockReturnValue([]);
+    it('should return null if specific model not found in priority list', async () => {
+      modelsService.findByNameAndProvider.mockReturnValue([]);
 
-      const result = service.selectModel({
+      const result = await service.selectModel({
         models: [{ name: 'non-existent' }],
         allowAutoFallback: false,
       });
@@ -85,13 +77,13 @@ describe('SelectorService', () => {
       expect(result).toBeNull();
     });
 
-    it('should use strategy to select from filtered models', () => {
+    it('should use strategy to select from filtered models', async () => {
       const filteredModels = [mockModel];
-      mockModelsService.filter.mockReturnValue(filteredModels);
-      mockStrategy.select.mockReturnValue(mockModel);
+      modelsService.filter.mockReturnValue(filteredModels);
+      strategy.select.mockResolvedValue(mockModel);
 
       const criteria = { type: 'fast' as const, tags: ['general'] };
-      const result = service.selectModel(criteria);
+      const result = await service.selectModel(criteria);
 
       expect(modelsService.filter).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -103,10 +95,10 @@ describe('SelectorService', () => {
       expect(result).toEqual(mockModel);
     });
 
-    it('should return null if no models match filters', () => {
-      mockModelsService.filter.mockReturnValue([]);
+    it('should return null if no models match filters', async () => {
+      modelsService.filter.mockReturnValue([]);
 
-      const result = service.selectModel({ type: 'fast' });
+      const result = await service.selectModel({ type: 'fast' });
 
       expect(result).toBeNull();
       expect(strategy.select).not.toHaveBeenCalled();
@@ -114,12 +106,12 @@ describe('SelectorService', () => {
   });
 
   describe('selectNextModel', () => {
-    it('should add excludeModels to criteria', () => {
+    it('should add excludeModels to criteria', async () => {
       const filteredModels = [mockModel];
-      mockModelsService.filter.mockReturnValue(filteredModels);
-      mockStrategy.select.mockReturnValue(mockModel);
+      modelsService.filter.mockReturnValue(filteredModels);
+      strategy.select.mockResolvedValue(mockModel);
 
-      service.selectNextModel({ type: 'fast' }, ['excluded-model']);
+      await service.selectNextModel({ type: 'fast' }, ['excluded-model']);
 
       expect(strategy.select).toHaveBeenCalledWith(
         filteredModels,
@@ -129,10 +121,11 @@ describe('SelectorService', () => {
       );
     });
 
-    it('should merge existing excludeModels', () => {
-      mockModelsService.filter.mockReturnValue([mockModel]);
+    it('should merge existing excludeModels', async () => {
+      modelsService.filter.mockReturnValue([mockModel]);
+      strategy.select.mockResolvedValue(mockModel);
 
-      service.selectNextModel({ type: 'fast', excludeModels: ['initial'] }, ['added']);
+      await service.selectNextModel({ type: 'fast', excludeModels: ['initial'] }, ['added']);
 
       expect(strategy.select).toHaveBeenCalledWith(
         expect.any(Array),
