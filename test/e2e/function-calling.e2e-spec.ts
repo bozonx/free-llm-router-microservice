@@ -1,25 +1,43 @@
-import type { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { createTestApp } from './test-app.factory.js';
+import type { Hono } from 'hono';
+import { MockFetchClient } from '../helpers/mock-fetch-client.js';
 
 describe('Function Calling (e2e)', () => {
-  let app: NestFastifyApplication;
+  let app: Hono;
+  let fetchClient: MockFetchClient;
 
   beforeEach(async () => {
-    app = await createTestApp();
-  });
+    fetchClient = new MockFetchClient();
+    fetchClient.setResponse({
+      method: 'POST',
+      url: 'https://openrouter.ai/api/v1/chat/completions',
+      response: {
+        status: 500,
+        body: JSON.stringify({ error: { message: 'Test error' } }),
+        headers: { 'content-type': 'application/json' },
+      },
+    });
+    fetchClient.setResponse({
+      method: 'POST',
+      url: 'https://api.deepseek.com/chat/completions',
+      response: {
+        status: 500,
+        body: JSON.stringify({ error: { message: 'Test error' } }),
+        headers: { 'content-type': 'application/json' },
+      },
+    });
 
-  afterEach(async () => {
-    if (app) {
-      await app.close();
-    }
+    app = await createTestApp({ fetchClient });
   });
 
   describe('POST /api/v1/chat/completions', () => {
     it('accepts tools and tool_choice fields', async () => {
-      const response = await app.inject({
+      const response = await app.request('/api/v1/chat/completions', {
         method: 'POST',
-        url: '/api/v1/chat/completions',
-        payload: {
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
           messages: [
             {
               role: 'user',
@@ -45,26 +63,28 @@ describe('Function Calling (e2e)', () => {
             },
           ],
           tool_choice: 'auto',
-        },
+        }),
       });
 
       // We expect 500 or 4xx because we don't have valid keys, but we want to ensure
       // the validation passed. If validation failed, it would be 400 Bad Request
       // with a specific error message about forbidden fields.
-      // However, since we added them to the DTO, they should be accepted.
+      // Here we just verify we didn't get a validation error for 'tools'.
 
       // If we get 400, checks if it is related to tools
-      expect(response.statusCode).not.toBe(400);
+      expect(response.status).not.toBe(400);
 
       // In a real e2e with mocks, we would assert 200 and the response content.
       // Here we just verify we didn't get a validation error for 'tools'.
     });
 
     it('accepts tool messages', async () => {
-      const response = await app.inject({
+      const response = await app.request('/api/v1/chat/completions', {
         method: 'POST',
-        url: '/api/v1/chat/completions',
-        payload: {
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
           messages: [
             {
               role: 'user',
@@ -90,10 +110,10 @@ describe('Function Calling (e2e)', () => {
               content: '{"temp": 20}',
             },
           ],
-        },
+        }),
       });
 
-      expect(response.statusCode).not.toBe(400);
+      expect(response.status).not.toBe(400);
     });
   });
 });

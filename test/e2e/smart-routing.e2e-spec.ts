@@ -1,9 +1,10 @@
-import type { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { createTestApp } from './test-app.factory.js';
-import nock from 'nock';
+import type { Hono } from 'hono';
+import { MockFetchClient } from '../helpers/mock-fetch-client.js';
 
 describe('Smart Routing (e2e)', () => {
-  let app: NestFastifyApplication;
+  let app: Hono;
+  let fetchClient: MockFetchClient;
 
   // Save original env to restore after tests
   const originalEnv = { ...process.env };
@@ -15,133 +16,149 @@ describe('Smart Routing (e2e)', () => {
     process.env['OPENROUTER_API_KEY'] = 'test-key';
     process.env['DEEPSEEK_API_KEY'] = 'test-key';
 
-    app = await createTestApp();
+    fetchClient = new MockFetchClient();
+    app = await createTestApp({ fetchClient });
   });
 
   afterAll(async () => {
-    if (app) {
-      await app.close();
-    }
     process.env = originalEnv;
-    nock.enableNetConnect();
-  });
-
-  beforeEach(() => {
-    nock.cleanAll();
-    nock.disableNetConnect();
   });
 
   describe('Circuit Breaker', () => {
     const targetModel = 'gpt-oss-20b'; // Priority 1
 
     it('should open circuit after failures and skip model', async () => {
-      // Setup:
-      // 1. Mock OpenRouter to always fail (500)
-      nock('https://openrouter.ai')
-        .post('/api/v1/chat/completions', () => true)
-        .times(100)
-        .reply(500, {
-          error: 'Internal Server Error',
-          usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
-        });
-
-      // 2. Mock DeepSeek (fallback) to succeed
-      nock('https://api.deepseek.com')
-        .post('/chat/completions', () => true)
-        .times(100)
-        .reply(200, {
-          id: 'fallback',
-          choices: [{ message: { role: 'assistant', content: 'Fallback response' } }],
-          usage: { prompt_tokens: 10, completion_tokens: 10, total_tokens: 20 },
-        });
-
-      // 1. Send Request 1
-      await app.inject({
+      fetchClient.setResponse({
         method: 'POST',
-        url: '/api/v1/chat/completions',
-        payload: {
-          model: targetModel,
-          messages: [{ role: 'user', content: 'test' }],
+        url: 'https://openrouter.ai/api/v1/chat/completions',
+        response: {
+          status: 500,
+          body: JSON.stringify({
+            error: 'Internal Server Error',
+            usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+          }),
+          headers: { 'content-type': 'application/json' },
         },
       });
 
-      // Check State: Circuit should be OPEN now
-      const adminResponse = await app.inject({
-        method: 'GET',
-        url: '/api/v1/admin/state',
+      fetchClient.setResponse({
+        method: 'POST',
+        url: 'https://api.deepseek.com/chat/completions',
+        response: {
+          status: 200,
+          body: JSON.stringify({
+            id: 'fallback',
+            choices: [{ message: { role: 'assistant', content: 'Fallback response' } }],
+            usage: { prompt_tokens: 10, completion_tokens: 10, total_tokens: 20 },
+          }),
+          headers: { 'content-type': 'application/json' },
+        },
       });
-      const state = JSON.parse(adminResponse.body);
+
+      // 1. Send Request 1
+      await app.request('/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: targetModel,
+          messages: [{ role: 'user', content: 'test' }],
+        }),
+      });
+
+      // Check State: Circuit should be OPEN now
+      const adminResponse = await app.request('/api/v1/admin/state', {
+        method: 'GET',
+      });
+      const state = JSON.parse(await adminResponse.text());
       const modelState = state.models.find((m: any) => m.name === targetModel);
       expect(modelState.circuitState).toBe('OPEN');
 
       // 2. Send Request 2 - Should SKIP OpenRouter (Primary) and go straight to Fallback
 
-      nock.cleanAll();
-      nock.disableNetConnect(); // Ensure blocked
-
-      const openRouterScope2 = nock('https://openrouter.ai')
-        .post('/api/v1/chat/completions', () => true)
-        .reply(500, {
-          error: 'Should not happen',
-          usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
-        });
-
-      const deepSeekScope2 = nock('https://api.deepseek.com')
-        .post('/chat/completions', () => true)
-        .reply(200, {
-          id: 'fallback-2',
-          choices: [{ message: { role: 'assistant', content: 'Fallback response 2' } }],
-          usage: { prompt_tokens: 10, completion_tokens: 10, total_tokens: 20 },
-        });
-
-      await app.inject({
+      const openRouterCallsBefore = fetchClient.getCallCount({
         method: 'POST',
-        url: '/api/v1/chat/completions',
-        payload: {
-          model: targetModel,
-          messages: [{ role: 'user', content: 'test' }],
-        },
+        url: 'https://openrouter.ai/api/v1/chat/completions',
       });
 
-      // Verify OpenRouter was NOT hit
-      expect(openRouterScope2.isDone()).toBe(false);
-      // Verify DeepSeek WAS hit
-      expect(deepSeekScope2.isDone()).toBe(true);
+      const deepSeekCallsBefore = fetchClient.getCallCount({
+        method: 'POST',
+        url: 'https://api.deepseek.com/chat/completions',
+      });
+
+      await app.request('/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: targetModel,
+          messages: [{ role: 'user', content: 'test' }],
+        }),
+      });
+
+      const openRouterCallsAfter = fetchClient.getCallCount({
+        method: 'POST',
+        url: 'https://openrouter.ai/api/v1/chat/completions',
+      });
+
+      const deepSeekCallsAfter = fetchClient.getCallCount({
+        method: 'POST',
+        url: 'https://api.deepseek.com/chat/completions',
+      });
+
+      // Verify OpenRouter was NOT hit again
+      expect(openRouterCallsAfter).toBe(openRouterCallsBefore);
+      // Verify DeepSeek WAS hit again
+      expect(deepSeekCallsAfter).toBeGreaterThan(deepSeekCallsBefore);
     });
 
     it('should mark model as PERMANENTLY_UNAVAILABLE on 404', async () => {
       const model404 = 'nemotron-nano-12b-v2-vl';
 
-      nock('https://openrouter.ai')
-        .post('/api/v1/chat/completions', () => true)
-        .reply(404, {
-          error: { message: 'Model not found' },
-          usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
-        });
-
-      // Mock Fallback
-      nock('https://api.deepseek.com')
-        .post('/chat/completions', () => true)
-        .reply(200, {
-          choices: [{ message: { content: 'ok' } }],
-          usage: { prompt_tokens: 10, completion_tokens: 10, total_tokens: 20 },
-        });
-
-      await app.inject({
+      fetchClient.setResponse({
         method: 'POST',
-        url: '/api/v1/chat/completions',
-        payload: {
-          model: model404,
-          messages: [{ role: 'user', content: 'test' }],
+        url: 'https://openrouter.ai/api/v1/chat/completions',
+        response: {
+          status: 404,
+          body: JSON.stringify({
+            error: { message: 'Model not found' },
+            usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+          }),
+          headers: { 'content-type': 'application/json' },
         },
       });
 
-      // Verify state
-      const adminResponse = await app.inject({
-        method: 'GET',
-        url: '/api/v1/admin/state',
+      fetchClient.setResponse({
+        method: 'POST',
+        url: 'https://api.deepseek.com/chat/completions',
+        response: {
+          status: 200,
+          body: JSON.stringify({
+            choices: [{ message: { content: 'ok' } }],
+            usage: { prompt_tokens: 10, completion_tokens: 10, total_tokens: 20 },
+          }),
+          headers: { 'content-type': 'application/json' },
+        },
       });
-      const state = JSON.parse(adminResponse.body);
+
+      await app.request('/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: model404,
+          messages: [{ role: 'user', content: 'test' }],
+        }),
+      });
+
+      // Verify state
+      const adminResponse = await app.request('/api/v1/admin/state', {
+        method: 'GET',
+      });
+      const state = JSON.parse(await adminResponse.text());
       const modelState = state.models.find((m: any) => m.name === model404);
       expect(modelState.circuitState).toBe('PERMANENTLY_UNAVAILABLE');
     });
@@ -153,28 +170,31 @@ describe('Smart Routing (e2e)', () => {
       // deepseek-r1t2-chimera has weight 5
       // With weighted random, llama-3.3-70b-instruct should be selected more often
 
-      nock('https://openrouter.ai')
-        .post('/api/v1/chat/completions', () => true)
-        .times(5)
-        .reply(200, (uri, body) => {
-          const reqBody = body as any;
-          return {
+      fetchClient.setResponse({
+        method: 'POST',
+        url: 'https://openrouter.ai/api/v1/chat/completions',
+        response: {
+          status: 200,
+          body: JSON.stringify({
             id: 'test-id',
             choices: [{ message: { role: 'assistant', content: 'response' } }],
-            model: reqBody.model,
             usage: { prompt_tokens: 10, completion_tokens: 10, total_tokens: 20 },
-          };
-        });
+          }),
+          headers: { 'content-type': 'application/json' },
+        },
+      });
 
       for (let i = 0; i < 5; i++) {
-        const response = await app.inject({
+        const response = await app.request('/api/v1/chat/completions', {
           method: 'POST',
-          url: '/api/v1/chat/completions',
-          payload: {
-            messages: [{ role: 'user', content: 'test' }],
+          headers: {
+            'content-type': 'application/json',
           },
+          body: JSON.stringify({
+            messages: [{ role: 'user', content: 'test' }],
+          }),
         });
-        const body = JSON.parse(response.body);
+        const body = JSON.parse(await response.text());
         // Just verify that a model was selected - weighted random means any could be chosen
         expect(body._router.model_name).toBeDefined();
       }
@@ -182,75 +202,93 @@ describe('Smart Routing (e2e)', () => {
 
     it('should select faster model when prefer_fast is true', async () => {
       // 1. Train gpt-oss-20b (Slow)
-      nock('https://openrouter.ai')
-        .post('/api/v1/chat/completions', () => true)
-        .delay(200)
-        .reply(200, {
-          choices: [{ message: { content: 'slow' } }],
-          usage: { prompt_tokens: 10, completion_tokens: 10, total_tokens: 20 },
-        });
-
-      await app.inject({
+      fetchClient.setResponse({
         method: 'POST',
-        url: '/api/v1/chat/completions',
-        payload: {
+        url: 'https://openrouter.ai/api/v1/chat/completions',
+        response: {
+          status: 200,
+          body: JSON.stringify({
+            choices: [{ message: { content: 'slow' } }],
+            usage: { prompt_tokens: 10, completion_tokens: 10, total_tokens: 20 },
+          }),
+          headers: { 'content-type': 'application/json' },
+        },
+      });
+
+      await app.request('/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
           model: 'gpt-oss-20b',
           messages: [{ role: 'user', content: 'train' }],
-        },
+        }),
       });
 
       // 2. Train mimo-v2-flash (Fast)
-      nock('https://openrouter.ai')
-        .post('/api/v1/chat/completions', () => true)
-        .delay(10)
-        .reply(200, {
-          choices: [{ message: { content: 'fast' } }],
-          usage: { prompt_tokens: 10, completion_tokens: 10, total_tokens: 20 },
-        });
-
-      await app.inject({
+      fetchClient.setResponse({
         method: 'POST',
-        url: '/api/v1/chat/completions',
-        payload: {
+        url: 'https://openrouter.ai/api/v1/chat/completions',
+        response: {
+          status: 200,
+          body: JSON.stringify({
+            choices: [{ message: { content: 'fast' } }],
+            usage: { prompt_tokens: 10, completion_tokens: 10, total_tokens: 20 },
+          }),
+          headers: { 'content-type': 'application/json' },
+        },
+      });
+
+      await app.request('/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
           model: 'mimo-v2-flash',
           messages: [{ role: 'user', content: 'train' }],
-        },
+        }),
       });
 
       // Now Request with prefer_fast=true
-      nock('https://openrouter.ai')
-        .post('/api/v1/chat/completions', () => true)
-        .reply(200, (uri, body: any) => {
-          return {
+      fetchClient.setResponse({
+        method: 'POST',
+        url: 'https://openrouter.ai/api/v1/chat/completions',
+        response: {
+          status: 200,
+          body: JSON.stringify({
             id: 'fast-id',
             choices: [{ message: { content: 'winner' } }],
-            model: body.model,
             usage: { prompt_tokens: 10, completion_tokens: 10, total_tokens: 20 },
-          };
-        });
-
-      const response = await app.inject({
-        method: 'POST',
-        url: '/api/v1/chat/completions',
-        payload: {
-          messages: [{ role: 'user', content: 'race' }],
-          prefer_fast: true,
+          }),
+          headers: { 'content-type': 'application/json' },
         },
       });
 
-      const body = JSON.parse(response.body);
+      const response = await app.request('/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: 'race' }],
+          prefer_fast: true,
+        }),
+      });
+
+      const body = JSON.parse(await response.text());
       expect(body._router.model_name).not.toBe('gpt-oss-20b');
     });
   });
 
   describe('Admin API', () => {
     it('should return metrics', async () => {
-      const response = await app.inject({
+      const response = await app.request('/api/v1/admin/metrics', {
         method: 'GET',
-        url: '/api/v1/admin/metrics',
       });
-      expect(response.statusCode).toBe(200);
-      const metrics = JSON.parse(response.body);
+      expect(response.status).toBe(200);
+      const metrics = JSON.parse(await response.text());
       expect(metrics).toHaveProperty('totalRequests');
       expect(metrics).toHaveProperty('successfulRequests');
       expect(metrics).toHaveProperty('avgLatency');

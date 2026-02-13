@@ -11,6 +11,8 @@
  * - Override per-test if needed using jest.setTimeout() or passing timeout as third arg to it()
  */
 
+import 'reflect-metadata';
+
 import nock from 'nock';
 import { beforeAll, afterEach, afterAll } from '@jest/globals';
 

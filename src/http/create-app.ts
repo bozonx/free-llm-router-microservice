@@ -1,8 +1,7 @@
 import { Hono } from 'hono';
 import { streamSSE } from 'hono/streaming';
-import { serveStatic } from '@hono/node-server/serve-static';
 import { Logger } from '../common/logger.js';
-import { loadRouterConfig } from '../config/router.config.js';
+import type { RouterConfig } from '../config/router-config.interface.js';
 import { ModelsService } from '../modules/models/models.service.js';
 import { createProvidersMap } from '../modules/providers/providers.factory.js';
 import { SelectorService } from '../modules/selector/selector.service.js';
@@ -20,11 +19,13 @@ import type { FetchClient } from './fetch-client.js';
 export interface CreateAppOptions {
   fetchClient: FetchClient;
   serveStaticFiles?: boolean;
+  routerConfig?: RouterConfig;
 }
 
 export async function createApp(options: CreateAppOptions): Promise<Hono> {
   const logger = new Logger('App');
-  const routerConfig = loadRouterConfig();
+  const routerConfig =
+    options.routerConfig ?? (await import('../config/router.config.js')).loadRouterConfig();
 
   const modelsService = new ModelsService({
     config: routerConfig,
@@ -88,6 +89,7 @@ export async function createApp(options: CreateAppOptions): Promise<Hono> {
   });
 
   if (options.serveStaticFiles) {
+    const { serveStatic } = await import('@hono/node-server/serve-static');
     app.use(
       '/*',
       serveStatic({

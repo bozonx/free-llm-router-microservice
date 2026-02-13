@@ -1,42 +1,14 @@
-import { Test } from '@nestjs/testing';
-import { ValidationPipe } from '@nestjs/common';
-import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
-import { AppModule } from '../../src/app.module.js';
+import type { Hono } from 'hono';
+import { createApp } from '../../src/http/create-app.js';
+import { NodeFetchClient } from '../../src/adapters/node/node-fetch-client.js';
+import type { FetchClient } from '../../src/http/fetch-client.js';
 
-export async function createTestApp(): Promise<NestFastifyApplication> {
-  // Ensure defaults the same as in main.ts
-  // process.env.BASE_PATH = process.env.BASE_PATH ?? '';
+export async function createTestApp(params?: { fetchClient?: FetchClient }): Promise<Hono> {
+  process.env['ROUTER_CONFIG_PATH'] = './test/setup/config.yaml';
+  process.env['BASE_PATH'] = '';
 
-  const moduleRef = await Test.createTestingModule({
-    imports: [AppModule],
-  }).compile();
-
-  const app = moduleRef.createNestApplication<NestFastifyApplication>(
-    new FastifyAdapter({
-      logger: false, // We'll use Pino logger instead
-      ignoreTrailingSlash: true,
-    }),
-  );
-
-  app.useGlobalPipes(
-    new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
-  );
-
-  const basePath = (process.env.BASE_PATH ?? '').replace(/^\/+|\/+$/g, '');
-  const globalPrefix = [basePath, 'api', 'v1'].filter(Boolean).join('/');
-
-  // Exclude dashboard, consistent with main.ts
-  const dashboardPrefix = basePath ? `/${basePath}` : '';
-  const excludePaths = ['/ui', '/ui/', '/ui/styles.css', '/ui/app.js', '/ui/:filename'].map(path =>
-    (dashboardPrefix + path).replace('//', '/'),
-  );
-
-  app.setGlobalPrefix(globalPrefix, {
-    exclude: excludePaths,
+  return createApp({
+    fetchClient: params?.fetchClient ?? new NodeFetchClient(),
+    serveStaticFiles: false,
   });
-
-  await app.init();
-  // Ensure Fastify has completed plugin registration and routing before tests
-  await app.getHttpAdapter().getInstance().ready();
-  return app;
 }

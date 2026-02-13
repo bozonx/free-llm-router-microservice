@@ -1,25 +1,43 @@
-import type { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { createTestApp } from './test-app.factory.js';
+import type { Hono } from 'hono';
+import { MockFetchClient } from '../helpers/mock-fetch-client.js';
 
 describe('Vision Support (e2e)', () => {
-  let app: NestFastifyApplication;
+  let app: Hono;
+  let fetchClient: MockFetchClient;
 
   beforeEach(async () => {
-    app = await createTestApp();
-  });
+    fetchClient = new MockFetchClient();
+    fetchClient.setResponse({
+      method: 'POST',
+      url: 'https://openrouter.ai/api/v1/chat/completions',
+      response: {
+        status: 500,
+        body: JSON.stringify({ error: { message: 'Test error' } }),
+        headers: { 'content-type': 'application/json' },
+      },
+    });
+    fetchClient.setResponse({
+      method: 'POST',
+      url: 'https://api.deepseek.com/chat/completions',
+      response: {
+        status: 500,
+        body: JSON.stringify({ error: { message: 'Test error' } }),
+        headers: { 'content-type': 'application/json' },
+      },
+    });
 
-  afterEach(async () => {
-    if (app) {
-      await app.close();
-    }
+    app = await createTestApp({ fetchClient });
   });
 
   describe('POST /api/v1/chat/completions', () => {
     it('accepts plain string content (regression)', async () => {
-      const response = await app.inject({
+      const response = await app.request('/api/v1/chat/completions', {
         method: 'POST',
-        url: '/api/v1/chat/completions',
-        payload: {
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
           model: 'gpt-3.5-turbo',
           messages: [
             {
@@ -27,17 +45,19 @@ describe('Vision Support (e2e)', () => {
               content: 'Hello, world!',
             },
           ],
-        },
+        }),
       });
 
-      expect(response.statusCode).not.toBe(400);
+      expect(response.status).not.toBe(400);
     });
 
     it('accepts image_url content block in messages', async () => {
-      const response = await app.inject({
+      const response = await app.request('/api/v1/chat/completions', {
         method: 'POST',
-        url: '/api/v1/chat/completions',
-        payload: {
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
           model: 'gpt-4o',
           messages: [
             {
@@ -56,18 +76,20 @@ describe('Vision Support (e2e)', () => {
               ],
             },
           ],
-        },
+        }),
       });
 
       // We mainly care that validation doesn't fail.
-      expect(response.statusCode).not.toBe(400);
+      expect(response.status).not.toBe(400);
     });
 
     it('accepts image_url with detail parameter', async () => {
-      const response = await app.inject({
+      const response = await app.request('/api/v1/chat/completions', {
         method: 'POST',
-        url: '/api/v1/chat/completions',
-        payload: {
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
           model: 'gpt-4o',
           messages: [
             {
@@ -83,10 +105,10 @@ describe('Vision Support (e2e)', () => {
               ],
             },
           ],
-        },
+        }),
       });
 
-      expect(response.statusCode).not.toBe(400);
+      expect(response.status).not.toBe(400);
     });
   });
 });

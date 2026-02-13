@@ -1,30 +1,44 @@
-import type { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { createTestApp } from './test-app.factory.js';
+import type { Hono } from 'hono';
+import { MockFetchClient } from '../helpers/mock-fetch-client.js';
 
 describe('Router (e2e)', () => {
-  let app: NestFastifyApplication;
+  let app: Hono;
+  let fetchClient: MockFetchClient;
 
   beforeEach(async () => {
     // Create fresh app instance for each test for better isolation
-    app = await createTestApp();
-  });
+    fetchClient = new MockFetchClient();
+    fetchClient.setResponse({
+      method: 'POST',
+      url: 'https://openrouter.ai/api/v1/chat/completions',
+      response: {
+        status: 500,
+        body: JSON.stringify({ error: { message: 'Test error' } }),
+        headers: { 'content-type': 'application/json' },
+      },
+    });
+    fetchClient.setResponse({
+      method: 'POST',
+      url: 'https://api.deepseek.com/chat/completions',
+      response: {
+        status: 500,
+        body: JSON.stringify({ error: { message: 'Test error' } }),
+        headers: { 'content-type': 'application/json' },
+      },
+    });
 
-  afterEach(async () => {
-    // Clean up app instance after each test
-    if (app) {
-      await app.close();
-    }
+    app = await createTestApp({ fetchClient });
   });
 
   describe('GET /api/v1/models', () => {
     it('returns list of available models', async () => {
-      const response = await app.inject({
+      const response = await app.request('/api/v1/models', {
         method: 'GET',
-        url: '/api/v1/models',
       });
 
-      expect(response.statusCode).toBe(200);
-      const body = JSON.parse(response.body);
+      expect(response.status).toBe(200);
+      const body = JSON.parse(await response.text());
 
       expect(body).toHaveProperty('models');
       expect(Array.isArray(body.models)).toBe(true);
@@ -51,51 +65,59 @@ describe('Router (e2e)', () => {
 
   describe('POST /api/v1/chat/completions', () => {
     it('validates required messages field', async () => {
-      const response = await app.inject({
+      const response = await app.request('/api/v1/chat/completions', {
         method: 'POST',
-        url: '/api/v1/chat/completions',
-        payload: {},
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({}),
       });
 
-      expect(response.statusCode).toBe(400);
-      const body = JSON.parse(response.body);
+      expect(response.status).toBe(400);
+      const body = JSON.parse(await response.text());
       expect(body.message).toContain('messages');
     });
 
     it('validates messages array is not empty', async () => {
-      const response = await app.inject({
+      const response = await app.request('/api/v1/chat/completions', {
         method: 'POST',
-        url: '/api/v1/chat/completions',
-        payload: {
-          messages: [],
+        headers: {
+          'content-type': 'application/json',
         },
+        body: JSON.stringify({
+          messages: [],
+        }),
       });
 
-      expect(response.statusCode).toBe(400);
+      expect(response.status).toBe(400);
     });
 
     it('validates message role is valid', async () => {
-      const response = await app.inject({
+      const response = await app.request('/api/v1/chat/completions', {
         method: 'POST',
-        url: '/api/v1/chat/completions',
-        payload: {
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
           messages: [
             {
               role: 'invalid',
               content: 'test',
             },
           ],
-        },
+        }),
       });
 
-      expect(response.statusCode).toBe(400);
+      expect(response.status).toBe(400);
     });
 
     it('validates temperature is in range 0-2', async () => {
-      const response = await app.inject({
+      const response = await app.request('/api/v1/chat/completions', {
         method: 'POST',
-        url: '/api/v1/chat/completions',
-        payload: {
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
           messages: [
             {
               role: 'user',
@@ -103,17 +125,19 @@ describe('Router (e2e)', () => {
             },
           ],
           temperature: 3,
-        },
+        }),
       });
 
-      expect(response.statusCode).toBe(400);
+      expect(response.status).toBe(400);
     });
 
     it('validates top_p is in range 0-1', async () => {
-      const response = await app.inject({
+      const response = await app.request('/api/v1/chat/completions', {
         method: 'POST',
-        url: '/api/v1/chat/completions',
-        payload: {
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
           messages: [
             {
               role: 'user',
@@ -121,17 +145,19 @@ describe('Router (e2e)', () => {
             },
           ],
           top_p: 2,
-        },
+        }),
       });
 
-      expect(response.statusCode).toBe(400);
+      expect(response.status).toBe(400);
     });
 
     it('validates type field with valid values', async () => {
-      const response = await app.inject({
+      const response = await app.request('/api/v1/chat/completions', {
         method: 'POST',
-        url: '/api/v1/chat/completions',
-        payload: {
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
           messages: [
             {
               role: 'user',
@@ -139,17 +165,19 @@ describe('Router (e2e)', () => {
             },
           ],
           type: 'invalid',
-        },
+        }),
       });
 
-      expect(response.statusCode).toBe(400);
+      expect(response.status).toBe(400);
     });
 
     it('rejects non-whitelisted fields', async () => {
-      const response = await app.inject({
+      const response = await app.request('/api/v1/chat/completions', {
         method: 'POST',
-        url: '/api/v1/chat/completions',
-        payload: {
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
           messages: [
             {
               role: 'user',
@@ -157,19 +185,21 @@ describe('Router (e2e)', () => {
             },
           ],
           unexpected_field: 'should be rejected',
-        },
+        }),
       });
 
-      expect(response.statusCode).toBe(400);
+      expect(response.status).toBe(400);
     });
 
     // Note: This test requires actual API keys and is skipped in CI
     // Run manually with valid API keys to test integration
     it.skip('successfully completes chat with valid request', async () => {
-      const response = await app.inject({
+      const response = await app.request('/api/v1/chat/completions', {
         method: 'POST',
-        url: '/api/v1/chat/completions',
-        payload: {
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
           messages: [
             {
               role: 'user',
@@ -177,11 +207,11 @@ describe('Router (e2e)', () => {
             },
           ],
           temperature: 0.7,
-        },
+        }),
       });
 
-      expect(response.statusCode).toBe(200);
-      const body = JSON.parse(response.body);
+      expect(response.status).toBe(200);
+      const body = JSON.parse(await response.text());
 
       // Check standard OpenAI fields
       expect(body).toHaveProperty('id');
@@ -218,10 +248,12 @@ describe('Router (e2e)', () => {
     });
 
     it.skip('filters models by type', async () => {
-      const response = await app.inject({
+      const response = await app.request('/api/v1/chat/completions', {
         method: 'POST',
-        url: '/api/v1/chat/completions',
-        payload: {
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
           messages: [
             {
               role: 'user',
@@ -229,19 +261,21 @@ describe('Router (e2e)', () => {
             },
           ],
           type: 'fast',
-        },
+        }),
       });
 
-      expect(response.statusCode).toBe(200);
-      const body = JSON.parse(response.body);
+      expect(response.status).toBe(200);
+      const body = JSON.parse(await response.text());
       expect(body._router.model_name).toBeDefined();
     });
 
     it.skip('filters models by tags', async () => {
-      const response = await app.inject({
+      const response = await app.request('/api/v1/chat/completions', {
         method: 'POST',
-        url: '/api/v1/chat/completions',
-        payload: {
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
           messages: [
             {
               role: 'user',
@@ -249,19 +283,21 @@ describe('Router (e2e)', () => {
             },
           ],
           tags: ['code'],
-        },
+        }),
       });
 
-      expect(response.statusCode).toBe(200);
-      const body = JSON.parse(response.body);
+      expect(response.status).toBe(200);
+      const body = JSON.parse(await response.text());
       expect(body._router.model_name).toBeDefined();
     });
 
     it.skip('uses specified model when provided', async () => {
-      const response = await app.inject({
+      const response = await app.request('/api/v1/chat/completions', {
         method: 'POST',
-        url: '/api/v1/chat/completions',
-        payload: {
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
           messages: [
             {
               role: 'user',
@@ -269,21 +305,23 @@ describe('Router (e2e)', () => {
             },
           ],
           model: 'llama-3.3-70b',
-        },
+        }),
       });
 
-      expect(response.statusCode).toBe(200);
-      const body = JSON.parse(response.body);
+      expect(response.status).toBe(200);
+      const body = JSON.parse(await response.text());
       expect(body._router.model_name).toBe('llama-3.3-70b');
     });
   });
 
   describe('POST /api/v1/chat/completions (Streaming)', () => {
     it('validates stream parameter is boolean', async () => {
-      const response = await app.inject({
+      const response = await app.request('/api/v1/chat/completions', {
         method: 'POST',
-        url: '/api/v1/chat/completions',
-        payload: {
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
           messages: [
             {
               role: 'user',
@@ -291,17 +329,19 @@ describe('Router (e2e)', () => {
             },
           ],
           stream: 'invalid',
-        },
+        }),
       });
 
-      expect(response.statusCode).toBe(400);
+      expect(response.status).toBe(400);
     });
 
     it.skip('returns SSE stream when stream=true', async () => {
-      const response = await app.inject({
+      const response = await app.request('/api/v1/chat/completions', {
         method: 'POST',
-        url: '/api/v1/chat/completions',
-        payload: {
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
           messages: [
             {
               role: 'user',
@@ -309,16 +349,16 @@ describe('Router (e2e)', () => {
             },
           ],
           stream: true,
-        },
+        }),
       });
 
-      expect(response.statusCode).toBe(200);
-      expect(response.headers['content-type']).toBe('text/event-stream');
-      expect(response.headers['cache-control']).toBe('no-cache');
-      expect(response.headers['connection']).toBe('keep-alive');
+      expect(response.status).toBe(200);
+      expect(response.headers.get('content-type')).toBe('text/event-stream');
+      expect(response.headers.get('cache-control')).toBe('no-cache');
+      expect(response.headers.get('connection')).toBe('keep-alive');
 
       // Parse SSE events from body
-      const body = response.body;
+      const body = await response.text();
       const lines = body.split('\n');
       const dataLines = lines.filter((line: string) => line.startsWith('data: '));
 
@@ -355,10 +395,12 @@ describe('Router (e2e)', () => {
     });
 
     it.skip('handles errors in streaming mode', async () => {
-      const response = await app.inject({
+      const response = await app.request('/api/v1/chat/completions', {
         method: 'POST',
-        url: '/api/v1/chat/completions',
-        payload: {
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
           messages: [
             {
               role: 'user',
@@ -367,18 +409,20 @@ describe('Router (e2e)', () => {
           ],
           model: 'non-existent-model',
           stream: true,
-        },
+        }),
       });
 
       // Should return error as SSE or HTTP error
-      expect([200, 400, 404, 500]).toContain(response.statusCode);
+      expect([200, 400, 404, 500]).toContain(response.status);
     });
 
     it.skip('streams with specific model', async () => {
-      const response = await app.inject({
+      const response = await app.request('/api/v1/chat/completions', {
         method: 'POST',
-        url: '/api/v1/chat/completions',
-        payload: {
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
           messages: [
             {
               role: 'user',
@@ -387,13 +431,13 @@ describe('Router (e2e)', () => {
           ],
           model: 'llama-3.3-70b',
           stream: true,
-        },
+        }),
       });
 
-      expect(response.statusCode).toBe(200);
-      expect(response.headers['content-type']).toBe('text/event-stream');
+      expect(response.status).toBe(200);
+      expect(response.headers.get('content-type')).toBe('text/event-stream');
 
-      const body = response.body;
+      const body = await response.text();
       const dataLines = body.split('\n').filter((line: string) => line.startsWith('data: '));
 
       // Verify chunks contain model name

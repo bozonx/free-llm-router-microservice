@@ -10,6 +10,8 @@
  * - Override per-test if needed using jest.setTimeout() or passing timeout as third arg to it()
  */
 
+import 'reflect-metadata';
+
 import { jest } from '@jest/globals';
 
 // Set global timeout for all e2e tests to 30 seconds
